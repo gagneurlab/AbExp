@@ -1,0 +1,23 @@
+name: abexp-veff-py
+
+channels:
+- conda-forge
+
+dependencies:
+- python
+- ipykernel
+- pandas
+- pyarrow
+- numpy
+- scipy
+- joblib
+- scikit-learn
+- tqdm
+- statsmodels
+- polars
+- bioconda::pyranges
+- bioconda::vcf2parquet
+- bioconda::snakemake
+- pip
+- pip:
+  - smakemk_util

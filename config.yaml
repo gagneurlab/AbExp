@@ -1,0 +1,20 @@
+projectTitle: AbExp
+
+vcf_input_dir: "example/data"
+output_dir: "example/output"
+predict_abexp_models:
+  - "abexp_dna_v1.0"
+
+# human_genome_version: "hg38"
+human_genome_version: "hg19"
+# assembly: "GRCh38"
+assembly: "GRCh37"
+# fasta_file: "/s/genomes/Gencode/Gencode_human/release_34/GRCh38.primary_assembly.genome.fa"
+fasta_file: "/s/genomes/Gencode/Gencode_human/release_34/GRCh37_mapping/GRCh37.primary_assembly.genome.fa"
+# gtf_file: "/s/genomes/Gencode/Gencode_human/release_34/gencode.v34.annotation.gtf.gz"
+gtf_file: "/s/genomes/Gencode/Gencode_human/release_34/GRCh37_mapping/gencode.v34lift37.annotation.gtf.gz"
+
+chrom_alias_tsv: "{SNAKEMAKE_DIR}/resources/chromAlias.tsv"
+
+# absplice_additional_cache:
+# - '/s/project/rep/processed/absplice_cache/hg38/veff.ukbb_200k_wes.parquet'

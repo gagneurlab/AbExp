@@ -1,0 +1,87 @@
+dirs:
+    vcf_file_pattern: "{VCF_INPUT_DIR}/{{vcf_file}}"
+    vcf_pq_file_pattern: "{RESULTS_DIR}/vcf.parquet/{{vcf_file}}.parquet"
+    veff_basedir: "{RESULTS_DIR}/veff"
+    fset_dir_pattern: "{RESULTS_DIR}/fset/{{feature_set}}"
+    
+
+vcf_file_endings:
+  - ".vcf"
+  - ".vcf.gz"
+  - ".vcf.bgz"
+  - ".bcf"
+
+canonical_transcript_pq: "/s/project/rep/processed/training_results_v13/general/gtex_canonical_transcript.parquet"
+subtissue_level_pext_scores_pq: "/s/project/rep/processed/training_results_v13/general/gtex_subtissue_level_pext_scores.parquet"
+expressed_genes_pq: "/s/project/rep/processed/training_results_v13/gtex_v8/gene_is_expressed_per_subtissue.parquet"
+gtex_expected_expr: "/s/project/rep/processed/training_results_v13/gtex_v8/feature_sets/expected_expr.py/data.parquet"
+
+# gencode_basepath: "/s/genomes/Gencode/Gencode_human/release_{gencode_version}"
+# MANE_select_url: 'https://ftp.ncbi.nlm.nih.gov/refseq/MANE/MANE_human/release_1.2/MANE.GRCh38.v1.2.ensembl_genomic.gtf.gz'
+vep:
+  version: 108
+  vep_bin: "vep"
+  perl_bin: "perl"
+  vep_cache_dir: "/s/raw/vep/{vep_version}"
+  cadd_dir: "/s/raw/cadd/v1.6/{human_genome_assembly}"
+  loftee_data_dir: "/s/raw/loftee/{human_genome_assembly}"
+  loftee_src_path: "/s/raw/loftee/{human_genome_assembly}_src"
+absplice:
+  cache: 
+    - '/s/project/rep/processed/absplice_cache/{human_genome_version}/veff.snp.parquet'
+  subtissue_mapping_csv: "{SNAKEMAKE_DIR}/resources/AbSplice_subtissue_mapping.csv"
+
+models:
+  abexp_dna_v1.0:
+    model: "resources/models/v1.0/model.joblib"
+    features: "resources/models/v1.0/features.yaml"
+    predict_subtissues:
+      - "Adipose - Subcutaneous"
+      - "Adipose - Visceral (Omentum)"
+      - "Adrenal Gland"
+      - "Artery - Aorta"
+      - "Artery - Coronary"
+      - "Artery - Tibial"
+      - "Brain - Amygdala"
+      - "Brain - Anterior cingulate cortex (BA24)"
+      - "Brain - Caudate (basal ganglia)"
+      - "Brain - Cerebellar Hemisphere"
+      - "Brain - Cerebellum"
+      - "Brain - Cortex"
+      - "Brain - Frontal Cortex (BA9)"
+      - "Brain - Hippocampus"
+      - "Brain - Hypothalamus"
+      - "Brain - Nucleus accumbens (basal ganglia)"
+      - "Brain - Putamen (basal ganglia)"
+      - "Brain - Spinal cord (cervical c-1)"
+      - "Brain - Substantia nigra"
+      - "Breast - Mammary Tissue"
+      - "Cells - EBV-transformed lymphocytes"
+      - "Cells - Cultured fibroblasts"
+      - "Colon - Sigmoid"
+      - "Colon - Transverse"
+      - "Esophagus - Gastroesophageal Junction"
+      - "Esophagus - Mucosa"
+      - "Esophagus - Muscularis"
+      - "Heart - Atrial Appendage"
+      - "Heart - Left Ventricle"
+      # - "Kidney - Cortex"
+      - "Liver"
+      - "Lung"
+      - "Minor Salivary Gland"
+      - "Muscle - Skeletal"
+      - "Nerve - Tibial"
+      - "Ovary"
+      - "Pancreas"
+      - "Pituitary"
+      - "Prostate"
+      - "Skin - Not Sun Exposed (Suprapubic)"
+      - "Skin - Sun Exposed (Lower leg)"
+      - "Small Intestine - Terminal Ileum"
+      - "Spleen"
+      - "Stomach"
+      - "Testis"
+      - "Thyroid"
+      - "Uterus"
+      - "Vagina"
+      - "Whole Blood"

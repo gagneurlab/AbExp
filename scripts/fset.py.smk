@@ -44,6 +44,7 @@ rule veff__fset_config:
         gtex_expected_expr=config["system"]["gtex_expected_expr"],
     wildcard_constraints:
         feature_set="[^/]+",
+    localrule: True
     run:
         with open(input["config_template"], "r") as fd:
             cfg = yaml.safe_load(fd)

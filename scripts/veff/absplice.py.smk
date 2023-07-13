@@ -16,9 +16,9 @@ VEFF_VCF_PQ_PATTERN=f"{OUTPUT_BASEDIR}/veff.parquet/{{vcf_file}}.parquet"
 def _absplice_cache_path(wildcards):
     cache_dirs = expand(
         config["system"]["absplice"]["cache"],
-        human_genome_version=ds_config[wildcards.ds_dir]["human_genome_version"]
+        human_genome_version=config["human_genome_version"]
     )
-    additional_cache_dirs = ds_config[wildcards.ds_dir].get("absplice_additional_cache",  [])
+    additional_cache_dirs = config.get("absplice_additional_cache",  [])
     if isinstance(additional_cache_dirs, str):
         additional_cache_dirs = [additional_cache_dirs]
     cache_dirs += additional_cache_dirs
@@ -33,7 +33,7 @@ rule veff__absplice:
     output:
         veff_pq=VEFF_VCF_PQ_PATTERN,
     input:
-        vcf=VCF_FILE_PATTERN,
+        vcf=VCF_PQ_FILE_PATTERN,
         absplice_cache=_absplice_cache_path,
         chrom_alias=ancient(CHROM_ALIAS_TSV),
         subtissue_mapping=ancient(config["system"]["absplice"].get(
@@ -42,8 +42,6 @@ rule veff__absplice:
         ).format(SNAKEMAKE_DIR=SNAKEMAKE_DIR)),
     params:
         nb_script=f"{SCRIPT}",
-    wildcard_constraints:
-        ds_dir="[^/]+",
     script:
         "{params.nb_script}.py"
 

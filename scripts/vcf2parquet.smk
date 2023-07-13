@@ -3,9 +3,6 @@ SNAKEFILE_DIR = os.path.dirname(SNAKEFILE)
 
 SCRIPT=os.path.basename(SNAKEFILE)[:-4]
 
-VCF_FILE_PATTERN=f"{DS_DIR}/distinct_variants.vcf/{{vcf_file}}"
-VCF_PQ_FILE_PATTERN=f"{DS_DIR}/distinct_variants.vcf.parquet/{{vcf_file}}.parquet"
-
 rule vcf_to_parquet:
     threads: 1
     resources:
@@ -15,10 +12,7 @@ rule vcf_to_parquet:
         vcf_pq_file=VCF_PQ_FILE_PATTERN,
     input:
         vcf_file=VCF_FILE_PATTERN,
-    params:
-        output_basedir=f"{DS_DIR}",
     wildcard_constraints:
-        ds_dir="[^/]+",
         vcf_file=f"[^/]+(?:{'|'.join(VCF_FILE_ENDINGS)})",
     shell:
         """

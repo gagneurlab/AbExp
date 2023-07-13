@@ -248,7 +248,7 @@ echo "" | \
     > "$OUTPUT_VEFF_HEADER"
 
 # run variant effect prediction
-cat "$INPUT_VCF" | \
+bcftools view "$INPUT_VCF" | \
     $PERL -e 'do(shift(@ARGV)) or die "Error attempting to execute script: $@\n";' "$SCRIPT" \
     --no_header \
     {params.vep_cli_options} \

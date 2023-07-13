@@ -6,6 +6,8 @@ SCRIPT=os.path.basename(SNAKEFILE)[:-4]
 include: f"{SNAKEFILE_DIR}/gtf_transcripts.py.smk"
 include: f"{SNAKEFILE_DIR}/fset.py.smk"
 include: f"{SNAKEFILE_DIR}/predict.py.smk"
+include: f"{SNAKEFILE_DIR}/extract_vcf_variants.smk"
+include: f"{SNAKEFILE_DIR}/vcf2parquet.smk"
 
 # subdirectories
 smkpaths = [

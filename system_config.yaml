@@ -1,5 +1,6 @@
 dirs:
-    vcf_file_pattern: "{VCF_INPUT_DIR}/{{vcf_file}}"
+    vcf_input_file_pattern: "{VCF_INPUT_DIR}/{{vcf_file}}"
+    vcf_file_pattern: "{RESULTS_DIR}/vcf/{{vcf_file}}.vcf"
     vcf_pq_file_pattern: "{RESULTS_DIR}/vcf.parquet/{{vcf_file}}.parquet"
     veff_basedir: "{RESULTS_DIR}/veff"
     fset_dir_pattern: "{RESULTS_DIR}/fset/{{feature_set}}"
@@ -11,6 +12,7 @@ vcf_file_endings:
   - ".vcf.bgz"
   - ".bcf"
 
+vcf_header: "resources/header.vcf"
 canonical_transcript_pq: "/s/project/rep/processed/training_results_v13/general/gtex_canonical_transcript.parquet"
 subtissue_level_pext_scores_pq: "/s/project/rep/processed/training_results_v13/general/gtex_subtissue_level_pext_scores.parquet"
 expressed_genes_pq: "/s/project/rep/processed/training_results_v13/gtex_v8/gene_is_expressed_per_subtissue.parquet"

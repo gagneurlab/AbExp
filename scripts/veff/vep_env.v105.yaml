@@ -6,6 +6,7 @@ channels:
 
 dependencies:
 - perl
+- bioconda::bcftools
 - bioconda::perl-dbd-sqlite
 - bioconda::perl-bio-bigfile
 - bioconda::perl-set-intervaltree

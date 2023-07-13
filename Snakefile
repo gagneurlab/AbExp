@@ -26,7 +26,8 @@ VCF_FILE_ENDINGS=config["system"]["vcf_file_endings"]
 VCF_FILE_REGEX="^.+(" + "|".join([e.replace(".", "\.") for e in VCF_FILE_ENDINGS]) + ")$"
 VCF_FILE_REGEX_PATTERN = re.compile(VCF_FILE_REGEX)
 
-VCF_FILE_PATTERN=config["system"]["dirs"]["vcf_file_pattern"].format(VCF_INPUT_DIR=VCF_INPUT_DIR)
+VCF_INPUT_FILE_PATTERN=config["system"]["dirs"]["vcf_input_file_pattern"].format(VCF_INPUT_DIR=VCF_INPUT_DIR)
+VCF_FILE_PATTERN=config["system"]["dirs"]["vcf_file_pattern"].format(RESULTS_DIR=RESULTS_DIR)
 VCF_PQ_FILE_PATTERN=config["system"]["dirs"]["vcf_pq_file_pattern"].format(RESULTS_DIR=RESULTS_DIR)
 
 VEFF_BASEDIR=config["system"]["dirs"]["veff_basedir"].format(RESULTS_DIR=RESULTS_DIR)
@@ -37,7 +38,7 @@ CHROM_ALIAS_TSV=config.get(
 ).format(SNAKEMAKE_DIR=SNAKEMAKE_DIR)
 
 
-vcf_input_file_names = glob_wildcards(VCF_FILE_PATTERN)._asdict()["vcf_file"]
+vcf_input_file_names = glob_wildcards(VCF_INPUT_FILE_PATTERN)._asdict()["vcf_file"]
 vcf_input_file_names = [f for f in vcf_input_file_names if VCF_FILE_REGEX_PATTERN.match(f)]
 eprint(vcf_input_file_names)
 

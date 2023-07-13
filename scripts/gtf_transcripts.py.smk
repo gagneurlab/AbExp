@@ -13,6 +13,8 @@ rule gtf_transcripts:
         gtf_transcripts=f"{RESULTS_DIR}/gtf_transcripts.parquet",
     input:
         gtf_file=config["gtf_file"],
+    params:
+        nb_script=f"{SCRIPT}",
     script:
         "{params.nb_script}.py"
         

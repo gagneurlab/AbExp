@@ -15,6 +15,7 @@ dependencies:
 - tqdm
 - statsmodels
 - polars
+- bioconda::bcftools
 - bioconda::pyranges
 - bioconda::vcf2parquet
 - bioconda::snakemake

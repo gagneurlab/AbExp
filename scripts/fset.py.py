@@ -34,7 +34,7 @@ import polars.datatypes as t
 import rep.polars_functions as plf
 
 # %%
-snakefile_path = os.getcwd() + "/../../../Snakefile"
+snakefile_path = os.getcwd() + "/../Snakefile"
 
 # %%
 # del snakemake
@@ -49,17 +49,16 @@ except NameError:
         snakefile = snakefile_path,
         rule_name = 'veff__fset',
         default_wildcards={
-            "vcf_file": "part-00209-d3833c90-3f14-4d7a-aaa8-64bf310086b5-c000.vcf",
+            "vcf_file": "clinvar_chr1_pathogenic.vcf.gz",
             "feature_set": "abexp_dna_v1.0",
-        }
+        },
+        change_dir=True
     )
+
 
 # %%
 from snakemk_util import pretty_print_snakemake
 print(pretty_print_snakemake(snakemake))
-
-# %%
-os.getcwd()
 
 # %%
 os.getcwd()

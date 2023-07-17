@@ -26,6 +26,9 @@ import yaml
 
 from pprint import pprint
 
+# %%
+import joblib
+
 # %% jupyter={"outputs_hidden": false} pycharm={"name": "#%%\n"}
 import numpy as np
 import polars as pl
@@ -34,7 +37,7 @@ import polars.datatypes as t
 import rep.polars_functions as plf
 
 # %%
-snakefile_path = os.getcwd() + "/../../../Snakefile"
+snakefile_path = os.getcwd() + "/../Snakefile"
 
 # %%
 # del snakemake
@@ -50,7 +53,7 @@ except NameError:
         rule_name = 'predict_veff',
         default_wildcards={
             "model_type": "abexp_dna_v1.0",
-            "vcf_file": "part-00066-d3833c90-3f14-4d7a-aaa8-64bf310086b5-c000.vcf",
+            "vcf_file": "clinvar_chr1_pathogenic.vcf.gz",
         }
     )
 
@@ -88,6 +91,9 @@ print(f"Index columns: {index_columns}")
 # # Setup training data
 
 # %%
+assert data_df.select(pl.count()).collect()["count"].item() > 0, "Data to predict is empty"
+
+# %%
 predict_data_df = (
     data_df
     .join(
@@ -95,8 +101,9 @@ predict_data_df = (
         on=[c for c in ['gene', 'tissue', 'subtissue'] if c in data_df.columns],
         how="left",
     )
-    .fill_null(strategy="zero")
-    .fill_nan(0.)
+    #.with_columns([
+    #.fill_null(strategy="zero")
+    #.fill_nan(0.)
 )
 predict_data_df.schema
 

@@ -34,13 +34,10 @@ import pyarrow as pa
 import pyarrow.dataset as pads
 
 # %%
-try:
-    from tqdm.notebook import tqdm
-except:
-    from tqdm import tqdm
+from tqdm.auto import tqdm
 
 # %%
-snakefile_path = os.getcwd() + "/../../../Snakefile"
+snakefile_path = os.getcwd() + "/../../Snakefile"
 
 # %%
 # del snakemake
@@ -55,8 +52,10 @@ except NameError:
         snakefile = snakefile_path,
         rule_name = 'veff__absplice',
         default_wildcards={
-            "vcf_file": "part-00310-d3833c90-3f14-4d7a-aaa8-64bf310086b5-c000.vcf",
-        }
+            "vcf_file": "clinvar_chr1_pathogenic.vcf.gz",
+            "feature_set": "abexp_dna_v1.0",
+        },
+        change_dir=True
     )
 
 # %%
@@ -88,18 +87,25 @@ variants_df = (
         "reference": "ref",
         "alternate": "alt",
         "info_END": "INFO_END",
-        "info_SVTYPE": "INFO_SVTYPE",
+        # "info_TYPE": "INFO_TYPE",
+        # "info_SVTYPE": "INFO_SVTYPE",
     })
-    .with_columns([
+    .select([
         pl.col("chrom").map_dict(chrom_mapping, default=pl.col("chrom"), return_dtype=t.Utf8()).cast(t.Utf8()),
         (pl.col("pos") - 1).cast(t.Int64()).alias("start"),
         pl.col("INFO_END").cast(t.Int64()).alias("end"),
-        pl.col("alt").arr.first().alias("alt"),
-        pl.col("id").arr.first().alias("id"),
-        pl.col("filter").arr.first().alias("filter"),
+        pl.col("ref"),
+        pl.col("alt").list.first().alias("alt"),
+        # pl.col("id").list.first().alias("id"),
+        # pl.col("filter").list.first().alias("filter"),
     ])
+    # prefetch
+    .collect()
 )
 variants_df.schema
+
+# %%
+# variants_df.limit(10).collect()
 
 # %%
 snakemake.input["absplice_cache"]
@@ -113,10 +119,15 @@ absplice_cache_ds = pads.dataset(absplice_cache_ds)
 absplice_cache_ds.schema
 
 # %%
-queries = variants_df.groupby("chrom").agg([
-    pl.col("start").min().alias("min_start"),
-    pl.col("start").max().alias("max_start"),
-]).collect()
+queries = (
+    variants_df
+    .groupby("chrom")
+    .agg([
+        pl.col("start").min().alias("min_start"),
+        pl.col("start").max().alias("max_start"),
+    ])
+    # .collect()
+)
 queries
 
 # %%
@@ -129,7 +140,8 @@ for chrom, min_start, max_start in queries.rows():
             & (pads.field("start") <= max_start)
         )
     )):
-        tbl = pl.from_arrow(pa.Table.from_batches([batch])).lazy()
+        tbl = pl.from_arrow(pa.Table.from_batches([batch]))
+        # tbl = tbl.lazy()
         tbl = (
             variants_df
             .join(
@@ -138,24 +150,17 @@ for chrom, min_start, max_start in queries.rows():
                 how="inner"
             )
             # .sort(["chrom", "start", "end", "ref", "alt", "gene", "subtissue"])
-            .collect()
+            # .collect()
         )
-
-        tbl_list.append(tbl)
-
-# %%
-# tbl_list = []
-# for chrom, min_start, max_start in queries.rows():
-#     tbl = absplice_cache_ds.to_table(filter=(
-#         (pads.field("chrom") == chrom)
-#         & (pads.field("start") >= min_start)
-#         & (pads.field("start") <= max_start)
-#     ))
-#     tbl = pl.from_arrow(tbl).lazy()
-#     tbl_list.append(tbl)
+        
+        row_count = tbl.select(pl.count()).item()
+        if row_count > 0:
+            tbl_list.append(tbl)
 
 # %%
 joint_df = pl.concat(tbl_list).unique()
+
+# %%
 del tbl_list
 
 # %%

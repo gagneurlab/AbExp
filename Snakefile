@@ -40,7 +40,7 @@ CHROM_ALIAS_TSV=config.get(
 
 vcf_input_file_names = glob_wildcards(VCF_INPUT_FILE_PATTERN)._asdict()["vcf_file"]
 vcf_input_file_names = [f for f in vcf_input_file_names if VCF_FILE_REGEX_PATTERN.match(f)]
-eprint(vcf_input_file_names)
+# eprint(vcf_input_file_names)
 
 rule all:
     input:

@@ -31,7 +31,7 @@ import polars as pl
 import polars.datatypes as t
 
 # %%
-snakefile_path = os.getcwd() + "/../../../Snakefile"
+snakefile_path = os.getcwd() + "/../../Snakefile"
 
 # %%
 # del snakemake
@@ -46,7 +46,7 @@ except NameError:
         snakefile = snakefile_path,
         rule_name = 'veff__tissue_specific_vep',
         default_wildcards={
-            "vcf_file": "part-00091-2257c40f-9583-4e6c-90a8-9ae7e2dd6c23-c000.vcf",
+            "vcf_file": "clinvar_chr1_pathogenic.vcf.gz",
             # "transcript_level": "None",
             # "transcript_level": "cutoff:0.1",
             # "transcript_level": "cutoff:0.2",
@@ -82,8 +82,8 @@ canonical_transcript_df.schema
 gtf_transcript_df = (
     pl.scan_parquet(snakemake.input["gtf_transcripts"])
     .with_columns([
-        pl.col("gene_id").str.split(".").arr.get(0).alias("gene"),
-        pl.col("transcript_id").str.split(".").arr.get(0).alias("transcript"),
+        pl.col("gene_id").str.split(".").list.get(0).alias("gene"),
+        pl.col("transcript_id").str.split(".").list.get(0).alias("transcript"),
     ])
     .select([
         "gene",

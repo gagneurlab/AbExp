@@ -266,6 +266,7 @@ rule veff__vep_parse:
     output:
         veff_pq=VEFF_VCF_PQ_PATTERN,
     input:
+        chrom_alias=ancient(CHROM_ALIAS_TSV),
         veff_tsv=VEFF_VCF_TSV_PATTERN,
         veff_header=VEFF_VCF_TSV_HEADER_PATTERN,
         veff_done=VEFF_VCF_TSV_PATTERN_DONE,

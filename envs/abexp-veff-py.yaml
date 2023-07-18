@@ -22,3 +22,4 @@ dependencies:
 - pip
 - pip:
   - smakemk_util
+  - git+ssh://git@github.com/gagneurlab/rep.git

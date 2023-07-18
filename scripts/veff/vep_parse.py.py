@@ -46,7 +46,7 @@ except NameError:
         snakefile = snakefile_path,
         rule_name = 'veff__vep_parse',
         default_wildcards={
-            "vcf_file": "part-00240-6b781084-72e3-49da-ab5c-b2770f2f89b0-c000.vcf",
+            "vcf_file": "clinvar_chr1_pathogenic.vcf.gz",
         }
     )
 
@@ -59,6 +59,9 @@ os.getcwd()
 
 # %% [markdown]
 # # Load input data
+
+# %%
+chrom_mapping = dict(pl.read_csv(snakemake.input["chrom_alias"], separator="\t").rename({"#alias": "alias"})[["alias", "chrom"]].rows())
 
 # %%
 header = None
@@ -191,6 +194,9 @@ parsed_df = (
         pl.col("PolyPhen").str.replace("\\(.*", "").alias("polyphen_prediction"),
         pl.col("PolyPhen").str.extract(r".*\((.*)\)", 1).alias("polyphen_score"),
     ])
+    .with_columns([
+        pl.col("chrom").map_dict(chrom_mapping, default=pl.col("chrom"), return_dtype=t.Utf8()).cast(t.Utf8()),
+    ])
     .drop([
         "#Uploaded_variation", 
         "Location", 
@@ -250,7 +256,7 @@ def parse_col(name):
             col = col.str.split(",")
         col = col.cast(dtypes[name])
     if name in needsMinVal:
-        col = col.arr.sort().arr.get(0)
+        col = col.list.sort().list.get(0)
     
     return col.alias(name)
 
@@ -260,6 +266,17 @@ parsed_df = parsed_df.select([
     parse_col(x) for x in parsed_df.columns
 ])
 parsed_df
+
+# %%
+failed_variants = parsed_df.filter(pl.col("chrom").is_null() | pl.col("start").is_null() | pl.col("end").is_null() | pl.col("ref").is_null() | pl.col("alt").is_null()).select(pl.count()).collect().item()
+failed_variants
+
+# %%
+total_variants = parsed_df.select(pl.count()).collect().item()
+total_variants
+
+# %%
+assert failed_variants == 0, f"{failed_variants} out of {total_variants} variants failed to parse!"
 
 # %% [markdown]
 # # parse consequences, etc.
@@ -339,14 +356,8 @@ def multi_label_binarize(col: Union[str, pl.Expr], labels: List[str]):
 def multi_label_binarize_array(col: Union[str, pl.Expr], labels: List[str]):
     if isinstance(col, str):
         col = pl.col(col)
-    return [col.arr.contains(l).alias(l) for l in labels]
+    return [col.list.contains(l).alias(l) for l in labels]
 
-
-# %%
-parsed_df.collect()
-
-# %%
-multi_label_binarize_array("Consequence", possible_consequences)
 
 # %%
 csq_struct = multi_label_binarize_array("Consequence", possible_consequences)

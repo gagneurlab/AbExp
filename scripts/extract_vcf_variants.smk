@@ -22,6 +22,7 @@ rule extract_vcf_variants:
         echo "writing to '{output.vcf_file}'..."
         bcftools annotate -x ID,^INFO/END,INFO/SVTYPE '{input.vcf_file}' | \
             bcftools +fill-tags -- -t "END,TYPE" | \
+            bcftools annotate --set-id +'%CHROM:%POS0:%END:%REF>%FIRST_ALT' | \
             bcftools reheader -h '{params.vcf_header}' > '{output.vcf_file}'
         echo "done!"
         ls -larth '{output.vcf_file}'

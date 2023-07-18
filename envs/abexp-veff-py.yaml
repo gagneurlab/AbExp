@@ -17,7 +17,7 @@ dependencies:
 - polars
 - bioconda::bcftools
 - bioconda::pyranges
-- bioconda::vcf2parquet
+- bioconda::vcf2parquet>=0.4
 - bioconda::snakemake
 - pip
 - pip:

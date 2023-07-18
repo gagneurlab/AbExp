@@ -17,6 +17,6 @@ rule vcf_to_parquet:
     shell:
         """
         env
-        echo vcf2parquet --input '{input.vcf_file}' convert --output '{output.vcf_pq_file}'
-        vcf2parquet --input '{input.vcf_file}' convert --output '{output.vcf_pq_file}'
+        set -x
+        vcf2parquet --info-optional --input '{input.vcf_file}' convert --output '{output.vcf_pq_file}'
         """

@@ -35,8 +35,8 @@ absplice:
 
 models:
   abexp_dna_v1.0:
-    model: "resources/models/v1.0/model.joblib"
-    features: "resources/models/v1.0/features.yaml"
+    model: "resources/models/abexp_dna_v1.0/model.joblib"
+    features: "resources/models/abexp_dna_v1.0/features.yaml"
     predict_subtissues:
       - "Adipose - Subcutaneous"
       - "Adipose - Visceral (Omentum)"

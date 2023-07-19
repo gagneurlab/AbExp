@@ -1,0 +1,54 @@
+classifier: &id002 !!python/object:rep.models.wrappers.AbExpBinaryClassifier
+  model: !!python/object:sklearn.linear_model._logistic.LogisticRegression
+    C: 1.0
+    _sklearn_version: 1.0.2
+    class_weight: null
+    dual: false
+    fit_intercept: true
+    intercept_scaling: 1
+    l1_ratio: null
+    max_iter: 100
+    multi_class: auto
+    n_jobs: null
+    penalty: l2
+    random_state: null
+    solver: lbfgs
+    tol: 0.0001
+    verbose: 0
+    warm_start: false
+  model_class: !!python/name:sklearn.linear_model._logistic.LogisticRegression ''
+classifier__C: 1.0
+classifier__class_weight: null
+classifier__dual: false
+classifier__fit_intercept: true
+classifier__intercept_scaling: 1
+classifier__l1_ratio: null
+classifier__max_iter: 100
+classifier__model_class: sklearn.linear_model._logistic.LogisticRegression
+classifier__multi_class: auto
+classifier__n_jobs: null
+classifier__penalty: l2
+classifier__random_state: null
+classifier__solver: lbfgs
+classifier__tol: 0.0001
+classifier__verbose: 0
+classifier__warm_start: false
+memory: null
+polynomial_features: &id001 !!python/object:sklearn.preprocessing._polynomial.PolynomialFeatures
+  _sklearn_version: 1.0.2
+  degree: 2
+  include_bias: false
+  interaction_only: true
+  order: C
+polynomial_features__degree: 2
+polynomial_features__include_bias: false
+polynomial_features__interaction_only: true
+polynomial_features__order: C
+steps:
+- !!python/tuple
+  - polynomial_features
+  - *id001
+- !!python/tuple
+  - classifier
+  - *id002
+verbose: false

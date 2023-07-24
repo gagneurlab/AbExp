@@ -21,7 +21,7 @@ rule extract_vcf_variants:
         """
         set -x
         echo "writing to '{output.vcf_file}'..."
-        bcftools reheader -f '{fasta_file_index}' '{input.vcf_file}' | \
+        bcftools reheader -f '{input.fasta_file_index}' '{input.vcf_file}' | \
             bcftools annotate -x ID,^INFO/END,INFO/SVTYPE | \
             bcftools +fill-tags -- -t "END,TYPE" | \
             bcftools annotate --set-id +'%CHROM:%POS0:%END:%REF>%FIRST_ALT' | \

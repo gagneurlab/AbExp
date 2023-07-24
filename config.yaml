@@ -11,6 +11,9 @@ human_genome_version: "hg19"
 assembly: "GRCh37"
 # fasta_file: "/s/genomes/Gencode/Gencode_human/release_34/GRCh38.primary_assembly.genome.fa"
 fasta_file: "/s/genomes/Gencode/Gencode_human/release_34/GRCh37_mapping/GRCh37.primary_assembly.genome.fa"
+# fasta file index is by default `fasta_file + ".fai"` but could be changed here:
+# fasta_file_idx: "/s/genomes/Gencode/Gencode_human/release_34/GRCh37_mapping/GRCh37.primary_assembly.genome.fa.fai"
+
 # gtf_file: "/s/genomes/Gencode/Gencode_human/release_34/gencode.v34.annotation.gtf.gz"
 gtf_file: "/s/genomes/Gencode/Gencode_human/release_34/GRCh37_mapping/gencode.v34lift37.annotation.gtf.gz"
 

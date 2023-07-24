@@ -12,6 +12,7 @@ rule extract_vcf_variants:
         vcf_file=VCF_FILE_PATTERN,
     input:
         vcf_file=VCF_INPUT_FILE_PATTERN,
+        fasta_file_index=config.get("fasta_file_idx", config["fasta_file"] + ".fai")
     params:
         vcf_header=config["system"]["vcf_header"],
     wildcard_constraints:
@@ -20,9 +21,10 @@ rule extract_vcf_variants:
         """
         set -x
         echo "writing to '{output.vcf_file}'..."
-        bcftools annotate -x ID,^INFO/END,INFO/SVTYPE '{input.vcf_file}' --force | \
+        bcftools reheader -f '{fasta_file_index}' '{input.vcf_file}' | \
+            bcftools annotate -x ID,^INFO/END,INFO/SVTYPE | \
             bcftools +fill-tags -- -t "END,TYPE" | \
-            bcftools annotate --set-id +'%CHROM:%POS0:%END:%REF>%FIRST_ALT' --force | \
+            bcftools annotate --set-id +'%CHROM:%POS0:%END:%REF>%FIRST_ALT' | \
             bcftools reheader -h '{params.vcf_header}' > '{output.vcf_file}'
         echo "done!"
         ls -larth '{output.vcf_file}'

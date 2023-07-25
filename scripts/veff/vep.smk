@@ -194,7 +194,7 @@ rule veff__vep_annotation:
         veff_header=temp(VEFF_VCF_TSV_HEADER_PATTERN),
         veff_done=temp(touch(VEFF_VCF_TSV_PATTERN_DONE)),
     input:
-        vcf=VCF_FILE_PATTERN,
+        vcf=STRIPPED_VCF_FILE_PATTERN,
 #     log:
 #         "run_vep_annotation.log"
     params:

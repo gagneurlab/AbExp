@@ -1,7 +1,12 @@
 projectTitle: AbExp
 
 vcf_input_dir: "example/data"
+# set this to True if you are sure that the variants are already normalized
+# and contig names start with "chr"
+vcf_is_normalized: False
+
 output_dir: "example/output"
+
 predict_abexp_models:
   - "abexp_dna_v1.0"
 

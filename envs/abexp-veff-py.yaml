@@ -16,6 +16,8 @@ dependencies:
 - statsmodels
 - polars
 - bioconda::bcftools
+- bioconda::tabix
+- bioconda::pyfaidx
 - bioconda::pyranges
 - bioconda::vcf2parquet>=0.4
 - bioconda::snakemake

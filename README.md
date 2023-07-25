@@ -14,7 +14,7 @@
 ## Usage
 
 1) Edit `config.yaml` to your needs
-2) Run `snakemake`.
+2) Run `snakemake --use-conda -c all`.
    All rules are annotated with resource requirements s.t. snakemake can submit jobs to HPC clusters or cloud environments.
    It is highly recommended to use snakemake with some batch submission system, e.g. SLURM.
 

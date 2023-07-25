@@ -1,6 +1,7 @@
 dirs:
     vcf_input_file_pattern: "{VCF_INPUT_DIR}/{{vcf_file}}"
-    vcf_file_pattern: "{RESULTS_DIR}/vcf/{{vcf_file}}.vcf"
+    normalized_vcf_file_pattern: "{RESULTS_DIR}/normalized_vcf/{{vcf_file}}.vcf"
+    stripped_vcf_file_pattern: "{RESULTS_DIR}/stripped_vcf/{{vcf_file}}.vcf"
     vcf_pq_file_pattern: "{RESULTS_DIR}/vcf.parquet/{{vcf_file}}.parquet"
     veff_basedir: "{RESULTS_DIR}/veff"
     fset_dir_pattern: "{RESULTS_DIR}/fset/{{feature_set}}"

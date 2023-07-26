@@ -65,7 +65,16 @@ print(pretty_print_snakemake(snakemake))
 # # Load input data
 
 # %%
+with open(snakemake.input["featureset_config"], "r") as fd:
+    featureset_config = yaml.safe_load(fd)
+featureset_config
+
+# %%
 data_df = pl.scan_parquet(snakemake.input["featureset_pq"])
+for req in featureset_config.get("required_features", []):
+    data_df = data_df.filter(pl.col(req).is_not_null())
+    if data_df.schema[req] in t.FLOAT_DTYPES:
+        data_df = data_df.filter(pl.col(req).is_not_nan())
 data_df.schema
 
 # %%
@@ -99,13 +108,25 @@ predict_data_df = (
     .join(
         expressed_genes_df,
         on=[c for c in ['gene', 'tissue', 'subtissue'] if c in data_df.columns],
-        how="left",
+        how="inner",
     )
-    #.with_columns([
-    #.fill_null(strategy="zero")
-    #.fill_nan(0.)
+    # .fill_null(strategy="zero")
+    # .fill_nan(0.)
 )
 predict_data_df.schema
+
+# %%
+fill_values = featureset_config.get("fill_values", None)
+if fill_values is not None:
+    fill_exprs = []
+    for col, fval in fill_values.items():
+        expr = pl.col(col).fill_null(fval)
+        if predict_data_df.schema[col] in t.FLOAT_DTYPES:
+            expr = expr.fill_nan(fval)
+        expr = expr.alias(col)
+
+        fill_exprs.append(expr)
+predict_data_df = predict_data_df.with_columns(fill_exprs)
 
 # %%
 # with pd.option_context('display.max_rows', None, 'display.max_columns', None):

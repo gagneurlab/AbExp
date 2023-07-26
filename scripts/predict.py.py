@@ -126,7 +126,7 @@ if fill_values is not None:
         expr = expr.alias(col)
 
         fill_exprs.append(expr)
-predict_data_df = predict_data_df.with_columns(fill_exprs)
+    predict_data_df = predict_data_df.with_columns(fill_exprs)
 
 # %%
 # with pd.option_context('display.max_rows', None, 'display.max_columns', None):

@@ -159,7 +159,12 @@ predict_data_pd_df = predict_data_df.collect().to_pandas()
 predict_data_pd_df
 
 # %%
-x_predict = predict_data_pd_df.iloc[:, predict_data_pd_df.columns.isin(features_list)]
+x_predict = (
+    predict_data_pd_df.iloc[:, predict_data_pd_df.columns.isin(features_list)]
+    .fillna(0)
+    .fillna(0.)
+    .fillna(False)
+)
 display(x_predict)
 
 # %%

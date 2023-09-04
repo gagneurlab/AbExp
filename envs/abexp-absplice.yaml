@@ -1,0 +1,29 @@
+name: abexp-absplice
+channels:
+  - conda-forge
+dependencies:
+  - python==3.8
+  - cython
+  - pytest
+  - setuptools
+  - scipy
+  - pandas
+  - tqdm
+  - click
+  - pyarrow
+  - onnx
+  - onnxruntime
+  - pandas
+  - numpy==1.23
+  # needed for splicemap
+  - seaborn
+  - scikit-learn
+  - bioconda::pyfaidx
+  - bioconda::pyranges>=0.0.71
+  - bioconda::tabix
+  - bioconda::spliceai
+  - bioconda::kipoiseq>=0.7
+  - deepdiff
+  - pip
+  - pip:
+#    - mmsplice

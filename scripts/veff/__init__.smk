@@ -15,3 +15,4 @@ for p in smkpaths:
 include: f"{SNAKEFILE_DIR}/vep.smk"
 include: f"{SNAKEFILE_DIR}/tissue_specific_vep.py.smk"
 include: f"{SNAKEFILE_DIR}/absplice.py.smk"
+include: f"{SNAKEFILE_DIR}/absplice_denovo.py.smk"

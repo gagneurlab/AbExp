@@ -37,17 +37,19 @@ rule extract_chromalias_targets:
         #        grep -v "^#" \
         #    > {output.chrom_targets_txt}'''
 
+
 rule tabix_vcf:
     threads: 1
     resources:
         ntasks=1,
         mem_mb=lambda wildcards, attempt, threads: (1000 * threads) * attempt
     input:
-        vcf_file=VCF_INPUT_FILE_PATTERN,
+        vcf_file="{dir}/{vcf_file}",
     output:
-        vcf_file_tbi=VCF_INPUT_FILE_PATTERN + ".tbi",
+        vcf_file_tbi="{dir}/{vcf_file}.tbi",
     wildcard_constraints:
-        vcf_file=f"[^/]+(?:{'|'.join(VCF_FILE_ENDINGS)})",
+        #vcf_file=f"[^/]+(?:{'|'.join(VCF_FILE_ENDINGS)})",
+        vcf_file="[^/]+" + VCF_FILE_REGEX,
     shell:
         '''
         tabix -f "{input.vcf_file}"
@@ -80,10 +82,10 @@ if not config.get("vcf_is_normalized", False):
                 <(bcftools query -f "##contig=<ID=%CHROM>\n" '{input.vcf_file}' | uniq | sort | uniq) \
                 <(echo "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO") \
                 <(bcftools view --no-header '{input.vcf_file}') | \
-                bcftools annotate --rename-chrs {input.chromalias} | \
-                bcftools view --targets-file {input.targets} | \
+                bcftools annotate --rename-chrs {input.chromalias} -Ou | \
+                bcftools view --targets-file {input.targets} -Ou | \
                 bcftools norm --force -cs -m - -f "{input.fasta_file}" --threads {threads} \
-             > '{output.vcf_file}'
+                  -o '{output.vcf_file}'
             echo "done!"
             ls -larth '{output.vcf_file}'
             """
@@ -111,11 +113,34 @@ rule extract_vcf_variants:
         """
         set -x
         echo "writing to '{output.vcf_file}'..."
-        bcftools view '{input.vcf_file}' | \
-            bcftools annotate -x ID,^INFO/END,INFO/SVTYPE | \
-            bcftools +fill-tags -- -t "END,TYPE" | \
+        bcftools view '{input.vcf_file}' -Ou | \
+            bcftools annotate -x ID,^INFO/END,INFO/SVTYPE -Ou | \
+            bcftools +fill-tags -Ou -- -t "END,TYPE" | \
             bcftools annotate --set-id +'%CHROM:%POS0:%END:%REF>%FIRST_ALT' | \
-            bcftools reheader -h '{params.vcf_header}' > '{output.vcf_file}'
+            bcftools reheader -h '{params.vcf_header}' | bcftools view \
+              -o '{output.vcf_file}'
         echo "done!"
         ls -larth '{output.vcf_file}'
         """
+
+
+rule extract_valid_vcf_variants:
+    threads: 1
+    resources:
+        ntasks=1,
+        mem_mb=lambda wildcards, attempt, threads: (1000 * threads) * attempt
+    output:
+        vcf_file=VALID_VARIANTS_VCF_FILE_PATTERN,
+    input:
+        vcf_file=STRIPPED_VCF_FILE_PATTERN,
+    shell:
+        """
+        set -x
+        echo "writing to '{output.vcf_file}'..."
+        bcftools filter '{input.vcf_file}' \
+          --include 'REF~"^[ATCGatcg]\+$" & ALT~"^[ATCGatcg]\+$"' \
+          -o '{output.vcf_file}'
+        echo "done!"
+        ls -larth '{output.vcf_file}'
+        """
+

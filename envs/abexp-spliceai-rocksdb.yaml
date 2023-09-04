@@ -1,0 +1,23 @@
+name: spliceai-rocksdb
+channels:
+  - conda-forge
+dependencies:
+  - python>=3.6
+  - python-rocksdb>=0.7
+  - rocksdb
+  - tensorflow-gpu>=2.4
+  - cudnn
+  - cudatoolkit>=11.0
+  - pyarrow
+  - tqdm
+  - pip
+  - setuptools
+  - click
+  - pooch
+  - bioconda::kipoiseq
+  - bioconda::spliceai
+  #- bioconda::cyvcf2
+  - pip:
+    - git+https://github.com/gagneurlab/spliceai_rocksdb.git@master
+    # this allows to predict multi-nucleotide polymorphisms
+    - git+https://github.com/hoeze/SpliceAI.git@mnp

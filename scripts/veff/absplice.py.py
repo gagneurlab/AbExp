@@ -53,7 +53,7 @@ except NameError:
         rule_name = 'veff__absplice',
         default_wildcards={
             "vcf_file": "clinvar_chr1_pathogenic.vcf.gz",
-            "feature_set": "abexp_dna_v1.0",
+            # "feature_set": "abexp_dna_v1.0",
         },
         change_dir=True
     )
@@ -105,66 +105,17 @@ variants_df = (
 variants_df.schema
 
 # %%
-# variants_df.limit(10).collect()
+variants_df.limit(10)#.collect()
+
+# %% [markdown]
+# # read AbSplice de-novo predictions
 
 # %%
-snakemake.input["absplice_cache"]
+snakemake.input["absplice_denovo_pred_pq"]
 
 # %%
-absplice_cache_ds = [pads.dataset(p, partitioning="hive") for p in snakemake.input["absplice_cache"]]
-absplice_cache_ds
-
-# %%
-absplice_cache_ds = pads.dataset(absplice_cache_ds)
-absplice_cache_ds.schema
-
-# %%
-queries = (
-    variants_df
-    .groupby("chrom")
-    .agg([
-        pl.col("start").min().alias("min_start"),
-        pl.col("start").max().alias("max_start"),
-    ])
-    # .collect()
-)
-queries
-
-# %%
-tbl_list = []
-for chrom, min_start, max_start in queries.rows():
-    for batch in tqdm(absplice_cache_ds.to_batches(
-        filter=(
-            (pads.field("chrom") == chrom)
-            & (pads.field("start") >= min_start)
-            & (pads.field("start") <= max_start)
-        )
-    )):
-        tbl = pl.from_arrow(pa.Table.from_batches([batch]))
-        # tbl = tbl.lazy()
-        tbl = (
-            variants_df
-            .join(
-                tbl,
-                on=["chrom", "start", "end", "ref", "alt"],
-                how="inner"
-            )
-            # .sort(["chrom", "start", "end", "ref", "alt", "gene", "subtissue"])
-            # .collect()
-        )
-        
-        row_count = tbl.select(pl.count()).item()
-        if row_count > 0:
-            tbl_list.append(tbl)
-
-# %%
-joint_df = pl.concat(tbl_list).unique()
-
-# %%
-del tbl_list
-
-# %%
-joint_df = joint_df.rename({
+absplice_df = pl.scan_parquet(snakemake.input["absplice_denovo_pred_pq"])
+absplice_df = absplice_df.rename({
     k: v for k, v in {
         "tissue": "subtissue",
         "gene_id": "gene",
@@ -174,10 +125,41 @@ joint_df = joint_df.rename({
         "AbSplice_DNA": "AbSplice",
         "AbSplice_RNA": "AbSplice",
     }.items()
-    if k in joint_df.columns
+    if k in absplice_df.columns
 })
-joint_df = joint_df.with_columns(
+absplice_df = absplice_df.with_columns(
     pl.col("subtissue").map_dict(subtissue_mapping, default=pl.col("subtissue"), return_dtype=t.Utf8()).cast(t.Utf8())
+)
+absplice_df.schema
+
+# %% [markdown]
+# ## aggregate per gene
+
+# %%
+agg_absplice_df = (
+        absplice_df
+        .groupby("chrom", "start", "end", "ref", "alt", "gene", "subtissue")
+        .agg(
+            pl.all().sort_by(pl.col("AbSplice"), descending=True).first()
+        )
+        .filter(
+            pl.col("chrom").is_not_null()
+            & pl.col("start").is_not_null()
+            & pl.col("end").is_not_null()
+            & pl.col("ref").is_not_null()
+            & pl.col("alt").is_not_null()
+            & pl.col("gene").is_not_null()
+            & pl.col("subtissue").is_not_null()
+        )
+    )
+agg_absplice_df.schema
+
+# %%
+joint_df = (
+    variants_df.lazy()
+    .join(agg_absplice_df.lazy(), on=["chrom", "start", "end", "ref", "alt"], how="left")
+    .sort(["chrom", "start", "end", "ref", "alt", "gene", "subtissue"])
+    .collect()
 )
 joint_df
 
@@ -187,7 +169,6 @@ snakemake.output["veff_pq"]
 # %%
 (
     joint_df
-    .sort(["chrom", "start", "end", "ref", "alt", "gene", "subtissue"])
     .write_parquet(snakemake.output["veff_pq"], compression="snappy", statistics=True, use_pyarrow=True)
 )
 

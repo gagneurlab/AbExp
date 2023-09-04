@@ -9,21 +9,10 @@ SCRIPT=os.path.basename(SNAKEFILE)[:-4]
 
 import yaml
 
+ABSPLICE_DENOVO_PRED_PQ=f"{VEFF_BASEDIR}/absplice_denovo.py/veff.parquet/{{vcf_file}}.parquet"
+
 OUTPUT_BASEDIR=f"{VEFF_BASEDIR}/{SCRIPT}"
 VEFF_VCF_PQ_PATTERN=f"{OUTPUT_BASEDIR}/veff.parquet/{{vcf_file}}.parquet"
-
-
-def _absplice_cache_path(wildcards):
-    cache_dirs = expand(
-        config["system"]["absplice"]["cache"],
-        human_genome_version=config["human_genome_version"]
-    )
-    additional_cache_dirs = config.get("absplice_additional_cache",  [])
-    if isinstance(additional_cache_dirs, str):
-        additional_cache_dirs = [additional_cache_dirs]
-    cache_dirs += additional_cache_dirs
-    return cache_dirs
-
 
 rule veff__absplice:
     threads: lambda wildcards, attempt: 16 * attempt,
@@ -34,7 +23,7 @@ rule veff__absplice:
         veff_pq=VEFF_VCF_PQ_PATTERN,
     input:
         vcf=VCF_PQ_FILE_PATTERN,
-        absplice_cache=_absplice_cache_path,
+        absplice_denovo_pred_pq=ABSPLICE_DENOVO_PRED_PQ,
         chrom_alias=ancient(CHROM_ALIAS_TSV),
         subtissue_mapping=ancient(config["system"]["absplice"].get(
             "subtissue_mapping_csv",
@@ -46,5 +35,8 @@ rule veff__absplice:
         "{params.nb_script}.py"
 
 
-del OUTPUT_BASEDIR
-del VEFF_VCF_PQ_PATTERN
+del (
+    OUTPUT_BASEDIR,
+    VEFF_VCF_PQ_PATTERN,
+    ABSPLICE_DENOVO_PRED_PQ,
+)

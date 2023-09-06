@@ -22,6 +22,8 @@ vcf_file_endings:
   - ".bcf"
 
 vcf_header: "resources/header.vcf"
+formatted_vcf_header: "{RESULTS_DIR}/header.vcf"
+
 canonical_transcript_pq: "/s/project/rep/processed/training_results_v13/general/gtex_canonical_transcript.parquet"
 subtissue_level_pext_scores_pq: "/s/project/rep/processed/training_results_v13/general/gtex_subtissue_level_pext_scores.parquet"
 expressed_genes_pq: "/s/project/rep/processed/training_results_v13/gtex_v8/gene_is_expressed_per_subtissue.parquet"

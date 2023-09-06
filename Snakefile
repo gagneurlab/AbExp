@@ -37,6 +37,7 @@ VCF_PQ_FILE_PATTERN=config["system"]["dirs"]["vcf_pq_file_pattern"].format(RESUL
 
 VEFF_BASEDIR=config["system"]["dirs"]["veff_basedir"].format(RESULTS_DIR=RESULTS_DIR)
 
+FORMATTED_VCF_HEADER=config["system"]["formatted_vcf_header"].format(RESULTS_DIR=RESULTS_DIR)
 CHROM_ALIAS_TSV=config.get(
     "chrom_alias_tsv",
     "{SNAKEMAKE_DIR}/resources/chromAlias.tsv"

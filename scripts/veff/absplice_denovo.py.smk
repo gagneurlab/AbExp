@@ -29,35 +29,15 @@ SPLICEMAP3 = expand(
     genome=config["human_genome_version"],
 )
 
-SPLICEAI_ROCKSDB_PATHS = Namedlist(fromdict={
+SPLICEAI_ROCKSDB_PATHS = {
     f"{c}": config["system"]["absplice"]["spliceai_rocksdb"][config['human_genome_version']].format(
       chromosome=c,
     ) for c in config["system"]["absplice"]["spliceai_rocksdb_chromosomes"]
-})
-
-# rule veff__absplice_denovo:
-#     threads: lambda wildcards, attempt: 16 * attempt,
-#     resources:
-#         ntasks=1,
-#         mem_mb=lambda wildcards, attempt, threads: (4000 * threads) * attempt,
-#     output:
-#         veff_pq=VEFF_VCF_PQ_PATTERN,
-#     input:
-#         vcf=VCF_PQ_FILE_PATTERN,
-#         absplice_cache=_absplice_cache_path,
-#         chrom_alias=ancient(CHROM_ALIAS_TSV),
-#         subtissue_mapping=ancient(config["system"]["absplice"].get(
-#             "subtissue_mapping_csv",
-#             "{SNAKEMAKE_DIR}/resources/AbSplice_subtissue_mapping.csv",
-#         ).format(SNAKEMAKE_DIR=SNAKEMAKE_DIR)),
-#     params:
-#         nb_script=f"{SCRIPT}",
-#     script:
-#         "{params.nb_script}.py"
+}
 
 
 rule veff__mmsplice_splicemap:
-    threads: lambda wildcards, attempt: 4 * attempt,
+    threads: lambda wildcards, attempt: 3 * attempt,
     resources:
         mem_mb=lambda wildcards, attempt, threads: (8000 * threads) * attempt,
     input:
@@ -85,8 +65,9 @@ if config['system']['absplice']['use_spliceai_rocksdb'] == True:
         input:
             vcf = VALID_VARIANTS_VCF_FILE_PATTERN,
             fasta = config['fasta_file'],
-            spliceai_rocksdb_paths = SPLICEAI_ROCKSDB_PATHS,
+            spliceai_rocksdb_paths = list(SPLICEAI_ROCKSDB_PATHS.values()),
         params:
+            spliceai_rocksdb_path_keys = list(SPLICEAI_ROCKSDB_PATHS.keys()),
             lookup_only = False,
             genome = config['assembly'].lower()
         conda:
@@ -96,8 +77,8 @@ if config['system']['absplice']['use_spliceai_rocksdb'] == True:
 else:
     rule veff__spliceai:
         resources:
-            mem_mb = lambda wildcards, attempt: attempt * 16000,
-            threads = 1,
+            mem_mb=lambda wildcards, attempt, threads: (8000 * threads) * attempt,
+            threads = 4,
             gpu = 1,
         output:
             result = SPLICEAI_VEFF_VCF_PATTERN,
@@ -113,7 +94,7 @@ else:
     
     
     rule veff__spliceai_vcf_to_csv:
-        threads: lambda wildcards, attempt: 1 * attempt,
+        threads: lambda wildcards, attempt: 1,
         resources:
             mem_mb=lambda wildcards, attempt, threads: (4000 * threads) * attempt,
         input:
@@ -129,9 +110,9 @@ else:
 
 
 rule absplice_dna:
-    threads: lambda wildcards, attempt: 1 * attempt,
+    threads: lambda wildcards, attempt: 2,
     resources:
-        mem_mb=lambda wildcards, attempt, threads: (4000 * threads) * attempt,
+        mem_mb=lambda wildcards, attempt, threads: (8000 * threads) * attempt,
     input:
         mmsplice_splicemap = MMSPLICE_SPLICEMAP_VEFF_CSV_PATTERN,
         spliceai = SPLICEAI_VEFF_CSV_PATTERN,

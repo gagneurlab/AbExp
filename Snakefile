@@ -12,32 +12,56 @@ include: "snakefile_utils.smk"
 workdir: "./"
 configfile: "config.yaml"
 
-with open("system_config.yaml", "r") as fd:
+with open("defaults.yaml", "r") as fd:
     config["system"] = yaml.safe_load(fd)
+with open("system_config.yaml", "r") as fd:
+    system_config = yaml.safe_load(fd)
+    if system_config is None:
+        system_config = {}
+    config["system"] = deep_update(config["system"], system_config)
 
-SNAKEMAKE_DIR = os.path.dirname(workflow.snakefile)
+
+SNAKEMAKE_DIR = os.path.abspath(os.path.dirname(workflow.snakefile))
 
 CONDA_ENV_YAML_DIR=f"{SNAKEMAKE_DIR}/envs"
 
 VCF_INPUT_DIR = os.path.abspath(config["vcf_input_dir"])
 RESULTS_DIR = os.path.abspath(config["output_dir"])
+RESOURCES_DIR = os.path.abspath(config["system"]["dirs"]["resources_dir"]).format(RESULTS_DIR=RESULTS_DIR)
+
+HUMAN_GENOME_VERSION=config["human_genome_version"]
+ASSEMBLY=config["system"]["assembly_mapping"][HUMAN_GENOME_VERSION]
+
+config["system"] = recursive_format(
+    config["system"],
+    SafeDict(
+        SNAKEMAKE_DIR=SNAKEMAKE_DIR,
+        CONDA_ENV_YAML_DIR=CONDA_ENV_YAML_DIR,
+        VCF_INPUT_DIR=VCF_INPUT_DIR,
+        RESULTS_DIR=RESULTS_DIR,
+        RESOURCES_DIR=RESOURCES_DIR,
+        HUMAN_GENOME_VERSION=HUMAN_GENOME_VERSION,
+    )
+)
+
+eprint(json.dumps(config, indent=2, default=str))
 
 VCF_FILE_ENDINGS=config["system"]["vcf_file_endings"]
 VCF_FILE_REGEX="(" + "|".join([e.replace(".", "\.") for e in VCF_FILE_ENDINGS]) + ")"
 VCF_FILE_REGEX_PATTERN = re.compile("^.+" + VCF_FILE_REGEX + "$")
 
-VCF_INPUT_FILE_PATTERN=config["system"]["dirs"]["vcf_input_file_pattern"].format(VCF_INPUT_DIR=VCF_INPUT_DIR)
-NORMALIZED_VCF_FILE_PATTERN=config["system"]["dirs"]["normalized_vcf_file_pattern"].format(RESULTS_DIR=RESULTS_DIR)
+VCF_INPUT_FILE_PATTERN=config["system"]["dirs"]["vcf_input_file_pattern"]
+NORMALIZED_VCF_FILE_PATTERN=config["system"]["dirs"]["normalized_vcf_file_pattern"]
 if config.get("vcf_is_normalized", False):
     NORMALIZED_VCF_FILE_PATTERN=VCF_INPUT_FILE_PATTERN
 
-STRIPPED_VCF_FILE_PATTERN=config["system"]["dirs"]["stripped_vcf_file_pattern"].format(RESULTS_DIR=RESULTS_DIR)
-VALID_VARIANTS_VCF_FILE_PATTERN=config["system"]["dirs"]["valid_variants_vcf_file_pattern"].format(RESULTS_DIR=RESULTS_DIR)
-VCF_PQ_FILE_PATTERN=config["system"]["dirs"]["vcf_pq_file_pattern"].format(RESULTS_DIR=RESULTS_DIR)
+STRIPPED_VCF_FILE_PATTERN=config["system"]["dirs"]["stripped_vcf_file_pattern"]
+VALID_VARIANTS_VCF_FILE_PATTERN=config["system"]["dirs"]["valid_variants_vcf_file_pattern"]
+VCF_PQ_FILE_PATTERN=config["system"]["dirs"]["vcf_pq_file_pattern"]
 
-VEFF_BASEDIR=config["system"]["dirs"]["veff_basedir"].format(RESULTS_DIR=RESULTS_DIR)
+VEFF_BASEDIR=config["system"]["dirs"]["veff_basedir"]
 
-FORMATTED_VCF_HEADER=config["system"]["formatted_vcf_header"].format(RESULTS_DIR=RESULTS_DIR)
+FORMATTED_VCF_HEADER=config["system"]["formatted_vcf_header"]
 CHROM_ALIAS_TSV=config.get(
     "chrom_alias_tsv",
     "{SNAKEMAKE_DIR}/resources/chromAlias.tsv"

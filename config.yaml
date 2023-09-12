@@ -12,8 +12,7 @@ predict_abexp_models:
 
 # human_genome_version: "hg38"
 human_genome_version: "hg19"
-# assembly: "GRCh38"
-assembly: "GRCh37"
+
 # fasta_file: "/s/genomes/Gencode/Gencode_human/release_34/GRCh38.primary_assembly.genome.fa"
 fasta_file: "/s/genomes/Gencode/Gencode_human/release_34/GRCh37_mapping/GRCh37.primary_assembly.genome.fa"
 # fasta file index is by default `fasta_file + ".fai"` but could be changed here:
@@ -22,7 +21,5 @@ fasta_file: "/s/genomes/Gencode/Gencode_human/release_34/GRCh37_mapping/GRCh37.p
 # gtf_file: "/s/genomes/Gencode/Gencode_human/release_34/gencode.v34.annotation.gtf.gz"
 gtf_file: "/s/genomes/Gencode/Gencode_human/release_34/GRCh37_mapping/gencode.v34lift37.annotation.gtf.gz"
 
+# mapping of chromosome names. By default, maps them to "chr" prefix.
 chrom_alias_tsv: "{SNAKEMAKE_DIR}/resources/chromAlias.tsv"
-
-# absplice_additional_cache:
-# - '/s/project/rep/processed/absplice_cache/hg38/veff.ukbb_200k_wes.parquet'

@@ -30,7 +30,7 @@ SPLICEMAP3 = expand(
 )
 
 SPLICEAI_ROCKSDB_PATHS = {
-    f"{c}": config["system"]["absplice"]["spliceai_rocksdb"][config['human_genome_version']].format(
+    f"{c}": config["system"]["absplice"]["spliceai_rocksdb_path"][config['human_genome_version']].format(
       chromosome=c,
     ) for c in config["system"]["absplice"]["spliceai_rocksdb_chromosomes"]
 }
@@ -69,7 +69,7 @@ if config['system']['absplice']['use_spliceai_rocksdb'] == True:
         params:
             spliceai_rocksdb_path_keys = list(SPLICEAI_ROCKSDB_PATHS.keys()),
             lookup_only = False,
-            genome = config['assembly'].lower()
+            genome = ASSEMBLY.lower()
         conda:
             f"{CONDA_ENV_YAML_DIR}/abexp-spliceai-rocksdb.yaml"
         script:
@@ -86,7 +86,7 @@ else:
             vcf = VALID_VARIANTS_VCF_FILE_PATTERN,
             fasta = config['fasta_file'],
         params:
-            genome = config['assembly'].lower()
+            genome = ASSEMBLY.lower()
         conda:
             f"{CONDA_ENV_YAML_DIR}/abexp-spliceai-rocksdb.yaml"
         shell:

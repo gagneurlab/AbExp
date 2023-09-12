@@ -9,7 +9,6 @@ OUTPUT_BASEDIR=f"{RESULTS_DIR}/predict/{{model_type}}"
 
 FSET_BASEDIR=(
     config["system"]["dirs"]["fset_dir_pattern"]
-    .format(RESULTS_DIR=RESULTS_DIR)
     .format(feature_set="{model_type}")
 )
 

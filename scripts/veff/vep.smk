@@ -163,7 +163,7 @@ def get_vep_cli_options(
 
 def _loftee_src_path(wildcards):
     return get_loftee_src_path(
-        human_genome_assembly=config["assembly"],
+        human_genome_assembly=ASSEMBLY,
         loftee_src_path=config["system"]["vep"]["loftee_src_path"],
     )
 
@@ -171,7 +171,7 @@ def _loftee_src_path(wildcards):
 def _vep_cli_options(wildcards):
     return get_vep_cli_options(
         human_genome_version=config["human_genome_version"],
-        human_genome_assembly=config["assembly"],
+        human_genome_assembly=ASSEMBLY,
         gtf_file=config["gtf_file"],
         fasta_file=config["fasta_file"],
         vep_version=int(config["system"]["vep"]["version"]),

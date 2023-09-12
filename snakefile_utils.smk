@@ -4,20 +4,49 @@ import glob
 import yaml
 import json
 import pathlib
+import copy
 
 from typing import Dict, Callable
+import collections.abc
+
 from snakemake.io import glob_wildcards
 import re
 import numpy
+
 
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
 
+def deep_update(
+    d: collections.abc.MutableMapping,
+    u: collections.abc.Mapping,
+    inplace=False
+):
+    """
+    update a nested dictionary with another nested dictionary
+    """
+    if not inplace:
+        d = copy.deepcopy(d)
+    for k, v in u.items():
+        if isinstance(v, collections.abc.Mapping):
+            d[k] = deep_update(d.get(k, {}), v)
+        else:
+            d[k] = v
+    return d
+
+
 # from snakemk_util import recursive_format
 def recursive_format(data, params, fail_on_unknown=False):
+    """
+    format a (nested) dictionary of strings with a set of params
+    """
     if isinstance(data, str):
-        return data.format(**params)
+        try:
+            return data.format_map(params)
+        except ValueError as e:
+            eprint(f"Failed to format '{data}' with params '{params}'!")
+            raise e
     elif isinstance(data, dict):
         return {k: recursive_format(v, params) for k, v in data.items()}
     elif isinstance(data, list):

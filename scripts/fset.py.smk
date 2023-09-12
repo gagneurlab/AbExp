@@ -5,7 +5,7 @@ SCRIPT=os.path.basename(SNAKEFILE)[:-4]
 
 import yaml
 
-OUTPUT_BASEDIR=config["system"]["dirs"]["fset_dir_pattern"].format(RESULTS_DIR=RESULTS_DIR)
+OUTPUT_BASEDIR=config["system"]["dirs"]["fset_dir_pattern"]
 
 FSET_CONFIG=f"{OUTPUT_BASEDIR}/config.yaml"
 OUTPUT_PQ_PATTERN=f"{OUTPUT_BASEDIR}/veff.parquet/{{vcf_file}}.parquet"

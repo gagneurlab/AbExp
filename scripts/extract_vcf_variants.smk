@@ -73,7 +73,7 @@ if not config.get("vcf_is_normalized", False):
         params:
             vcf_header=config["system"]["vcf_header"],
         wildcard_constraints:
-            vcf_file=f"[^/]+(?:{'|'.join(VCF_FILE_ENDINGS)})",
+            vcf_file=f".+(?:{'|'.join(VCF_FILE_ENDINGS)})",
         shell:
             """
             set -x
@@ -132,7 +132,7 @@ rule extract_vcf_variants:
         # targets=CHROM_TARGETS_FILE,
     params:
     wildcard_constraints:
-        vcf_file=f"[^/]+(?:{'|'.join(VCF_FILE_ENDINGS)})",
+        vcf_file=f".+(?:{'|'.join(VCF_FILE_ENDINGS)})",
     shell:
         """
         set -x

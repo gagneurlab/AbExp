@@ -13,7 +13,7 @@ rule vcf_to_parquet:
     input:
         vcf_file=STRIPPED_VCF_FILE_PATTERN,
     wildcard_constraints:
-        vcf_file=f"[^/]+(?:{'|'.join(VCF_FILE_ENDINGS)})",
+        vcf_file=f".+(?:{'|'.join(VCF_FILE_ENDINGS)})",
     shell:
         """
         env

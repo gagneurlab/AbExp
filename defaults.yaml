@@ -17,7 +17,7 @@ dirs:
     resources_dir: "{RESULTS_DIR}/resources"
 
 canonical_transcript_pq: "{RESOURCES_DIR}/gtex_v8_canonical_transcript.parquet"
-subtissue_level_pext_scores_pq: "{RESOURCES_DIR}/gtex_v8_subtissue_level_pext_scores.parquet"
+subtissue_level_isoform_contribution_scores_pq: "{RESOURCES_DIR}/gtex_v8_subtissue_level_isoform_contribution_scores.parquet"
 expressed_genes_pq: "{RESOURCES_DIR}/gene_is_expressed_per_subtissue.parquet"
 gtex_expected_expr: "{RESOURCES_DIR}/gtex_v8_expected_expression.parquet"
 

@@ -26,7 +26,7 @@ rule veff__tissue_specific_vep:
     input:
         vep_pq=VEP_PQ_INPUT_PATTERN,
         canonical_transcript_pq=config["system"]["canonical_transcript_pq"],
-        subtissue_level_pext_scores_pq=config["system"]["subtissue_level_pext_scores_pq"],
+        subtissue_level_isoform_contribution_scores_pq=config["system"]["subtissue_level_isoform_contribution_scores_pq"],
         gtf_transcripts=f"{RESULTS_DIR}/gtf_transcripts.parquet",
         chrom_alias=ancient(CHROM_ALIAS_TSV),
     params:

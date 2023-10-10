@@ -94,8 +94,8 @@ gtf_transcript_df = (
 gtf_transcript_df.schema
 
 # %%
-subtissue_level_pext_scores_df = pl.scan_parquet(snakemake.input["subtissue_level_pext_scores_pq"])
-subtissue_level_pext_scores_df.schema
+subtissue_level_isoform_contribution_scores_df = pl.scan_parquet(snakemake.input["subtissue_level_isoform_contribution_scores_pq"])
+subtissue_level_isoform_contribution_scores_df.schema
 
 # %%
 snakemake.wildcards["transcript_level"]
@@ -127,7 +127,7 @@ elif snakemake.wildcards["transcript_level"] == "join":
             how="left"
         )
         .join(
-            subtissue_level_pext_scores_df.select([
+            subtissue_level_isoform_contribution_scores_df.select([
                 "transcript",
                 "subtissue",
                 "gene",
@@ -170,7 +170,7 @@ elif snakemake.wildcards["transcript_level"].startswith("protein_coding_cutoff")
             how="left"
         )
         .join(
-            subtissue_level_pext_scores_df.select([
+            subtissue_level_isoform_contribution_scores_df.select([
                 "transcript",
                 "subtissue",
                 "gene",
@@ -231,7 +231,7 @@ elif snakemake.wildcards["transcript_level"].startswith("cutoff"):
             how="left"
         )
         .join(
-            subtissue_level_pext_scores_df.select([
+            subtissue_level_isoform_contribution_scores_df.select([
                 "transcript",
                 "subtissue",
                 "gene",

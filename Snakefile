@@ -27,7 +27,7 @@ CONDA_ENV_YAML_DIR=f"{SNAKEMAKE_DIR}/envs"
 
 VCF_INPUT_DIR = os.path.abspath(config["vcf_input_dir"])
 RESULTS_DIR = os.path.abspath(config["output_dir"])
-RESOURCES_DIR = os.path.abspath(config["system"]["dirs"]["resources_dir"]).format(RESULTS_DIR=RESULTS_DIR)
+RESOURCES_DIR = os.path.abspath(config["system"]["dirs"]["resources_dir"].format(RESULTS_DIR=RESULTS_DIR))
 
 HUMAN_GENOME_VERSION=config["human_genome_version"]
 ASSEMBLY=config["system"]["assembly_mapping"][HUMAN_GENOME_VERSION]

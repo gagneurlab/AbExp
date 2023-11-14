@@ -20,6 +20,8 @@ with open("system_config.yaml", "r") as fd:
         system_config = {}
     config["system"] = deep_update(config["system"], system_config)
 
+with open("download_urls.yaml", "r") as fd:
+    download_urls = yaml.safe_load(fd)
 
 SNAKEMAKE_DIR = os.path.abspath(os.path.dirname(workflow.snakefile))
 
@@ -44,7 +46,7 @@ config["system"] = recursive_format(
     )
 )
 
-eprint(json.dumps(config, indent=2, default=str))
+# eprint(json.dumps(config, indent=2, default=str))
 
 VCF_FILE_ENDINGS=config["system"]["vcf_file_endings"]
 VCF_FILE_REGEX="(" + "|".join([e.replace(".", "\.") for e in VCF_FILE_ENDINGS]) + ")"
@@ -59,7 +61,7 @@ STRIPPED_VCF_FILE_PATTERN=config["system"]["dirs"]["stripped_vcf_file_pattern"]
 VALID_VARIANTS_VCF_FILE_PATTERN=config["system"]["dirs"]["valid_variants_vcf_file_pattern"]
 VCF_PQ_FILE_PATTERN=config["system"]["dirs"]["vcf_pq_file_pattern"]
 
-VEFF_BASEDIR=config["system"]["dirs"]["veff_basedir"]
+VEFF_BASEDIR=os.path.abspath(config["system"]["dirs"]["veff_basedir"])
 
 FORMATTED_VCF_HEADER=config["system"]["formatted_vcf_header"]
 CHROM_ALIAS_TSV=config.get(

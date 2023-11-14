@@ -116,17 +116,35 @@ predict_data_df = (
 predict_data_df.schema
 
 # %%
-fill_values = featureset_config.get("fill_values", None)
-if fill_values is not None:
-    fill_exprs = []
-    for col, fval in fill_values.items():
-        expr = pl.col(col).fill_null(fval)
-        if predict_data_df.schema[col] in t.FLOAT_DTYPES:
-            expr = expr.fill_nan(fval)
-        expr = expr.alias(col)
+# features_list = [c for c in data_df.columns if c.startswith("feature.")]
+with open(snakemake.input["features_yaml"], "r") as fd:
+    features_list = yaml.safe_load(fd)
+features_list
 
-        fill_exprs.append(expr)
-    predict_data_df = predict_data_df.with_columns(fill_exprs)
+# %%
+fill_values = featureset_config.get("fill_values", None)
+if fill_values is None:
+    fill_values = {}
+fill_exprs = []
+for col in features_list:
+    if col in fill_values:
+        fval = fill_values[col]
+    else:
+        if predict_data_df.schema[col] == t.Boolean:
+            fval = False
+        elif predict_data_df.schema[col] in t.FLOAT_DTYPES:
+            fval = 0.
+        elif predict_data_df.schema[col] in t.INTEGER_DTYPES:
+            fval = 0
+    
+    expr = pl.col(col).fill_null(fval)
+    if predict_data_df.schema[col] in t.FLOAT_DTYPES:
+        expr = expr.fill_nan(fval)
+
+    expr = expr.alias(col)
+
+    fill_exprs.append(expr)
+predict_data_df = predict_data_df.with_columns(fill_exprs)
 
 # %%
 # with pd.option_context('display.max_rows', None, 'display.max_columns', None):
@@ -144,12 +162,6 @@ artifact_dir
 
 # %%
 model = joblib.load(snakemake.input["model_joblib"])
-
-# %%
-# features_list = [c for c in data_df.columns if c.startswith("feature.")]
-with open(snakemake.input["features_yaml"], "r") as fd:
-    features_list = yaml.safe_load(fd)
-features_list
 
 # %% [markdown]
 # ## Store testing predictions

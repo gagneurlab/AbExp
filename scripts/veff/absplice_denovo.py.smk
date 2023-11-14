@@ -30,10 +30,28 @@ SPLICEMAP3 = expand(
 )
 
 SPLICEAI_ROCKSDB_PATHS = {
-    f"{c}": config["system"]["absplice"]["spliceai_rocksdb_path"][config['human_genome_version']].format(
+    f"{c}": config["system"]["absplice"]["spliceai_rocksdb_path"][HUMAN_GENOME_VERSION].format(
       chromosome=c,
     ) for c in config["system"]["absplice"]["spliceai_rocksdb_chromosomes"]
 }
+
+
+rule veff__absplice_download_splicemaps:
+    threads: 1
+    resources:
+        mem_mb=lambda wildcards, attempt, threads: (1000 * threads) * attempt,
+    output:
+        splicemap_psi5 = config["system"]["absplice"]["splicemap"]["psi5"],
+        splicemap_psi3 = config["system"]["absplice"]["splicemap"]["psi3"],
+    params:
+        splicemap_psi5_url = lambda wildcards: download_urls['splicemap'][wildcards.genome]['psi5'].format(tissue=wildcards.tissue),
+        splicemap_psi3_url = lambda wildcards: download_urls['splicemap'][wildcards.genome]['psi3'].format(tissue=wildcards.tissue),
+    shell:
+        """
+        set -x
+        wget -O - '{params.splicemap_psi5_url}' > '{output.splicemap_psi5}'
+        wget -O - '{params.splicemap_psi3_url}' > '{output.splicemap_psi3}'
+        """
 
 
 rule veff__mmsplice_splicemap:
@@ -55,6 +73,20 @@ rule veff__mmsplice_splicemap:
 
 
 if config['system']['absplice']['use_spliceai_rocksdb'] == True:
+    rule veff__spliceai_download_rocksdb:
+        threads: 1
+        resources:
+            mem_mb=lambda wildcards, attempt, threads: (1000 * threads) * attempt,
+        params:
+            version = ASSEMBLY.lower()
+        conda:
+            f"{CONDA_ENV_YAML_DIR}/abexp-spliceai-rocksdb.yaml"
+        output:
+            spliceai_rocksdb = config["system"]["absplice"]["spliceai_rocksdb_path"][HUMAN_GENOME_VERSION]
+        shell:
+            "spliceai_rocksdb_download --version {params.version} --db_path {output.spliceai_rocksdb} --chromosome {wildcards.chromosome}"
+
+
     rule veff__spliceai:
         resources:
             mem_mb = lambda wildcards, attempt: attempt * 16000,

@@ -80,7 +80,7 @@ if not config.get("vcf_is_normalized", False):
             echo "writing to '{output.vcf_file}'..."
             cat <(bcftools view --header-only '{input.vcf_file}' | head -n -1 ) \
                 <(bcftools query -f "##contig=<ID=%CHROM>\n" '{input.vcf_file}' | uniq | sort | uniq) \
-                <(bcftools view --header-only $vcf_file | tail -n 1) \
+                <(bcftools view --header-only '{input.vcf_file}' | tail -n 1) \
                 <(bcftools view --no-header '{input.vcf_file}') | \
                 bcftools annotate --rename-chrs {input.chromalias} -Ou | \
                 bcftools view --targets-file {input.targets} -Ou | \

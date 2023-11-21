@@ -22,8 +22,7 @@ rule extract_chromalias_targets:
         ntasks=1,
         mem_mb=1000,
     input:
-        # chromalias = CHROM_ALIAS_TSV,
-        fasta_file_index=config.get("fasta_file_idx", config["fasta_file"] + ".fai"),
+        fasta_file_index=FASTA_INDEX_FILE,
     output:
         chrom_targets_txt = CHROM_TARGETS_FILE,
     localrule: True
@@ -31,11 +30,6 @@ rule extract_chromalias_targets:
         """
         cat '{input.fasta_file_index}' | awk '{{print $1,"0",$2+1}}' | sed -e 's/ /\t/g' > '{output.chrom_targets_txt}'
         """
-        # '''cat <(cat {input.chromalias} | cut -f1) <(cat {input.chromalias} | cut -f2) | \
-        #        sort | \
-        #        uniq | \
-        #        grep -v "^#" \
-        #    > {output.chrom_targets_txt}'''
 
 
 rule tabix_vcf:
@@ -48,7 +42,6 @@ rule tabix_vcf:
     output:
         vcf_file_tbi="{dir}/{vcf_file}.tbi",
     wildcard_constraints:
-        #vcf_file=f"[^/]+(?:{'|'.join(VCF_FILE_ENDINGS)})",
         vcf_file="[^/]+" + VCF_FILE_REGEX,
     shell:
         '''
@@ -66,8 +59,8 @@ if not config.get("vcf_is_normalized", False):
         input:
             vcf_file=VCF_INPUT_FILE_PATTERN,
             # vcf_file_tbi=VCF_INPUT_FILE_PATTERN + ".tbi",
-            fasta_file=config["fasta_file"],
-            fasta_file_index=config.get("fasta_file_idx", config["fasta_file"] + ".fai"),
+            fasta_file=FASTA_FILE,
+            fasta_file_index=FASTA_INDEX_FILE,
             chromalias = CHROM_ALIAS_WSV,
             targets=CHROM_TARGETS_FILE,
         params:
@@ -100,10 +93,8 @@ rule format_vcf_header:
         vcf_header_file=FORMATTED_VCF_HEADER,
     input:
         vcf_header_file=config["system"]["vcf_header"],
-        # fasta_file=config["fasta_file"],
-        fasta_file_index=config.get("fasta_file_idx", config["fasta_file"] + ".fai"),
-        # chromalias = CHROM_ALIAS_WSV,
-        # targets=CHROM_TARGETS_FILE,
+        # fasta_file=FASTA_FILE,
+        fasta_file_index=FASTA_INDEX_FILE,
     shell:
         """
         set -x
@@ -125,11 +116,6 @@ rule extract_vcf_variants:
     input:
         vcf_file=NORMALIZED_VCF_FILE_PATTERN,
         vcf_header_file=FORMATTED_VCF_HEADER,
-        # vcf_file_tbi=VCF_INPUT_FILE_PATTERN + ".tbi",
-        # fasta_file=config["fasta_file"],
-        # fasta_file_index=config.get("fasta_file_idx", config["fasta_file"] + ".fai"),
-        # chromalias = CHROM_ALIAS_WSV,
-        # targets=CHROM_TARGETS_FILE,
     params:
     wildcard_constraints:
         vcf_file=f".+(?:{'|'.join(VCF_FILE_ENDINGS)})",

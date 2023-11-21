@@ -172,8 +172,8 @@ def _vep_cli_options(wildcards):
     return get_vep_cli_options(
         human_genome_version=config["human_genome_version"],
         human_genome_assembly=ASSEMBLY,
-        gtf_file=config["gtf_file"],
-        fasta_file=config["fasta_file"],
+        gtf_file=GTF_FILE,
+        fasta_file=FASTA_FILE,
         vep_version=int(config["system"]["vep"]["version"]),
         # system-dependent params that need to be adjusted
         vep_cache_dir=config["system"]["vep"]["vep_cache_dir"],

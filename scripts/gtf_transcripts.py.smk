@@ -12,7 +12,7 @@ rule gtf_transcripts:
     output:
         gtf_transcripts=f"{RESULTS_DIR}/gtf_transcripts.parquet",
     input:
-        gtf_file=config["gtf_file"],
+        gtf_file=GTF_FILE,
     params:
         nb_script=f"{SCRIPT}",
     script:

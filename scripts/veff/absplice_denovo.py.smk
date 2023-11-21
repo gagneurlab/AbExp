@@ -61,7 +61,7 @@ rule veff__mmsplice_splicemap:
     input:
         vcf = VALID_VARIANTS_VCF_FILE_PATTERN,
         vcf_tbi = VALID_VARIANTS_VCF_FILE_PATTERN + ".tbi",
-        fasta = config['fasta_file'],
+        fasta = FASTA_FILE,
         splicemap_5 = SPLICEMAP5,
         splicemap_3 = SPLICEMAP3,
     output:
@@ -82,7 +82,7 @@ if config['system']['absplice']['use_spliceai_rocksdb'] == True:
         conda:
             f"{CONDA_ENV_YAML_DIR}/abexp-spliceai-rocksdb.yaml"
         output:
-            spliceai_rocksdb = config["system"]["absplice"]["spliceai_rocksdb_path"][HUMAN_GENOME_VERSION]
+            spliceai_rocksdb = directory(config["system"]["absplice"]["spliceai_rocksdb_path"][HUMAN_GENOME_VERSION])
         shell:
             "spliceai_rocksdb_download --version {params.version} --db_path {output.spliceai_rocksdb} --chromosome {wildcards.chromosome}"
 
@@ -96,7 +96,7 @@ if config['system']['absplice']['use_spliceai_rocksdb'] == True:
             result = SPLICEAI_VEFF_CSV_PATTERN,
         input:
             vcf = VALID_VARIANTS_VCF_FILE_PATTERN,
-            fasta = config['fasta_file'],
+            fasta = FASTA_FILE,
             spliceai_rocksdb_paths = list(SPLICEAI_ROCKSDB_PATHS.values()),
         params:
             spliceai_rocksdb_path_keys = list(SPLICEAI_ROCKSDB_PATHS.keys()),
@@ -116,7 +116,7 @@ else:
             result = SPLICEAI_VEFF_VCF_PATTERN,
         input:
             vcf = VALID_VARIANTS_VCF_FILE_PATTERN,
-            fasta = config['fasta_file'],
+            fasta = FASTA_FILE,
         params:
             genome = ASSEMBLY.lower()
         conda:

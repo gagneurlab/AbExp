@@ -34,6 +34,10 @@ RESOURCES_DIR = os.path.abspath(config["system"]["dirs"]["resources_dir"].format
 HUMAN_GENOME_VERSION=config["human_genome_version"]
 ASSEMBLY=config["system"]["assembly_mapping"][HUMAN_GENOME_VERSION]
 
+FASTA_FILE=os.path.abspath(config["fasta_file"])
+FASTA_INDEX_FILE=os.path.abspath(config.get("fasta_file_idx", config["fasta_file"] + ".fai"))
+GTF_FILE=os.path.abspath(config["gtf_file"])
+
 config["system"] = recursive_format(
     config["system"],
     SafeDict(

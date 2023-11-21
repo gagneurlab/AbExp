@@ -1,6 +1,6 @@
 projectTitle: AbExp
 
-vcf_input_dir: "example/data"
+vcf_input_dir: "example/clinvar_chr22"
 # set this to True if you are sure that the variants are already normalized
 # and contig names start with "chr"
 vcf_is_normalized: False
@@ -10,16 +10,14 @@ output_dir: "example/output"
 predict_abexp_models:
   - "abexp_dna_v1.0"
 
-# human_genome_version: "hg38"
-human_genome_version: "hg19"
+human_genome_version: "hg38"
+# human_genome_version: "hg19"
 
-# fasta_file: "/s/genomes/Gencode/Gencode_human/release_34/GRCh38.primary_assembly.genome.fa"
-fasta_file: "/s/genomes/Gencode/Gencode_human/release_34/GRCh37_mapping/GRCh37.primary_assembly.genome.fa"
+fasta_file: "example/chr22_hg38.fa"
 # fasta file index is by default `fasta_file + ".fai"` but could be changed here:
-# fasta_file_idx: "/s/genomes/Gencode/Gencode_human/release_34/GRCh37_mapping/GRCh37.primary_assembly.genome.fa.fai"
+# fasta_file_idx: "example/chr22_hg38.fa.fai"
 
-# gtf_file: "/s/genomes/Gencode/Gencode_human/release_34/gencode.v34.annotation.gtf.gz"
-gtf_file: "/s/genomes/Gencode/Gencode_human/release_34/GRCh37_mapping/gencode.v34lift37.annotation.gtf.gz"
+gtf_file: "example/chr22.gencode.v34.annotation.gtf.gz"
 
 # mapping of chromosome names. By default, maps them to "chr" prefix.
 chrom_alias_tsv: "{SNAKEMAKE_DIR}/resources/chromAlias.tsv"

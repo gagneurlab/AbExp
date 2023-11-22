@@ -1,22 +1,66 @@
 # AbExp variant effect prediction pipeline
 
+## Minimum resource requirements
+
+- disk space: 1.0-1.4TB for cache files (hg19 + hg38)
+  - LOFTEE: 25Gi
+  - VEP v108: 113Gi
+  - CADD v1.6: 854Gi
+  - SpliceAI-RocksDB (optional): 349Gi
+- RAM: 64GB
+- GPU supporting CUDA for SpliceAI annotation
+
 ## Setup
 
 1) install conda and mamba on your system
+2) To download the VEP cache (if not existing yet):
+   ```bash
+   VEP_CACHE_PATH="<your cache path here>"
+   VEP_VERSION=108
+
+   mamba env create -f scripts/veff/vep_env.v108.yaml --name vep_v108
+   conda activate vep_v108
+   
+   bash misc/install_vep_cache/install_cache_for_version.sh $VEP_VERSION $VEP_CACHE_PATH
+   
+   conda deactivate
+   ```
+3) To download the CADD cache (if not existing yet):
+   ```bash
+   CADD_CACHE_PATH="<your cache path here>"
+
+   bash misc/download_CADD_v1.6.sh $CADD_CACHE_PATH
+   ```
+4) To download LOFTEE data and scripts:
+   ```bash
+   LOFTEE_DIR="<your path here>"
+
+   bash misc/install_vep_cache/download_loftee.sh $LOFTEE_DIR
+   ```
+4) configure `system_config.yaml`:
+   - specify paths to the VEP cache, CADD cache, LOFTEE data and LOFTEE source code as defined in steps 2-4
+   - (optional) Disable downloading the SpliceAI-RocksDB cache for pre-computed SpliceAI annotations
+   - (optional) Change file paths of automatically downloaded annotations to shared location
+   - (optional) Any options defined in `defaults.yaml` can be overwritten in this file if necessary
 2) run `mamba env create -f envs/abexp-veff-py.yaml`
 3) activate the created environment: `conda activate abexp-veff-py`
 
-## Minimum resource requirements
-
-- disk space: 1.5TB for cache files
-- RAM: 64GB
-
 ## Usage
 
-1) Edit `config.yaml` to your needs
+1) Edit `config.yaml` to your needs:
+   - Specify `vcf_input_dir`. All `.vcf|.vcf.gz|.vcf.bgz|.bcf` files in this folder will be annotated.
+   - Specify `vcf_is_normalized: True` if all variants are left-normalized and biallelic (`bcftools norm -cs -m`).
+     Otherwise, the pipeline will normalize the variants before annotation.
+   - Specify `fasta_file` and `gtf_file` corresponding to the `human_genome_version`.
+     The `gtf_file` needs to contain Ensembl gene and transcript identifiers.
+     Therefore, it is highly recommended to use the [Gencode genome annotations](https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/).
+   
+   An example is pre-configured and can be used to test the pipeline.
+
 2) Run `snakemake --use-conda -c all`.
    All rules are annotated with resource requirements s.t. snakemake can submit jobs to HPC clusters or cloud environments.
    It is highly recommended to use snakemake with some batch submission system, e.g. SLURM.
+   For further information, please visit the Snakemake documentation.
 
 ## Development setup
 

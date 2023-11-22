@@ -1,5 +1,7 @@
 #!/bin/bash
 
+LOFTEE_DIR="$1"
+
 wget --recursive --no-parent https://personal.broadinstitute.org/konradk/loftee_data/
 
 # this can be changed back once these PRs are merged:

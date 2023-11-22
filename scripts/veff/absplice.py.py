@@ -52,7 +52,7 @@ except NameError:
         snakefile = snakefile_path,
         rule_name = 'veff__absplice',
         default_wildcards={
-            "vcf_file": "clinvar_chr1_pathogenic.vcf.gz",
+            "vcf_file": "clinvar_chr22_pathogenic.vcf.gz",
             # "feature_set": "abexp_dna_v1.0",
         },
         change_dir=True
@@ -72,8 +72,8 @@ os.getcwd()
 chrom_mapping = dict(pl.read_csv(snakemake.input["chrom_alias"], separator="\t").rename({"#alias": "alias"})[["alias", "chrom"]].rows())
 
 # %%
-subtissue_mapping = dict(pl.read_csv(snakemake.input["subtissue_mapping"]).rows())
-subtissue_mapping
+tissue_mapping = dict(pl.read_csv(snakemake.input["tissue_mapping"]).rows())
+tissue_mapping
 
 # %%
 # assuming schema of vcf2parquet:
@@ -105,7 +105,7 @@ variants_df = (
 variants_df.schema
 
 # %%
-variants_df.limit(10)#.collect()
+# variants_df.limit(10)#.collect()
 
 # %% [markdown]
 # # read AbSplice de-novo predictions
@@ -117,7 +117,6 @@ snakemake.input["absplice_denovo_pred_pq"]
 absplice_df = pl.scan_parquet(snakemake.input["absplice_denovo_pred_pq"])
 absplice_df = absplice_df.rename({
     k: v for k, v in {
-        "tissue": "subtissue",
         "gene_id": "gene",
         "delta_score": "SpliceAI",
         "delta_logit_psi": "MMSplice_SpliceMap",
@@ -128,7 +127,7 @@ absplice_df = absplice_df.rename({
     if k in absplice_df.columns
 })
 absplice_df = absplice_df.with_columns(
-    pl.col("subtissue").map_dict(subtissue_mapping, default=pl.col("subtissue"), return_dtype=t.Utf8()).cast(t.Utf8())
+    pl.col("tissue").map_dict(tissue_mapping, default=pl.col("tissue"), return_dtype=t.Utf8()).cast(t.Utf8())
 )
 absplice_df.schema
 
@@ -138,7 +137,7 @@ absplice_df.schema
 # %%
 agg_absplice_df = (
         absplice_df
-        .groupby("chrom", "start", "end", "ref", "alt", "gene", "subtissue")
+        .groupby("chrom", "start", "end", "ref", "alt", "gene", "tissue")
         .agg(
             pl.all().sort_by(pl.col("AbSplice"), descending=True).first()
         )
@@ -149,7 +148,7 @@ agg_absplice_df = (
             & pl.col("ref").is_not_null()
             & pl.col("alt").is_not_null()
             & pl.col("gene").is_not_null()
-            & pl.col("subtissue").is_not_null()
+            & pl.col("tissue").is_not_null()
         )
     )
 agg_absplice_df.schema
@@ -158,7 +157,7 @@ agg_absplice_df.schema
 joint_df = (
     variants_df.lazy()
     .join(agg_absplice_df.lazy(), on=["chrom", "start", "end", "ref", "alt"], how="left")
-    .sort(["chrom", "start", "end", "ref", "alt", "gene", "subtissue"])
+    .sort(["chrom", "start", "end", "ref", "alt", "gene", "tissue"])
     .collect()
 )
 joint_df

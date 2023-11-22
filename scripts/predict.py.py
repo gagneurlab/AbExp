@@ -53,7 +53,7 @@ except NameError:
         rule_name = 'predict_veff',
         default_wildcards={
             "model_type": "abexp_dna_v1.0",
-            "vcf_file": "clinvar_chr1_pathogenic.vcf.gz",
+            "vcf_file": "clinvar_chr22_pathogenic.vcf.gz",
         }
     )
 
@@ -78,18 +78,7 @@ for req in featureset_config.get("required_features", []):
 data_df.schema
 
 # %%
-expressed_genes_df = (
-    pl.scan_parquet(snakemake.input["expressed_genes_pq"])
-    .select([
-        'gene',
-        'tissue',
-        'subtissue',
-        # 'drop_group',
-        'gene_is_expressed',
-        'median_reads',
-        'read_dispersion'
-    ])
-)
+expressed_genes_df = pl.scan_parquet(snakemake.input["expressed_genes_pq"])
 expressed_genes_df.schema
 
 # %%
@@ -107,7 +96,7 @@ predict_data_df = (
     data_df
     .join(
         expressed_genes_df,
-        on=[c for c in ['gene', 'tissue', 'subtissue'] if c in data_df.columns],
+        on=[c for c in ['gene', 'tissue', 'tissue_type'] if c in data_df.columns],
         how="inner",
     )
     # .fill_null(strategy="zero")
@@ -180,15 +169,32 @@ x_predict = (
 display(x_predict)
 
 # %%
+snakemake.wildcards.keys()
+
+# %%
+predict_data_df.columns
+
+# %%
+column_order = [
+    *[c for c in index_columns if c in predict_data_df.columns],
+    snakemake.wildcards['model_type'], # the prediction
+    *[c for c in predict_data_df.columns if c not in index_columns and snakemake.params.get("keep_features", True)],
+]
+column_order
+
+# %%
 predicted = (
     predict_data_pd_df
-    .loc[:, index_columns if not snakemake.params.get("keep_features", True) else predict_data_df.columns]
     .assign(**{
-        "y_pred": np.asarray(model.predict(x_predict) if not x_predict.empty else [], dtype="float64"),
-        "y_pred_proba": np.asarray(model.predict_proba(x_predict) if not x_predict.empty else [], dtype="float64"),
+        snakemake.wildcards['model_type']: np.asarray(model.predict(x_predict) if not x_predict.empty else [], dtype="float64"),
+        # "y_pred_proba": np.asarray(model.predict_proba(x_predict) if not x_predict.empty else [], dtype="float64"),
     })
+    .loc[:, column_order]
 )
 predicted
+
+# %%
+predicted.columns
 
 # %%
 # print("size of data to save: %.2f MB" % (predicted.memory_usage().sum()/2**20))

@@ -49,7 +49,7 @@ except NameError:
         snakefile = snakefile_path,
         rule_name = 'veff__fset',
         default_wildcards={
-            "vcf_file": "clinvar_chr1_pathogenic.vcf.gz",
+            "vcf_file": "clinvar_chr22_pathogenic.vcf.gz",
             "feature_set": "abexp_dna_v1.0",
         },
         change_dir=True
@@ -96,7 +96,7 @@ feature_dfs
 snakemake.params["index_cols"]
 
 # %%
-broadcast_columns = ["subtissue"]
+broadcast_columns = ["tissue"]
 distinct_values = dict()
 for col in broadcast_columns:
     # get all datasets that have the column

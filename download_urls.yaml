@@ -1,7 +1,5 @@
-canonical_transcript_pq: "https://sandbox.zenodo.org/record/1246621/files/gtex_v8_canonical_transcript.parquet?download=1"
-subtissue_level_isoform_contribution_scores_pq: "https://sandbox.zenodo.org/record/1246621/files/gtex_v8_subtissue_level_isoform_contribution_scores.parquet?download=1"
-expressed_genes_pq: "https://sandbox.zenodo.org/record/1246621/files/gene_is_expressed_per_subtissue.parquet?download=1"
-gtex_expected_expr: "https://sandbox.zenodo.org/record/1246621/files/gtex_v8_expected_expression.parquet?download=1"
+isoform_proportions_tsv: "https://zenodo.org/records/8427312/files/gtex_v8_isoform_proportions.tsv?download=1"
+expected_expression_tsv: "https://zenodo.org/records/8427312/files/gtex_v8_expected_expression.tsv?download=1"
 
 splicemap:
   hg19:

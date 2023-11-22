@@ -83,7 +83,7 @@ vcf_input_file_names = [f for f in vcf_input_file_names if VCF_FILE_REGEX_PATTER
 rule all:
     input:
         expand(
-            f"{RESULTS_DIR}/predict/{{model_type}}/data.parquet/{{vcf_file}}.parquet",
+            f"{RESULTS_DIR}/predict/{{model_type}}/{{vcf_file}}.parquet",
             vcf_file=vcf_input_file_names,
             model_type=config["predict_abexp_models"], 
         ),

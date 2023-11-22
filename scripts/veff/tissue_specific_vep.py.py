@@ -46,13 +46,13 @@ except NameError:
         snakefile = snakefile_path,
         rule_name = 'veff__tissue_specific_vep',
         default_wildcards={
-            "vcf_file": "clinvar_chr1_pathogenic.vcf.gz",
+            "vcf_file": "clinvar_chr22_pathogenic.vcf.gz",
             # "transcript_level": "None",
             # "transcript_level": "cutoff:0.1",
             # "transcript_level": "cutoff:0.2",
             # "transcript_level": "join",
             # "transcript_level": "cutoff:0.15",
-            "transcript_level": "CANONICAL",
+            # "transcript_level": "CANONICAL",
             # "transcript_level": "0.1",
         }
     )
@@ -75,10 +75,6 @@ vep_df = pl.scan_parquet(snakemake.input["vep_pq"])
 vep_df.schema
 
 # %%
-canonical_transcript_df = pl.scan_parquet(snakemake.input["canonical_transcript_pq"])
-canonical_transcript_df.schema
-
-# %%
 gtf_transcript_df = (
     pl.scan_parquet(snakemake.input["gtf_transcripts"])
     .with_columns([
@@ -94,188 +90,46 @@ gtf_transcript_df = (
 gtf_transcript_df.schema
 
 # %%
-subtissue_level_isoform_contribution_scores_df = pl.scan_parquet(snakemake.input["subtissue_level_isoform_contribution_scores_pq"])
-subtissue_level_isoform_contribution_scores_df.schema
+isoform_proportions_df = pl.scan_parquet(snakemake.input["isoform_proportions_pq"])
+isoform_proportions_df.schema
 
 # %%
-snakemake.wildcards["transcript_level"]
-
-# %%
-if snakemake.wildcards["transcript_level"] == "CANONICAL":
-    # filter transcripts for being 'CANONICAL' according to VEP
-    subtissue_df = vep_df.filter(pl.col("CANONICAL") == pl.lit(True))
-elif snakemake.wildcards["transcript_level"] == "None":
-    # do not filter anything
-    subtissue_df = vep_df
-elif snakemake.wildcards["transcript_level"] == "join":
-    # only join
-    cutoff = 0
-    subtissue_df = (
-        canonical_transcript_df.select("subtissue").unique().sort("subtissue")
-        .join(
-            vep_df,
-            how="cross"
-        )
-        .join(
-            gtf_transcript_df,
-            on=["gene", "transcript"],
-            how="left"
-        )
-        .join(
-            canonical_transcript_df,
-            on=["gene", "subtissue"],
-            how="left"
-        )
-        .join(
-            subtissue_level_isoform_contribution_scores_df.select([
-                "transcript",
-                "subtissue",
-                "gene",
-                "mean_transcript_proportions",
-                "median_transcript_proportions",
-                "sd_transcript_proportions",
-            ]),
-            on=["gene", "transcript", "subtissue"],
-            how="left"
-        )
+tissue_df = (
+    isoform_proportions_df.select("tissue").unique().sort("tissue")
+    .join(
+        vep_df,
+        how="cross"
     )
-elif snakemake.wildcards["transcript_level"].startswith("protein_coding_cutoff"):
-    # filter out a transcript if (assuming cutoff == 0.2):
-    #  - there is another major isoform covering >= 20% of the gene's transcription AND
-    #  - the transcript covers < 20% of the gene's transcription
-    
-    cutoffs = snakemake.wildcards["transcript_level"].split(":")[1:]
-    # cutoff1 = 0.2
-    median_transcript_proportion_cutoff = float(cutoffs[0])
-    if len(cutoffs) > 1:
-        subtissue_level_canonical_transcript_proportion_median_cutoff = float(cutoffs[1])
-    else:
-        subtissue_level_canonical_transcript_proportion_median_cutoff = 0
-        
-    
-    subtissue_df = (
-        canonical_transcript_df.select("subtissue").unique().sort("subtissue")
-        .join(
-            vep_df,
-            how="cross"
-        )
-        .join(
-            gtf_transcript_df,
-            on=["gene", "transcript"],
-            how="left"
-        )
-        .join(
-            canonical_transcript_df,
-            on=["gene", "subtissue"],
-            how="left"
-        )
-        .join(
-            subtissue_level_isoform_contribution_scores_df.select([
-                "transcript",
-                "subtissue",
-                "gene",
-                "mean_transcript_proportions",
-                "median_transcript_proportions",
-                "sd_transcript_proportions",
-            ]),
-            on=["gene", "transcript", "subtissue"],
-            how="left"
-        )
-    )
-    
-    subtissue_df = (
-        subtissue_df
-        .filter(
-            (
-                # filter for protein-coding transcripts
-                pl.col("transcript_biotype") == pl.lit("protein_coding")
-                # keep unknown transcript types by default
-            ).fill_null(True)
-        )
-        .filter(
-            (~ (
-                (pl.col("subtissue_level_canonical_transcript_proportion_median") >= subtissue_level_canonical_transcript_proportion_median_cutoff) &
-                (pl.col("median_transcript_proportions") < median_transcript_proportion_cutoff)
-            ))
-            .fill_null(True)
-        )
-    )
-elif snakemake.wildcards["transcript_level"].startswith("cutoff"):
-    # filter out a transcript if (assuming cutoff == 0.2):
-    #  - there is another major isoform covering >= 20% of the gene's transcription AND
-    #  - the transcript covers < 20% of the gene's transcription
-    
-    cutoffs = snakemake.wildcards["transcript_level"].split(":")[1:]
-    # cutoff1 = 0.2
-    median_transcript_proportion_cutoff = float(cutoffs[0])
-    if len(cutoffs) > 1:
-        subtissue_level_canonical_transcript_proportion_median_cutoff = float(cutoffs[1])
-    else:
-        subtissue_level_canonical_transcript_proportion_median_cutoff = 0
-        
-    
-    subtissue_df = (
-        canonical_transcript_df.select("subtissue").unique().sort("subtissue")
-        .join(
-            vep_df,
-            how="cross"
-        )
-        .join(
-            gtf_transcript_df,
-            on=["gene", "transcript"],
-            how="left"
-        )
-        .join(
-            canonical_transcript_df,
-            on=["gene", "subtissue"],
-            how="left"
-        )
-        .join(
-            subtissue_level_isoform_contribution_scores_df.select([
-                "transcript",
-                "subtissue",
-                "gene",
-                "mean_transcript_proportions",
-                "median_transcript_proportions",
-                "sd_transcript_proportions",
-            ]),
-            on=["gene", "transcript", "subtissue"],
-            how="left"
-        )
-    )
-    
-    subtissue_df = (
-        subtissue_df
-        .filter(
-            (~ (
-                (pl.col("subtissue_level_canonical_transcript_proportion_median") >= subtissue_level_canonical_transcript_proportion_median_cutoff) &
-                (pl.col("median_transcript_proportions") < median_transcript_proportion_cutoff)
-            ))
-            .fill_null(True)
-        )
-    )
-else:
-    # filter transcripts based on isoform table
-    subtissue_df = vep_df.join(
-        canonical_transcript_df.with_column(pl.col(snakemake.wildcards["transcript_level"]).alias("transcript")),
+    .join(
+        gtf_transcript_df,
         on=["gene", "transcript"],
-        how="inner"
+        how="left"
     )
-
-subtissue_df.schema
-
+    .join(
+        isoform_proportions_df.select([
+            "transcript",
+            "tissue",
+            "gene",
+            "mean_transcript_proportions",
+            "median_transcript_proportions",
+            "sd_transcript_proportions",
+        ]),
+        on=["gene", "transcript", "tissue"],
+        how="left"
+    )
+)
 
 # %%
-subtissue_df.schema["Consequence"].fields
+tissue_df.schema["Consequence"].fields
 
 # %%
 aggregations = pl.struct([
-    *[pl.col("Consequence").struct.field(c.name).max().cast(t.Boolean).alias(f"{c.name}.max") for c in subtissue_df.schema["Consequence"].fields],
-    *[pl.col("Consequence").struct.field(c.name).cast(t.Int32).sum().alias(f"{c.name}.sum") for c in subtissue_df.schema["Consequence"].fields],
-    *[(pl.col("median_transcript_proportions") * pl.col("Consequence").struct.field(c.name)).sum().alias(f"{c.name}.proportion") for c in subtissue_df.schema["Consequence"].fields if "median_transcript_proportions" in subtissue_df.columns],
-    *[pl.col("LoF").struct.field(c.name).max().cast(t.Boolean).alias(f"LoF_{c.name}.max") for c in subtissue_df.schema["LoF"].fields],
-    *[pl.col("LoF").struct.field(c.name).cast(t.Int32).sum().alias(f"LoF_{c.name}.sum") for c in subtissue_df.schema["LoF"].fields],
-    *[(pl.col("median_transcript_proportions") * pl.col("LoF").struct.field(c.name)).sum().alias(f"LoF_{c.name}.proportion") for c in subtissue_df.schema["LoF"].fields if "median_transcript_proportions" in subtissue_df.columns],
+    *[pl.col("Consequence").struct.field(c.name).max().cast(t.Boolean).alias(f"{c.name}.max") for c in tissue_df.schema["Consequence"].fields],
+    *[pl.col("Consequence").struct.field(c.name).cast(t.Int32).sum().alias(f"{c.name}.sum") for c in tissue_df.schema["Consequence"].fields],
+    *[(pl.col("median_transcript_proportions") * pl.col("Consequence").struct.field(c.name)).sum().alias(f"{c.name}.proportion") for c in tissue_df.schema["Consequence"].fields if "median_transcript_proportions" in tissue_df.columns],
+    *[pl.col("LoF").struct.field(c.name).max().cast(t.Boolean).alias(f"LoF_{c.name}.max") for c in tissue_df.schema["LoF"].fields],
+    *[pl.col("LoF").struct.field(c.name).cast(t.Int32).sum().alias(f"LoF_{c.name}.sum") for c in tissue_df.schema["LoF"].fields],
+    *[(pl.col("median_transcript_proportions") * pl.col("LoF").struct.field(c.name)).sum().alias(f"LoF_{c.name}.proportion") for c in tissue_df.schema["LoF"].fields if "median_transcript_proportions" in tissue_df.columns],
 #     pl.max(-pl.log10(pl.col("sift_score"))).alias("sift_score.pval_max_significant"),
 #     pl.max(pl.col("CADD_RAW")).alias("cadd_raw.max"),
 #     pl.max(pl.col("polyphen_score")).alias("polyphen_score.max"),
@@ -290,40 +144,16 @@ aggregations = pl.struct([
 aggregations
 
 # %%
-non_aggregations = pl.struct([
-    *[pl.col("Consequence").struct.field(c.name).cast(t.Boolean).alias(f"{c.name}.max") for c in subtissue_df.schema["Consequence"].fields],
-    *[pl.col("Consequence").struct.field(c.name).cast(t.Int32).alias(f"{c.name}.sum") for c in subtissue_df.schema["Consequence"].fields],
-    *[(pl.col("median_transcript_proportions") * pl.col("Consequence").struct.field(c.name)).alias(f"{c.name}.proportion") for c in subtissue_df.schema["Consequence"].fields if "median_transcript_proportions" in subtissue_df.columns],
-    *[pl.col("LoF").struct.field(c.name).cast(t.Boolean).alias(f"LoF_{c.name}.max") for c in subtissue_df.schema["LoF"].fields],
-    *[pl.col("LoF").struct.field(c.name).cast(t.Int32).alias(f"LoF_{c.name}.sum") for c in subtissue_df.schema["LoF"].fields],
-    *[(pl.col("median_transcript_proportions") * pl.col("LoF").struct.field(c.name)).alias(f"LoF_{c.name}.proportion") for c in subtissue_df.schema["LoF"].fields if "median_transcript_proportions" in subtissue_df.columns],
-#     pl.max(-pl.log10(pl.col("sift_score"))).alias("sift_score.pval_max_significant"),
-#     pl.max(pl.col("CADD_RAW")).alias("cadd_raw.max"),
-#     pl.max(pl.col("polyphen_score")).alias("polyphen_score.max"),
-#     pl.max(pl.col("condel_score")).alias("condel_score.max"),
-#     pl.count("Consequence").alias("num_variants"),
-    (-pl.col("sift_score").log10()).alias("sift_score.pval_max_significant"),
-    pl.col("CADD_RAW").alias("cadd_raw.max"),
-    pl.col("polyphen_score").alias("polyphen_score.max"),
-    pl.col("condel_score").alias("condel_score.max"),
-    pl.count("Consequence").alias("num_transcripts"),
-]).alias("features")
-non_aggregations
-
-# %%
-groupby = ["chrom", "start", "end", "ref", "alt", "gene", "subtissue"]
-groupby = [c for c in groupby if c in subtissue_df.columns]
+groupby = ["chrom", "start", "end", "ref", "alt", "gene", "tissue"]
+groupby = [c for c in groupby if c in tissue_df.columns]
 groupby
 
 # %%
-if snakemake.wildcards["transcript_level"] != "join":
-    aggregated_df = (
-        subtissue_df
-        .groupby(groupby)
-        .agg(aggregations)
-    )
-else:
-    aggregated_df = subtissue_df.with_columns(non_aggregations)
+aggregated_df = (
+    tissue_df
+    .groupby(groupby)
+    .agg(aggregations)
+)
 aggregated_df.schema
 
 # %%

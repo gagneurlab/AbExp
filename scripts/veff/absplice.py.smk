@@ -25,9 +25,9 @@ rule veff__absplice:
         vcf=VCF_PQ_FILE_PATTERN,
         absplice_denovo_pred_pq=ABSPLICE_DENOVO_PRED_PQ,
         chrom_alias=ancient(CHROM_ALIAS_TSV),
-        subtissue_mapping=ancient(config["system"]["absplice"].get(
-            "subtissue_mapping_csv",
-            "{SNAKEMAKE_DIR}/resources/AbSplice_subtissue_mapping.csv",
+        tissue_mapping=ancient(config["system"]["absplice"].get(
+            "tissue_mapping_csv",
+            "{SNAKEMAKE_DIR}/resources/AbSplice_tissue_mapping.csv",
         ).format(SNAKEMAKE_DIR=SNAKEMAKE_DIR)),
     params:
         nb_script=f"{SCRIPT}",

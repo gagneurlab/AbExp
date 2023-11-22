@@ -16,10 +16,10 @@ dirs:
     # default directory for downloaded resources
     resources_dir: "{RESULTS_DIR}/resources"
 
-canonical_transcript_pq: "{RESOURCES_DIR}/gtex_v8_canonical_transcript.parquet"
-subtissue_level_isoform_contribution_scores_pq: "{RESOURCES_DIR}/gtex_v8_subtissue_level_isoform_contribution_scores.parquet"
-expressed_genes_pq: "{RESOURCES_DIR}/gene_is_expressed_per_subtissue.parquet"
-gtex_expected_expr: "{RESOURCES_DIR}/gtex_v8_expected_expression.parquet"
+isoform_proportions_tsv: "{RESOURCES_DIR}/gtex_v8_isoform_proportions.tsv"
+isoform_proportions_pq: "{RESOURCES_DIR}/gtex_v8_isoform_proportions.parquet"
+expected_expression_tsv: "{RESOURCES_DIR}/gtex_v8_expected_expression.tsv"
+expected_expression_pq: "{RESOURCES_DIR}/gtex_v8_expected_expression.parquet"
 
 vcf_file_endings:
   - ".vcf"
@@ -46,7 +46,7 @@ vep:
   loftee_src_path: "{RESOURCES_DIR}/{{human_genome_assembly}}_src"
 
 absplice:
-  subtissue_mapping_csv: "{SNAKEMAKE_DIR}/resources/AbSplice_subtissue_mapping.csv"
+  tissue_mapping_csv: "{SNAKEMAKE_DIR}/resources/AbSplice_tissue_mapping.csv"
   splicemap:
     psi3: '{RESOURCES_DIR}/splicemap_{{genome}}/{{tissue}}_splicemap_psi3_method=kn_event_filter=median_cutoff.csv.gz'
     psi5: '{RESOURCES_DIR}/splicemap_{{genome}}/{{tissue}}_splicemap_psi5_method=kn_event_filter=median_cutoff.csv.gz'
@@ -107,15 +107,15 @@ absplice:
   spliceai_rocksdb_chromosomes: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', 'X', 'Y']
 
 models:
-  abexp_dna_v1.0:
-    model: "resources/models/abexp_dna_v1.0/model.joblib"
-    features: "resources/models/abexp_dna_v1.0/features.yaml"
+  abexp_v1.0:
+    model: "resources/models/abexp_v1.0/model.joblib"
+    features: "resources/models/abexp_v1.0/features.yaml"
     cutoffs:
       # 50% precision, 8.5% recall:
       high_confidence: 3.3951878750977413
       # 20% precision, 19.1% recall:
       low_confidence: 1.3049192425217895
-    predict_subtissues:
+    predict_tissues:
       - "Adipose - Subcutaneous"
       - "Adipose - Visceral (Omentum)"
       - "Adrenal Gland"

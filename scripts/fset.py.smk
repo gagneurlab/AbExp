@@ -22,7 +22,7 @@ rule veff__fset:
         unpack(require_yaml_input(FSET_CONFIG)), # additional input from featureset config yaml
         featureset_config=FSET_CONFIG,
     params:
-        index_cols=['chrom', 'start', 'end', 'ref', 'alt', "gene", "transcript", "subtissue"],
+        index_cols=['chrom', 'start', 'end', 'ref', 'alt', "gene", "transcript", "tissue"],
         output_basedir=f"{OUTPUT_BASEDIR}",
         nb_script=f"{SCRIPT}",
     wildcard_constraints:
@@ -41,7 +41,7 @@ rule veff__fset_config:
     params:
         output_basedir=f"{OUTPUT_BASEDIR}",
         veff_dir=f"{VEFF_BASEDIR}",
-        gtex_expected_expr=config["system"]["gtex_expected_expr"],
+        gtex_expected_expr=config["system"]["expected_expression_pq"],
     wildcard_constraints:
         feature_set="[^/]+",
     localrule: True

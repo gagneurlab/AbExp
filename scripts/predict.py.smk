@@ -15,7 +15,7 @@ FSET_BASEDIR=(
 FSET_CONFIG=f"{FSET_BASEDIR}/config.yaml"
 FSET_PQ_PATTERN=f"{FSET_BASEDIR}/veff.parquet/{{vcf_file}}.parquet"
 
-OUTPUT_PQ_PATTERN=f"{OUTPUT_BASEDIR}/data.parquet/{{vcf_file}}.parquet"
+OUTPUT_PQ_PATTERN=f"{OUTPUT_BASEDIR}/{{vcf_file}}.parquet"
 
 
 rule predict_veff:
@@ -26,14 +26,14 @@ rule predict_veff:
     output:
         data_pq=f"{OUTPUT_PQ_PATTERN}",
     input:
-        expressed_genes_pq=config["system"]["expressed_genes_pq"],
+        expressed_genes_pq=config["system"]["expected_expression_pq"],
         featureset_config=FSET_CONFIG,
         featureset_pq=FSET_PQ_PATTERN,
         # the model to predict
         model_joblib=lambda wildcards: config["system"]["models"][wildcards.model_type]["model"],
         features_yaml=lambda wildcards: config["system"]["models"][wildcards.model_type]["features"],
     params: 
-        index_cols=['chrom', 'start', 'end', 'ref', 'alt', "gene", "transcript", "subtissue"],
+        index_cols=['chrom', 'start', 'end', 'ref', 'alt', "gene", "transcript", "tissue", "tissue_type"],
         keep_features=True,
         output_basedir=f"{OUTPUT_BASEDIR}",
         nb_script=f"{SCRIPT}",

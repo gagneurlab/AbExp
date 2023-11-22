@@ -12,7 +12,7 @@ import yaml
 
 VEP_PQ_INPUT_PATTERN=f"{VEFF_BASEDIR}/vep/veff.parquet/{{vcf_file}}.parquet"
 
-OUTPUT_BASEDIR=f"{VEFF_BASEDIR}/{SCRIPT}@tl={{transcript_level}}"
+OUTPUT_BASEDIR=f"{VEFF_BASEDIR}/{SCRIPT}"
 VEFF_VCF_PQ_PATTERN=f"{OUTPUT_BASEDIR}/veff.parquet/{{vcf_file}}.parquet"
 
 
@@ -25,8 +25,7 @@ rule veff__tissue_specific_vep:
         veff_pq=VEFF_VCF_PQ_PATTERN,
     input:
         vep_pq=VEP_PQ_INPUT_PATTERN,
-        canonical_transcript_pq=config["system"]["canonical_transcript_pq"],
-        subtissue_level_isoform_contribution_scores_pq=config["system"]["subtissue_level_isoform_contribution_scores_pq"],
+        isoform_proportions_pq=config["system"]["isoform_proportions_pq"],
         gtf_transcripts=f"{RESULTS_DIR}/gtf_transcripts.parquet",
         chrom_alias=ancient(CHROM_ALIAS_TSV),
     params:

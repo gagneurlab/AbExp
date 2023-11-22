@@ -8,7 +8,7 @@ vcf_is_normalized: False
 output_dir: "example/output"
 
 predict_abexp_models:
-  - "abexp_dna_v1.0"
+  - "abexp_v1.0"
 
 human_genome_version: "hg38"
 # human_genome_version: "hg19"

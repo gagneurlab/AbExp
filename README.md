@@ -51,6 +51,7 @@
    - Specify `vcf_input_dir`. All `.vcf|.vcf.gz|.vcf.bgz|.bcf` files in this folder will be annotated.
    - Specify `vcf_is_normalized: True` if all variants are left-normalized and biallelic (`bcftools norm -cs -m`).
      Otherwise, the pipeline will normalize the variants before annotation.
+   - Specify the `output_dir`
    - Specify `fasta_file` and `gtf_file` corresponding to the `human_genome_version`.
      The `gtf_file` needs to contain Ensembl gene and transcript identifiers.
      Therefore, it is highly recommended to use the [Gencode genome annotations](https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/).
@@ -61,6 +62,17 @@
    All rules are annotated with resource requirements s.t. snakemake can submit jobs to HPC clusters or cloud environments.
    It is highly recommended to use snakemake with some batch submission system, e.g. SLURM.
    For further information, please visit the Snakemake documentation.
+3) The resulting variant effect predictions will be stored in `<output_dir>/predict/abexp_v1.0/<input_vcf_file>.parquet`. It should contain the following columns:
+   - 'chrom'
+   - 'start'
+   - 'end'
+   - 'ref'
+   - 'alt'
+   - 'gene'
+   - 'tissue': GTEx tissue, e.g. "Artery - Tibial"
+   - 'tissue_type', GTEx tissue type, e.g. "Blood Vessel"
+   - 'abexp_v1.0': The predicted AbExp score
+   - a set of features used to predict the AbExp score
 
 ## Development setup
 

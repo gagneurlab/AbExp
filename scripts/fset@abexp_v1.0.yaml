@@ -1,6 +1,6 @@
 ---
 features:
-  vep: "{params.veff_dir}/tissue_specific_vep.py@tl=cutoff:0/veff.parquet/{{vcf_file}}.parquet"
+  vep: "{params.veff_dir}/tissue_specific_vep.py/veff.parquet/{{vcf_file}}.parquet"
   splice_ensemble: "{params.veff_dir}/absplice.py/veff.parquet/{{vcf_file}}.parquet"
   expected_expr: "{params.gtex_expected_expr}"
 
@@ -32,10 +32,9 @@ variables:
   - "MMSplice_SpliceMap_Psi_ref"
   - "SpliceAI"
   "expected_expr":
-#   - "mu"
-  - "theta"
+  - "expression_dispersion"
 
 required_features:
-- 'feature.expected_expr@theta'
+- 'feature.expected_expr@expression_dispersion'
 
 fill_values:

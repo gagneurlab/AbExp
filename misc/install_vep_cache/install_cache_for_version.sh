@@ -1,7 +1,7 @@
 #!/bin/bash
 
-VERSION=$1
-CACHE_DIR="/s/raw/vep/$VERSION"
+VERSION="$1"
+CACHE_DIR="$2"
 
 INSTALL_CACHE=TRUE
 

@@ -245,7 +245,9 @@ perl $(perldoc -l "LoF") && echo "LOFTEE OK" || {{ echo "Testing LOFTEE failed!"
 echo "" | \
     $PERL -e 'do(shift(@ARGV)) or die "Error attempting to execute script: $@\n";' "$SCRIPT" \
     {params.vep_cli_options} \
-    > "$OUTPUT_VEFF_HEADER"
+    --warning_file "${{OUTPUT_VEFF_TSV}}.warnings" \
+    > "$OUTPUT_VEFF_HEADER" \
+    2> "${{OUTPUT_VEFF_TSV}}.stderr"
 
 # run variant effect prediction
 bcftools view "$INPUT_VCF" | \
@@ -253,7 +255,9 @@ bcftools view "$INPUT_VCF" | \
     --no_header \
     {params.vep_cli_options} \
     --buffer_size {resources.vep_buffer_size} \
-    > "$OUTPUT_VEFF_TSV"
+    --warning_file "${{OUTPUT_VEFF_TSV}}.warnings" \
+    > "$OUTPUT_VEFF_TSV" \
+    2> "${{OUTPUT_VEFF_TSV}}.stderr"
 
 """
 

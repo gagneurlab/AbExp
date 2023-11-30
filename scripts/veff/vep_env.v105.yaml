@@ -9,6 +9,7 @@ dependencies:
 - bioconda::bcftools
 - bioconda::perl-dbd-sqlite
 - bioconda::perl-bio-bigfile
+- bioconda::perl-bio-procedural
 - bioconda::perl-set-intervaltree
 - bioconda::ensembl-vep=105
 - bioconda::samtools

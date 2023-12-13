@@ -12,7 +12,7 @@ dependencies:
 - scipy
 - joblib
 - scikit-learn
-- lightgbm
+- lightgbm~=3.3
 - tqdm
 - statsmodels
 - polars

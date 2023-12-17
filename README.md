@@ -1,5 +1,8 @@
 # AbExp variant effect prediction pipeline
 
+This repository contains a bioinformatics software pipeline for calculating **AbExp variant effect predictions**, taking vcf files as input.
+The preprint to this method can be found on [BioRxiv](https://doi.org/10.1101/2023.12.04.569414).
+
 ## Minimum resource requirements
 
 - disk space: 1.0-1.4TB for cache files (hg19 + hg38)

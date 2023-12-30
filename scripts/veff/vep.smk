@@ -207,6 +207,7 @@ rule veff__vep_annotation:
     shell: r"""#!/bin/bash
     
 set -x
+set -e
 
 LOFTEE_SRC_PATH="$(realpath '{params.loftee_src_path}')"
 PERL="$(realpath $(which '{params.perl_bin}'))"
@@ -215,6 +216,7 @@ SCRIPT="$(realpath $(which '{params.vep_bin}'))"
 INPUT_VCF="$(realpath '{input.vcf}')"
 OUTPUT_VEFF_HEADER="$(realpath '{output.veff_header}')"
 OUTPUT_VEFF_TSV="$(realpath '{output.veff_tsv}')"
+OUTPUT_VEFF_DONE="$(realpath '{output.veff_done}')"
 
 if [ -z "$LOFTEE_SRC_PATH" ]; then
     echo 'Missing environment variable: $LOFTEE_SRC_PATH' >&2
@@ -256,8 +258,10 @@ bcftools view "$INPUT_VCF" | \
     {params.vep_cli_options} \
     --buffer_size {resources.vep_buffer_size} \
     --warning_file "${{OUTPUT_VEFF_TSV}}.warnings" \
-    > "$OUTPUT_VEFF_TSV" \
+    --output_file "$OUTPUT_VEFF_TSV" \
     2> "${{OUTPUT_VEFF_TSV}}.stderr"
+
+touch "$OUTPUT_VEFF_DONE"
 
 """
 

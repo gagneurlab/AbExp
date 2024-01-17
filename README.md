@@ -81,7 +81,8 @@ The preprint to this method can be found on [BioRxiv](https://doi.org/10.1101/20
    - a set of features used to predict the AbExp score
 
 ## Development setup
-
+Advanced users who want to edit this pipeline can use the following steps to convert the python scripts back to Jupyter notebooks:
 1) Make sure that the `jupytext` command is available, e.g. via `mamba install jupytext`
 2) run `find scripts/ -iname "*[.py.py|.R.R]" -exec jupytext --sync {} \;` to convert all percent scripts to jupyter notebooks
+Jupyter will then automatically synchronize the percent scripts with the corresponding notebook files.
 

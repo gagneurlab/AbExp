@@ -1,15 +1,18 @@
 # AbExp variant effect prediction pipeline
 
+AbExp is a tool to predict aberrant gene underexpression in 48 human tissue based on DNA sequence variants.
+It was trained on aberrant gene expression calls from the GTEx dataset.
+
 This repository contains a bioinformatics software pipeline for calculating **AbExp variant effect predictions**, taking vcf files as input.
 The preprint to this method can be found on [BioRxiv](https://doi.org/10.1101/2023.12.04.569414).
 
 ## Minimum resource requirements
 
 - disk space: 1.0-1.4TB for cache files (hg19 + hg38)
-  - LOFTEE: 25Gi
-  - VEP v108: 113Gi
-  - CADD v1.6: 854Gi
-  - SpliceAI-RocksDB (optional): 349Gi
+  - LOFTEE: 25GB
+  - VEP v108: 113GB
+  - CADD v1.6: 854GB
+  - SpliceAI-RocksDB (optional): 349GB
 - RAM: 64GB
 - GPU supporting CUDA for SpliceAI annotation
 

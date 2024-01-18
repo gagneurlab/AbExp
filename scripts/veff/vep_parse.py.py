@@ -46,7 +46,9 @@ except NameError:
         snakefile = snakefile_path,
         rule_name = 'veff__vep_parse',
         default_wildcards={
-            "vcf_file": "clinvar_chr1_pathogenic.vcf.gz",
+            # "vcf_file": "clinvar_chr1_pathogenic.vcf.gz",
+            # "vcf_file": "chrom=chr12/66740210-66940210.vcf.gz",
+            "vcf_file": "chrom=chr12/6553032-6773308.vcf.gz",
         }
     )
 
@@ -147,24 +149,25 @@ dtypes = {
 snakemake.input["veff_tsv"]
 
 # %%
-df = pl.read_csv(
+df = pl.scan_csv(
     snakemake.input["veff_tsv"],
     has_header=False,
     separator="\t",
     new_columns=clean_header,
     null_values="-",
-#     dtypes={k: v for k, v in dtypes.items() if v in {
-#         t.Boolean,
-#         t.Int8,
-#         t.Int16,
-#         t.Int32,
-#         t.Int64,
-#         t.Float32,
-#         t.Float64,
-#         t.Utf8,
-#     }},
+    dtypes={k: v for k, v in dtypes.items() if v in clean_header},
+    #     dtypes={k: v for k, v in dtypes.items() if v in {
+    #         t.Boolean,
+    #         t.Int8,
+    #         t.Int16,
+    #         t.Int32,
+    #         t.Int64,
+    #         t.Float32,
+    #         t.Float64,
+    #         t.Utf8,
+    #     }},
     infer_schema_length=0
-).lazy()
+)
 df
 
 # %%
@@ -181,8 +184,8 @@ parsed_df = (
         pl.col("#Uploaded_variation").str.extract('(.+):([0-9]+):([0-9]+):(.+?)>(.+)', 4).alias("ref"),
         pl.col("#Uploaded_variation").str.extract('(.+):([0-9]+):([0-9]+):(.+?)>(.+)', 5).alias("alt"),
     ]).with_columns([
-        pl.when(pl.col("ref") == '-').then("").otherwise(pl.col("ref")).alias("ref"),
-        pl.when(pl.col("alt") == '-').then("").otherwise(pl.col("alt")).alias("alt"),
+        pl.when(pl.col("ref") == pl.lit('-')).then(pl.lit("")).otherwise(pl.col("ref")).alias("ref"),
+        pl.when(pl.col("alt") == pl.lit('-')).then(pl.lit("")).otherwise(pl.col("alt")).alias("alt"),
         (pl.col("start") + 1).alias("pos"),
         (pl.col("end") - pl.col("start")).alias("len"),
     ]).with_columns([
@@ -195,7 +198,7 @@ parsed_df = (
         pl.col("PolyPhen").str.extract(r".*\((.*)\)", 1).alias("polyphen_score"),
     ])
     .with_columns([
-        pl.col("chrom").map_dict(chrom_mapping, default=pl.col("chrom"), return_dtype=t.Utf8()).cast(t.Utf8()),
+        pl.col("chrom").replace(chrom_mapping, default=pl.col("chrom"), return_dtype=t.Utf8()).cast(t.Utf8()),
     ])
     .drop([
         "#Uploaded_variation", 
@@ -266,17 +269,6 @@ parsed_df = parsed_df.select([
     parse_col(x) for x in parsed_df.columns
 ])
 parsed_df
-
-# %%
-failed_variants = parsed_df.filter(pl.col("chrom").is_null() | pl.col("start").is_null() | pl.col("end").is_null() | pl.col("ref").is_null() | pl.col("alt").is_null()).select(pl.count()).collect().item()
-failed_variants
-
-# %%
-total_variants = parsed_df.select(pl.count()).collect().item()
-total_variants
-
-# %%
-assert failed_variants == 0, f"{failed_variants} out of {total_variants} variants failed to parse!"
 
 # %% [markdown]
 # # parse consequences, etc.
@@ -391,13 +383,26 @@ parsed_vep_df.schema
 parsed_vep_df.schema["Consequence"].fields
 
 # %%
-parsed_vep_df = parsed_vep_df.collect()
-parsed_vep_df
+snakemake.output["veff_pq"]
 
 # %%
 (
     parsed_vep_df
-    .write_parquet(snakemake.output["veff_pq"], compression="snappy", statistics=True, use_pyarrow=True)
+    .sink_parquet(snakemake.output["veff_pq"], compression="snappy", statistics=True)
 )
+
+# %%
+parsed_vep_df = pl.scan_parquet(snakemake.output["veff_pq"], hive_partitioning=False)
+
+# %%
+failed_variants = parsed_vep_df.filter(pl.col("chrom").is_null() | pl.col("start").is_null() | pl.col("end").is_null() | pl.col("ref").is_null() | pl.col("alt").is_null()).select(pl.count()).collect().item()
+failed_variants
+
+# %%
+total_variants = parsed_vep_df.select(pl.count()).collect().item()
+total_variants
+
+# %%
+assert failed_variants == 0, f"{failed_variants} out of {total_variants} variants failed to parse!"
 
 # %%

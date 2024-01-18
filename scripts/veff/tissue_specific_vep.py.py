@@ -8,9 +8,9 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.14.5
 #   kernelspec:
-#     display_name: Python [conda env:anaconda-florian4]
+#     display_name: Python [conda env:anaconda-abexp-veff-py]
 #     language: python
-#     name: conda-env-anaconda-florian4-py
+#     name: conda-env-anaconda-abexp-veff-py-py
 # ---
 
 # %%
@@ -31,6 +31,9 @@ import polars as pl
 import polars.datatypes as t
 
 # %%
+import pyarrow.parquet as pq
+
+# %%
 snakefile_path = os.getcwd() + "/../../Snakefile"
 
 # %%
@@ -46,7 +49,8 @@ except NameError:
         snakefile = snakefile_path,
         rule_name = 'veff__tissue_specific_vep',
         default_wildcards={
-            "vcf_file": "clinvar_chr22_pathogenic.vcf.gz",
+            # "vcf_file": "clinvar_chr22_pathogenic.vcf.gz",
+            "vcf_file": "chrom=chr1/40321531-40346531.vcf.gz",
             # "transcript_level": "None",
             # "transcript_level": "cutoff:0.1",
             # "transcript_level": "cutoff:0.2",
@@ -67,12 +71,8 @@ os.getcwd()
 # %% [markdown]
 # # Load input data
 
-# %%
-chrom_mapping = dict(pl.read_csv(snakemake.input["chrom_alias"], separator="\t").rename({"#alias": "alias"})[["alias", "chrom"]].rows())
-
-# %%
-vep_df = pl.scan_parquet(snakemake.input["vep_pq"])
-vep_df.schema
+# %% [raw]
+# chrom_mapping = dict(pl.read_csv(snakemake.input["chrom_alias"], separator="\t").rename({"#alias": "alias"})[["alias", "chrom"]].rows())
 
 # %%
 gtf_transcript_df = (
@@ -90,46 +90,70 @@ gtf_transcript_df = (
 gtf_transcript_df.schema
 
 # %%
+snakemake.input["isoform_proportions_pq"]
+
+# %%
 isoform_proportions_df = pl.scan_parquet(snakemake.input["isoform_proportions_pq"])
 isoform_proportions_df.schema
 
 # %%
-tissue_df = (
-    isoform_proportions_df.select("tissue").unique().sort("tissue")
-    .join(
-        vep_df,
-        how="cross"
-    )
-    .join(
-        gtf_transcript_df,
-        on=["gene", "transcript"],
-        how="left"
-    )
-    .join(
-        isoform_proportions_df.select([
-            "transcript",
-            "tissue",
-            "gene",
-            "mean_transcript_proportions",
-            "median_transcript_proportions",
-            "sd_transcript_proportions",
-        ]),
-        on=["gene", "transcript", "tissue"],
-        how="left"
-    )
-)
+tissues_df = isoform_proportions_df.select("tissue").unique().sort("tissue").collect()
+tissues_df
 
 # %%
-tissue_df.schema["Consequence"].fields
+vep_df = pl.scan_parquet(snakemake.input["vep_pq"], hive_partitioning=False)
+vep_df.schema
+
+# %%
+variants_df = (
+    vep_df
+    .group_by("chrom")
+    .agg(
+        pl.col("start").min().alias("min_start"),
+        pl.col("start").max().alias("max_start"),
+        pl.count().alias("num_rows"),
+    )
+    .with_columns(
+        (pl.col("max_start") - pl.col("min_start")).alias("region_size")
+    )
+    .sort("chrom")
+    .collect()
+)
+print("statistics:")
+display(variants_df)
+
+# %%
+total_num_rows = variants_df['num_rows'].sum()
+total_num_rows
+
+# %%
+total_region_size = variants_df['region_size'].sum()
+total_region_size
+
+# %%
+num_rows_per_position = total_num_rows / total_region_size
+num_rows_per_position
+
+# %%
+batch_size = snakemake.params.get("batch_size", 1_000_000)
+
+# %%
+position_batch_size = int(np.ceil(batch_size / num_rows_per_position))
+position_batch_size
+
+# %%
+groupby = ["chrom", "start", "end", "ref", "alt", "gene", "tissue"]
+# groupby = [c for c in groupby if c in tissue_df.columns]
+groupby
 
 # %%
 aggregations = pl.struct([
-    *[pl.col("Consequence").struct.field(c.name).max().cast(t.Boolean).alias(f"{c.name}.max") for c in tissue_df.schema["Consequence"].fields],
-    *[pl.col("Consequence").struct.field(c.name).cast(t.Int32).sum().alias(f"{c.name}.sum") for c in tissue_df.schema["Consequence"].fields],
-    *[(pl.col("median_transcript_proportions") * pl.col("Consequence").struct.field(c.name)).sum().alias(f"{c.name}.proportion") for c in tissue_df.schema["Consequence"].fields if "median_transcript_proportions" in tissue_df.columns],
-    *[pl.col("LoF").struct.field(c.name).max().cast(t.Boolean).alias(f"LoF_{c.name}.max") for c in tissue_df.schema["LoF"].fields],
-    *[pl.col("LoF").struct.field(c.name).cast(t.Int32).sum().alias(f"LoF_{c.name}.sum") for c in tissue_df.schema["LoF"].fields],
-    *[(pl.col("median_transcript_proportions") * pl.col("LoF").struct.field(c.name)).sum().alias(f"LoF_{c.name}.proportion") for c in tissue_df.schema["LoF"].fields if "median_transcript_proportions" in tissue_df.columns],
+    *[pl.col("Consequence").struct.field(c.name).max().cast(t.Boolean).alias(f"{c.name}.max") for c in vep_df.schema["Consequence"].fields],
+    *[pl.col("Consequence").struct.field(c.name).cast(t.Int32).sum().alias(f"{c.name}.sum") for c in vep_df.schema["Consequence"].fields],
+    *[(pl.col("median_transcript_proportions") * pl.col("Consequence").struct.field(c.name)).sum().alias(f"{c.name}.proportion") for c in vep_df.schema["Consequence"].fields],
+    *[pl.col("LoF").struct.field(c.name).max().cast(t.Boolean).alias(f"LoF_{c.name}.max") for c in vep_df.schema["LoF"].fields],
+    *[pl.col("LoF").struct.field(c.name).cast(t.Int32).sum().alias(f"LoF_{c.name}.sum") for c in vep_df.schema["LoF"].fields],
+    *[(pl.col("median_transcript_proportions") * pl.col("LoF").struct.field(c.name)).sum().alias(f"LoF_{c.name}.proportion") for c in vep_df.schema["LoF"].fields],
 #     pl.max(-pl.log10(pl.col("sift_score"))).alias("sift_score.pval_max_significant"),
 #     pl.max(pl.col("CADD_RAW")).alias("cadd_raw.max"),
 #     pl.max(pl.col("polyphen_score")).alias("polyphen_score.max"),
@@ -144,39 +168,77 @@ aggregations = pl.struct([
 aggregations
 
 # %%
-groupby = ["chrom", "start", "end", "ref", "alt", "gene", "tissue"]
-groupby = [c for c in groupby if c in tissue_df.columns]
-groupby
+pq_writer = None
+
+# now process file in batches
+for (chrom, min_start, max_start, num_rows, region_size) in variants_df.rows():
+    for start, end in zip(
+        range(min_start, max_start, position_batch_size),
+        range(min_start + position_batch_size, max_start + position_batch_size, position_batch_size),
+    ):
+        print(f"processing {chrom}:{start}-{end}...")
+        
+        vep_batch_df = vep_df.filter(
+            (pl.col("chrom") == pl.lit(chrom))
+            & (pl.col("start") >= start)
+            & (pl.col("end") < end)
+        )
+        
+        joint_df = (
+            tissues_df.lazy()
+            .join(
+                vep_batch_df,
+                how="cross"
+            )
+            .join(
+                gtf_transcript_df,
+                on=["gene", "transcript"],
+                how="left"
+            )
+            .join(
+                isoform_proportions_df.select([
+                    "transcript",
+                    "tissue",
+                    "gene",
+                    "mean_transcript_proportions",
+                    "median_transcript_proportions",
+                    "sd_transcript_proportions",
+                ]),
+                on=["gene", "transcript", "tissue"],
+                how="left"
+            )
+        )
+        
+        aggregated_df = (
+            joint_df
+            .group_by(groupby)
+            .agg(aggregations)
+            .sort(groupby)
+            .collect()
+        )
+        
+        if pq_writer is None:
+            schema=aggregated_df.to_arrow().schema
+
+            pq_writer =  pq.ParquetWriter(
+                snakemake.output["veff_pq"], 
+                schema=schema
+            )
+        
+        pq_writer.write_table(aggregated_df.to_arrow())
+        
+        del (
+            aggregated_df,
+            joint_df,
+            vep_batch_df
+        )
+
+assert pq_writer is not None, "Failed to write dataset"
+print("Done!")
+
+pq_writer.close()
 
 # %%
-aggregated_df = (
-    tissue_df
-    .groupby(groupby)
-    .agg(aggregations)
-)
-aggregated_df.schema
-
-# %%
-out_df = (
-    aggregated_df
-    .sort(groupby)
-    .collect()
-)
-
-# %%
-out_df
-
-# %%
-# check for polars bug
-# assert out_df.schema.get("features").fields == aggregated_df.schema.get("features").fields
-
-# %%
-snakemake.output["veff_pq"]
-
-# %%
-(
-    out_df
-    .write_parquet(snakemake.output["veff_pq"], compression="snappy", statistics=True, use_pyarrow=True)
-)
+print(snakemake.output["veff_pq"])
 
 # %%

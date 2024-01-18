@@ -39,6 +39,7 @@ rule predict_veff:
         nb_script=f"{SCRIPT}",
     wildcard_constraints:
         ds_dir="[^/]+",
+        model_type="[^/]+",
         feature_set="[^/]+",
         template="[^/]+",
 #     log:

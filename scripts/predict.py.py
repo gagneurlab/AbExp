@@ -8,9 +8,9 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.14.5
 #   kernelspec:
-#     display_name: Python [conda env:anaconda-florian4]
+#     display_name: Python [conda env:anaconda-abexp-veff-py]
 #     language: python
-#     name: conda-env-anaconda-florian4-py
+#     name: conda-env-anaconda-abexp-veff-py-py
 # ---
 
 # %%
@@ -52,8 +52,9 @@ except NameError:
         snakefile = snakefile_path,
         rule_name = 'predict_veff',
         default_wildcards={
-            "model_type": "abexp_dna_v1.0",
-            "vcf_file": "clinvar_chr22_pathogenic.vcf.gz",
+            "model_type": "abexp_v1.0",
+            # "vcf_file": "clinvar_chr22_pathogenic.vcf.gz",
+            "vcf_file": "chrom=chr13/113735191-113765351.vcf.gz",
         }
     )
 
@@ -70,7 +71,7 @@ with open(snakemake.input["featureset_config"], "r") as fd:
 featureset_config
 
 # %%
-data_df = pl.scan_parquet(snakemake.input["featureset_pq"])
+data_df = pl.scan_parquet(snakemake.input["featureset_pq"], hive_partitioning=False)
 for req in featureset_config.get("required_features", []):
     data_df = data_df.filter(pl.col(req).is_not_null())
     if data_df.schema[req] in t.FLOAT_DTYPES:
@@ -78,7 +79,7 @@ for req in featureset_config.get("required_features", []):
 data_df.schema
 
 # %%
-expressed_genes_df = pl.scan_parquet(snakemake.input["expressed_genes_pq"])
+expressed_genes_df = pl.scan_parquet(snakemake.input["expressed_genes_pq"], hive_partitioning=False)
 expressed_genes_df.schema
 
 # %%

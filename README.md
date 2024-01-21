@@ -69,12 +69,12 @@ The preprint to this method can be found on [BioRxiv](https://doi.org/10.1101/20
    It is highly recommended to use snakemake with some batch submission system, e.g. SLURM.
    For further information, please visit the Snakemake documentation.
 3) The resulting variant effect predictions will be stored in `<output_dir>/predict/abexp_v1.0/<input_vcf_file>.parquet`. It should contain the following columns:
-   - 'chrom'
-   - 'start'
-   - 'end'
-   - 'ref'
-   - 'alt'
-   - 'gene'
+   - 'chrom': chromosome of the variant
+   - 'start': start position of the variant (0-based)
+   - 'end': end position of the variant (1-based)
+   - 'ref': reference allele
+   - 'alt': alternate allele
+   - 'gene': the gene affected by the variant
    - 'tissue': GTEx tissue, e.g. "Artery - Tibial"
    - 'tissue_type', GTEx tissue type, e.g. "Blood Vessel"
    - 'abexp_v1.0': The predicted AbExp score

@@ -50,7 +50,8 @@ except NameError:
         rule_name = 'veff__tissue_specific_vep',
         default_wildcards={
             # "vcf_file": "clinvar_chr22_pathogenic.vcf.gz",
-            "vcf_file": "chrom=chr1/40321531-40346531.vcf.gz",
+            # "vcf_file": "chrom=chr1/40321531-40346531.vcf.gz",
+            "vcf_file": "chrom=chr9/18143060-18168060.vcf.gz",
             # "transcript_level": "None",
             # "transcript_level": "cutoff:0.1",
             # "transcript_level": "cutoff:0.2",
@@ -131,14 +132,20 @@ total_region_size = variants_df['region_size'].sum()
 total_region_size
 
 # %%
-num_rows_per_position = total_num_rows / total_region_size
+if total_num_rows > 0:
+    num_rows_per_position = total_num_rows / total_region_size
+else:
+    num_rows_per_position = 0
 num_rows_per_position
 
 # %%
 batch_size = snakemake.params.get("batch_size", 1_000_000)
 
 # %%
-position_batch_size = int(np.ceil(batch_size / num_rows_per_position))
+if total_num_rows > 0:
+    position_batch_size = int(np.ceil(batch_size / num_rows_per_position))
+else:
+    position_batch_size = 0
 position_batch_size
 
 # %%
@@ -167,71 +174,87 @@ aggregations = pl.struct([
 ]).alias("features")
 aggregations
 
+
+# %%
+def process_batch(vep_batch_df):
+    joint_df = (
+        tissues_df.lazy()
+        .join(
+            vep_batch_df,
+            how="cross"
+        )
+        .join(
+            gtf_transcript_df,
+            on=["gene", "transcript"],
+            how="left"
+        )
+        .join(
+            isoform_proportions_df.select([
+                "transcript",
+                "tissue",
+                "gene",
+                "mean_transcript_proportions",
+                "median_transcript_proportions",
+                "sd_transcript_proportions",
+            ]),
+            on=["gene", "transcript", "tissue"],
+            how="left"
+        )
+    )
+
+    aggregated_df = (
+        joint_df
+        .group_by(groupby)
+        .agg(aggregations)
+        .sort(groupby)
+        .collect()
+    )
+    return aggregated_df
+
+
 # %%
 pq_writer = None
 
-# now process file in batches
-for (chrom, min_start, max_start, num_rows, region_size) in variants_df.rows():
-    for start, end in zip(
-        range(min_start, max_start, position_batch_size),
-        range(min_start + position_batch_size, max_start + position_batch_size, position_batch_size),
-    ):
-        print(f"processing {chrom}:{start}-{end}...")
-        
-        vep_batch_df = vep_df.filter(
-            (pl.col("chrom") == pl.lit(chrom))
-            & (pl.col("start") >= start)
-            & (pl.col("end") < end)
-        )
-        
-        joint_df = (
-            tissues_df.lazy()
-            .join(
-                vep_batch_df,
-                how="cross"
-            )
-            .join(
-                gtf_transcript_df,
-                on=["gene", "transcript"],
-                how="left"
-            )
-            .join(
-                isoform_proportions_df.select([
-                    "transcript",
-                    "tissue",
-                    "gene",
-                    "mean_transcript_proportions",
-                    "median_transcript_proportions",
-                    "sd_transcript_proportions",
-                ]),
-                on=["gene", "transcript", "tissue"],
-                how="left"
-            )
-        )
-        
-        aggregated_df = (
-            joint_df
-            .group_by(groupby)
-            .agg(aggregations)
-            .sort(groupby)
-            .collect()
-        )
-        
-        if pq_writer is None:
-            schema=aggregated_df.to_arrow().schema
+if total_num_rows > 0:
+    # now process file in batches
+    for (chrom, min_start, max_start, num_rows, region_size) in variants_df.rows():
+        for start, end in zip(
+            range(min_start, max_start, position_batch_size),
+            range(min_start + position_batch_size, max_start + position_batch_size, position_batch_size),
+        ):
+            print(f"processing {chrom}:{start}-{end}...")
 
-            pq_writer =  pq.ParquetWriter(
-                snakemake.output["veff_pq"], 
-                schema=schema
+            vep_batch_df = vep_df.filter(
+                (pl.col("chrom") == pl.lit(chrom))
+                & (pl.col("start") >= start)
+                & (pl.col("end") < end)
             )
-        
-        pq_writer.write_table(aggregated_df.to_arrow())
-        
-        del (
-            aggregated_df,
-            joint_df,
-            vep_batch_df
-        )
+
+            aggregated_df = process_batch(vep_batch_df)
+
+            if pq_writer is None:
+                schema=aggregated_df.to_arrow().schema
+
+                pq_writer =  pq.ParquetWriter(
+                    snakemake.output["veff_pq"], 
+                    schema=schema
+                )
+
+            pq_writer.write_table(aggregated_df.to_arrow())
+
+            del (
+                aggregated_df,
+                vep_batch_df
+            )
+else:
+    aggregated_df = process_batch(vep_df)
+
+    schema=aggregated_df.to_arrow().schema
+
+    pq_writer =  pq.ParquetWriter(
+        snakemake.output["veff_pq"], 
+        schema=schema
+    )
 
 assert pq_writer is not None, "Failed to write dataset"
 print("Done!")

@@ -52,7 +52,8 @@ except NameError:
         snakefile = snakefile_path,
         rule_name = 'veff__absplice',
         default_wildcards={
-            "vcf_file": "clinvar_chr22_pathogenic.vcf.gz",
+            # "vcf_file": "clinvar_chr22_pathogenic.vcf.gz",
+            "vcf_file": "chrom=chr3/113035099-113060099.vcf.gz",
             # "feature_set": "abexp_dna_v1.0",
         },
         change_dir=True
@@ -77,7 +78,7 @@ tissue_mapping
 
 # %%
 # assuming schema of vcf2parquet:
-variants_df = pl.read_parquet(snakemake.input["vcf"]).lazy()
+variants_df = pl.read_parquet(snakemake.input["vcf"], hive_partitioning=False).lazy()
 variants_df = (
     variants_df
     .rename({
@@ -91,7 +92,7 @@ variants_df = (
         # "info_SVTYPE": "INFO_SVTYPE",
     })
     .select([
-        pl.col("chrom").map_dict(chrom_mapping, default=pl.col("chrom"), return_dtype=t.Utf8()).cast(t.Utf8()),
+        pl.col("chrom").replace(chrom_mapping, default=pl.col("chrom"), return_dtype=t.Utf8()).cast(t.Utf8()),
         (pl.col("pos") - 1).cast(t.Int64()).alias("start"),
         pl.col("INFO_END").cast(t.Int64()).alias("end"),
         pl.col("ref"),
@@ -114,7 +115,7 @@ variants_df.schema
 snakemake.input["absplice_denovo_pred_pq"]
 
 # %%
-absplice_df = pl.scan_parquet(snakemake.input["absplice_denovo_pred_pq"])
+absplice_df = pl.scan_parquet(snakemake.input["absplice_denovo_pred_pq"], hive_partitioning=False)
 absplice_df = absplice_df.rename({
     k: v for k, v in {
         "gene_id": "gene",
@@ -127,7 +128,7 @@ absplice_df = absplice_df.rename({
     if k in absplice_df.columns
 })
 absplice_df = absplice_df.with_columns(
-    pl.col("tissue").map_dict(tissue_mapping, default=pl.col("tissue"), return_dtype=t.Utf8()).cast(t.Utf8())
+    pl.col("tissue").replace(tissue_mapping, default=pl.col("tissue"), return_dtype=t.Utf8()).cast(t.Utf8())
 )
 absplice_df.schema
 
@@ -137,7 +138,7 @@ absplice_df.schema
 # %%
 agg_absplice_df = (
         absplice_df
-        .groupby("chrom", "start", "end", "ref", "alt", "gene", "tissue")
+        .group_by("chrom", "start", "end", "ref", "alt", "gene", "tissue")
         .agg(
             pl.all().sort_by(pl.col("AbSplice"), descending=True).first()
         )

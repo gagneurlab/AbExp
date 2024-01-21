@@ -49,8 +49,9 @@ except NameError:
         snakefile = snakefile_path,
         rule_name = 'veff__fset',
         default_wildcards={
-            "vcf_file": "clinvar_chr22_pathogenic.vcf.gz",
-            "feature_set": "abexp_dna_v1.0",
+            # "vcf_file": "clinvar_chr22_pathogenic.vcf.gz",
+            "vcf_file": "chrom=chr12/6553032-6773308.vcf.gz",
+            "feature_set": "abexp_v1.0",
         },
         change_dir=True
     )
@@ -83,7 +84,7 @@ for (fset, fset_path) in config["features"].items():
     fset_path = fset_path.format(**snakemake.wildcards)
     print(f"Loading '{fset}'...")
     print(f"    path: '{fset_path}'")
-    this_df = pl.scan_parquet(fset_path)
+    this_df = pl.scan_parquet(fset_path, hive_partitioning=False)
 #     this_df = this_df.sort([p for p in snakemake.params["index_cols"] if p in this_df.columns])
     feature_dfs[fset] = this_df
     print(f"""    rows: {this_df.select(pl.count()).collect()[0, 0]} """)

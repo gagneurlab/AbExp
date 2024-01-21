@@ -148,12 +148,17 @@ rule absplice_dna:
     input:
         mmsplice_splicemap = MMSPLICE_SPLICEMAP_VEFF_CSV_PATTERN,
         spliceai = SPLICEAI_VEFF_CSV_PATTERN,
+        tissue_mapping=ancient(config["system"]["absplice"].get(
+            "tissue_mapping_csv",
+            "{SNAKEMAKE_DIR}/resources/AbSplice_tissue_mapping.csv",
+        ).format(SNAKEMAKE_DIR=SNAKEMAKE_DIR)),
+        chrom_alias=ancient(CHROM_ALIAS_TSV),
     output:
         absplice_dna = VEFF_VCF_PQ_PATTERN,
     conda:
         f"{CONDA_ENV_YAML_DIR}/abexp-absplice.yaml"
     script:
-        "absplice_dna.py"
+        "absplice_dna.py.py"
 
 
 del (

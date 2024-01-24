@@ -65,7 +65,7 @@ rule veff__mmsplice_splicemap:
         splicemap_5 = SPLICEMAP5,
         splicemap_3 = SPLICEMAP3,
     output:
-        result = MMSPLICE_SPLICEMAP_VEFF_CSV_PATTERN,
+        result = temp(MMSPLICE_SPLICEMAP_VEFF_CSV_PATTERN),
     conda:
         f"{CONDA_ENV_YAML_DIR}/abexp-absplice.yaml"
     script:
@@ -93,7 +93,7 @@ if config['system']['absplice']['use_spliceai_rocksdb'] == True:
             threads = 1,
             gpu = 1,
         output:
-            result = SPLICEAI_VEFF_CSV_PATTERN,
+            result = temp(SPLICEAI_VEFF_CSV_PATTERN),
         input:
             vcf = VALID_VARIANTS_VCF_FILE_PATTERN,
             fasta = FASTA_FILE,
@@ -113,7 +113,7 @@ else:
             threads = 4,
             gpu = 1,
         output:
-            result = SPLICEAI_VEFF_VCF_PATTERN,
+            result = temp(SPLICEAI_VEFF_VCF_PATTERN),
         input:
             vcf = VALID_VARIANTS_VCF_FILE_PATTERN,
             fasta = FASTA_FILE,
@@ -132,7 +132,7 @@ else:
         input:
             spliceai_vcf = SPLICEAI_VEFF_VCF_PATTERN,
         output:
-            spliceai_csv = SPLICEAI_VEFF_CSV_PATTERN,
+            spliceai_csv = temp(SPLICEAI_VEFF_CSV_PATTERN),
         conda:
             f"{CONDA_ENV_YAML_DIR}/abexp-absplice.yaml"
         run:

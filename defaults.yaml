@@ -31,7 +31,7 @@ assembly_mapping:
   hg19: "GRCh37"
   hg38: "GRCh38"
 
-vcf_header: "resources/header.vcf"
+vcf_header: "{SNAKEMAKE_DIR}/resources/header.vcf"
 formatted_vcf_header: "{RESULTS_DIR}/header.vcf"
 
 # gencode_basepath: "/s/genomes/Gencode/Gencode_human/release_{gencode_version}"
@@ -108,8 +108,8 @@ absplice:
 
 models:
   abexp_v1.0:
-    model: "resources/models/abexp_v1.0/model.joblib"
-    features: "resources/models/abexp_v1.0/features.yaml"
+    model: "{SNAKEMAKE_DIR}/resources/models/abexp_v1.0/model.joblib"
+    features: "{SNAKEMAKE_DIR}/resources/models/abexp_v1.0/features.yaml"
     cutoffs:
       # 50% precision, 8.5% recall:
       high_confidence: 3.3951878750977413

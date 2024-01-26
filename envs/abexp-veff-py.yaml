@@ -25,4 +25,4 @@ dependencies:
 - pip
 - pip:
   - snakemk_util
-  - git+ssh://git@github.com/gagneurlab/rep.git
+  - git+https://github.com/gagneurlab/rep.git

@@ -54,7 +54,8 @@ except NameError:
         default_wildcards={
             "model_type": "abexp_v1.0",
             # "vcf_file": "clinvar_chr22_pathogenic.vcf.gz",
-            "vcf_file": "chrom=chr13/113735191-113765351.vcf.gz",
+            # "vcf_file": "chrom=chr13/113735191-113765351.vcf.gz",
+            "vcf_file": "INFO_CLNSIG=Pathogenic/part-00000-42194a16-b74c-4645-a16e-70a3041393b0.c000.vcf"
         }
     )
 
@@ -90,7 +91,7 @@ print(f"Index columns: {index_columns}")
 # # Setup training data
 
 # %%
-assert data_df.select(pl.count()).collect()["count"].item() > 0, "Data to predict is empty"
+# assert data_df.select(pl.count()).collect()["count"].item() > 0, "Data to predict is empty"
 
 # %%
 predict_data_df = (
@@ -187,8 +188,8 @@ column_order
 predicted = (
     predict_data_pd_df
     .assign(**{
-        snakemake.wildcards['model_type']: np.asarray(model.predict(x_predict) if not x_predict.empty else [], dtype="float64"),
-        # "y_pred_proba": np.asarray(model.predict_proba(x_predict) if not x_predict.empty else [], dtype="float64"),
+        snakemake.wildcards['model_type']: np.asarray(model.predict(x_predict[features_list]) if not x_predict.empty else [], dtype="float64"),
+        # "y_pred_proba": np.asarray(model.predict_proba(x_predict[features_list]) if not x_predict.empty else [], dtype="float64"),
     })
     .loc[:, column_order]
 )

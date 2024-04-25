@@ -53,7 +53,8 @@ except NameError:
         rule_name = 'veff__absplice',
         default_wildcards={
             # "vcf_file": "clinvar_chr22_pathogenic.vcf.gz",
-            "vcf_file": "chrom=chr3/113035099-113060099.vcf.gz",
+            # "vcf_file": "chrom=chr3/113035099-113060099.vcf.gz",
+            "vcf_file": "chrom=chr10/118822206-118847206.vcf.gz",
             # "feature_set": "abexp_dna_v1.0",
         },
         change_dir=True
@@ -130,6 +131,14 @@ absplice_df = absplice_df.rename({
 absplice_df = absplice_df.with_columns(
     pl.col("tissue").replace(tissue_mapping, default=pl.col("tissue"), return_dtype=t.Utf8()).cast(t.Utf8())
 )
+absplice_df.schema
+
+# %%
+for col in variants_df.columns:
+    if (col in absplice_df.schema) and (absplice_df.schema[col] == pl.Null):
+        absplice_df = absplice_df.cast({
+            col: variants_df.schema[col]
+        })
 absplice_df.schema
 
 # %% [markdown]

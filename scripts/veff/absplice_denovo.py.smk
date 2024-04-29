@@ -155,6 +155,8 @@ rule absplice_dna:
         chrom_alias=ancient(CHROM_ALIAS_TSV),
     output:
         absplice_dna = VEFF_VCF_PQ_PATTERN,
+    params:
+        variants_per_batch=5000,
     conda:
         f"{CONDA_ENV_YAML_DIR}/abexp-absplice.yaml"
     script:

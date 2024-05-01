@@ -54,8 +54,8 @@ except NameError:
         default_wildcards={
             "model_type": "abexp_v1.0",
             # "vcf_file": "clinvar_chr22_pathogenic.vcf.gz",
-            # "vcf_file": "chrom=chr13/113735191-113765351.vcf.gz",
-            "vcf_file": "INFO_CLNSIG=Pathogenic/part-00000-42194a16-b74c-4645-a16e-70a3041393b0.c000.vcf"
+            "vcf_file": "chrom=chr5/140871637-140899832.vcf.gz",
+            # "vcf_file": "INFO_CLNSIG=Pathogenic/part-00000-42194a16-b74c-4645-a16e-70a3041393b0.c000.vcf"
         }
     )
 
@@ -154,27 +154,36 @@ artifact_dir
 # %%
 model = joblib.load(snakemake.input["model_joblib"])
 
+
 # %% [markdown]
 # ## Store testing predictions
 
 # %%
-predict_data_pd_df = predict_data_df.collect().to_pandas()
-predict_data_pd_df
+def model_predict(features_array: np.ndarray):
+    # workaround for empty feature sets
+    if features_array.shape[0] <= 0:
+         return np.array([])
+    
+    # predict
+    return model.predict(features_array)
+
 
 # %%
-x_predict = (
-    predict_data_pd_df.iloc[:, predict_data_pd_df.columns.isin(features_list)]
-    .fillna(0)
-    .fillna(0.)
-    .fillna(False)
+predicted = predict_data_df.with_columns(
+    pl.struct(
+        # create struct column containing all features in the correct order
+        [pl.col(c).cast(pl.Float32()) for c in features_list]
+    ).map_batches(
+        # batch-wise prediction
+        lambda x: model_predict(
+            # convert features struct to numpy array of shape (n_rows, n_features)
+            x.struct.unnest().to_numpy()
+        ),
+        return_dtype=pl.Float64()
+    )
+    .alias(snakemake.wildcards['model_type'])
 )
-display(x_predict)
-
-# %%
-snakemake.wildcards.keys()
-
-# %%
-predict_data_df.columns
+predicted.schema
 
 # %%
 column_order = [
@@ -185,18 +194,8 @@ column_order = [
 column_order
 
 # %%
-predicted = (
-    predict_data_pd_df
-    .assign(**{
-        snakemake.wildcards['model_type']: np.asarray(model.predict(x_predict[features_list]) if not x_predict.empty else [], dtype="float64"),
-        # "y_pred_proba": np.asarray(model.predict_proba(x_predict[features_list]) if not x_predict.empty else [], dtype="float64"),
-    })
-    .loc[:, column_order]
-)
-predicted
-
-# %%
-predicted.columns
+predicted = predicted.select(column_order)
+predicted.schema
 
 # %%
 # print("size of data to save: %.2f MB" % (predicted.memory_usage().sum()/2**20))
@@ -205,6 +204,10 @@ predicted.columns
 snakemake.output
 
 # %%
-predicted.reset_index().to_parquet(snakemake.output["data_pq"], index=False)
+(
+    predicted
+    .collect(streaming=True)
+    .write_parquet(snakemake.output["data_pq"], statistics=True, use_pyarrow=True)
+)
 
 # %%

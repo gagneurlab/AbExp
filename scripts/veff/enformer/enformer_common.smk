@@ -5,7 +5,6 @@ SNAKEFILE_DIR = os.path.dirname(SNAKEFILE)
 SCRIPT = os.path.basename(SNAKEFILE)[:-4]
 
 OUTPUT_BASEDIR = f"{VEFF_BASEDIR}/{SCRIPT}"
-ENFORMER_SCRIPTS_DIR = "scripts"
 GTF_PQ_FILE = f"{OUTPUT_BASEDIR}/gtf.parquet"
 
 rule enformer_gtf_to_parquet:
@@ -16,6 +15,6 @@ rule enformer_gtf_to_parquet:
     input:
         GTF_FILE
     script:
-        f"{ENFORMER_SCRIPTS_DIR}/gtf2parquet.py"
+        f"scripts/gtf2parquet.py"
 
 del GTF_PQ_FILE

@@ -23,7 +23,7 @@ rule enformer_predict_reference:
     conda:
         ENFORMER_CONDA_ENV_YAML
     script:
-        f"{ENFORMER_SCRIPTS_DIR}/predict_expression.py"
+        "scripts/predict_expression.py"
 
 
 rule enformer_aggregate_reference:
@@ -36,7 +36,7 @@ rule enformer_aggregate_reference:
     conda:
         ENFORMER_CONDA_ENV_YAML
     script:
-        f"{ENFORMER_SCRIPTS_DIR}/aggregate_tracks.py"
+        "scripts/aggregate_tracks.py"
 
 
 rule enformer_tissue_reference:
@@ -52,7 +52,7 @@ rule enformer_tissue_reference:
     conda:
         ENFORMER_CONDA_ENV_YAML
     script:
-        f"{ENFORMER_SCRIPTS_DIR}/tissue_expression.py"
+        "scripts/tissue_expression.py"
 
 del OUTPUT_BASEDIR
 del RAW_REF_PQ_PATTERN

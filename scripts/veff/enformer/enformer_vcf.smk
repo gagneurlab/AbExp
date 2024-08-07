@@ -29,7 +29,7 @@ rule enformer_predict_alternative:
         # requires GPU on environment installation
         ENFORMER_CONDA_ENV_YAML
     script:
-        f"{ENFORMER_SCRIPTS_DIR}/predict_expression.py"
+        "scripts/predict_expression.py"
 
 
 rule enformer_aggregate_alternative:
@@ -42,7 +42,7 @@ rule enformer_aggregate_alternative:
     conda:
         ENFORMER_CONDA_ENV_YAML
     script:
-        f"{ENFORMER_SCRIPTS_DIR}/aggregate_tracks.py"
+        "scripts/aggregate_tracks.py"
 
 
 rule enformer_tissue_alternative:
@@ -58,7 +58,7 @@ rule enformer_tissue_alternative:
     conda:
         ENFORMER_CONDA_ENV_YAML
     script:
-        f"{ENFORMER_SCRIPTS_DIR}/tissue_expression.py"
+        "scripts/tissue_expression.py"
 
 rule enformer_variant_effect:
     resources:
@@ -74,7 +74,7 @@ rule enformer_variant_effect:
     conda:
         ENFORMER_CONDA_ENV_YAML
     script:
-        f"{ENFORMER_SCRIPTS_DIR}/veff.py"
+        "scripts/veff.py"
 
 del OUTPUT_BASEDIR
 del RAW_VCF_PQ_PATTERN

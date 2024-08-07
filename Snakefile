@@ -23,6 +23,8 @@ with open("system_config.yaml", "r") as fd:
 with open("download_urls.yaml", "r") as fd:
     download_urls = yaml.safe_load(fd)
 
+# TODO upload enformer reference; download reference rule
+
 SNAKEMAKE_DIR = os.path.abspath(os.path.dirname(workflow.snakefile))
 
 CONDA_ENV_YAML_DIR=f"{SNAKEMAKE_DIR}/envs"
@@ -82,11 +84,16 @@ vcf_input_file_names = [f for f in vcf_input_file_names if VCF_FILE_REGEX_PATTER
 
 rule all:
     input:
+        # todo change to predict
         expand(
-            f"{RESULTS_DIR}/predict/{{model_type}}/{{vcf_file}}.parquet",
+            f"{VEFF_BASEDIR}/enformer_vcf/veff.parquet/{{vcf_file}}.parquet",
             vcf_file=vcf_input_file_names,
-            model_type=config["predict_abexp_models"], 
         ),
+        # expand(
+        #     f"{RESULTS_DIR}/predict/{{model_type}}/{{vcf_file}}.parquet",
+        #     vcf_file=vcf_input_file_names,
+        #     model_type=config["predict_abexp_models"],
+        # ),
 
 
 

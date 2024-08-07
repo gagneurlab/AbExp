@@ -44,6 +44,5 @@ dl_args = dl_args | {'fasta_file': input_['fasta_path'],
                      'gtf': gtf_df}
 
 dl = TSSDataloader.from_allele_type(allele, **dl_args, )
-enformer = Enformer()
-enformer.predict(dl, batch_size=2, filepath=pathlib.Path(output[0]),
+Enformer().predict(dl, batch_size=2, filepath=pathlib.Path(output[0]),
                  num_output_bins=21)

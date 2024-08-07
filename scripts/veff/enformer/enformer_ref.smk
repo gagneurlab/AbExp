@@ -47,8 +47,8 @@ rule enformer_tissue_reference:
     input:
         rules.enformer_aggregate_reference.output[0]
     params:
-        tissue_mapper_path=ENFORMER_TISSUE_MAPPER_PKL,
-        tracks_path=ENFORMER_TRACKS_YML
+        tissue_mapper_path=config["system"]["enformer"]["tissue_mapper_pkl"],
+        tracks_path=config["system"]["enformer"]["tracks"]
     conda:
         ENFORMER_CONDA_ENV_YAML
     script:

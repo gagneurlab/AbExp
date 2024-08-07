@@ -27,7 +27,7 @@ rule enformer_predict_alternative:
         type='alternative'
     conda:
         # requires GPU on environment installation
-        f"{CONDA_ENV_YAML_DIR}/abexp-enformer.yaml"
+        ENFORMER_CONDA_ENV_YAML
     script:
         f"{ENFORMER_SCRIPTS_DIR}/predict_expression.py"
 
@@ -40,7 +40,7 @@ rule enformer_aggregate_alternative:
     input:
         rules.enformer_predict_alternative.output[0],
     conda:
-        f"{CONDA_ENV_YAML_DIR}/abexp-enformer.yaml"
+        ENFORMER_CONDA_ENV_YAML
     script:
         f"{ENFORMER_SCRIPTS_DIR}/aggregate_tracks.py"
 
@@ -56,7 +56,7 @@ rule enformer_tissue_alternative:
         tissue_mapper_path=ENFORMER_TISSUE_MAPPER_PKL,
         tracks_path=ENFORMER_TRACKS_YML
     conda:
-        f"{CONDA_ENV_YAML_DIR}/abexp-enformer.yaml"
+        ENFORMER_CONDA_ENV_YAML
     script:
         f"{ENFORMER_SCRIPTS_DIR}/tissue_expression.py"
 
@@ -72,7 +72,7 @@ rule enformer_variant_effect:
     wildcard_constraints:
         vcf_file='.*\.vcf\.gz'
     conda:
-        f"{CONDA_ENV_YAML_DIR}/abexp-enformer.yaml"
+        ENFORMER_CONDA_ENV_YAML
     script:
         f"{ENFORMER_SCRIPTS_DIR}/veff.py"
 

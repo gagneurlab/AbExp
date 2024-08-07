@@ -21,8 +21,7 @@ rule enformer_predict_reference:
     params:
         type='reference'
     conda:
-        # requires GPU on environment installation
-        f"{CONDA_ENV_YAML_DIR}/abexp-enformer.yaml"
+        ENFORMER_CONDA_ENV_YAML
     script:
         f"{ENFORMER_SCRIPTS_DIR}/predict_expression.py"
 
@@ -35,7 +34,7 @@ rule enformer_aggregate_reference:
     input:
         rules.enformer_predict_reference.output[0]
     conda:
-        f"{CONDA_ENV_YAML_DIR}/abexp-enformer.yaml"
+        ENFORMER_CONDA_ENV_YAML
     script:
         f"{ENFORMER_SCRIPTS_DIR}/aggregate_tracks.py"
 
@@ -51,7 +50,7 @@ rule enformer_tissue_reference:
         tissue_mapper_path=ENFORMER_TISSUE_MAPPER_PKL,
         tracks_path=ENFORMER_TRACKS_YML
     conda:
-        f"{CONDA_ENV_YAML_DIR}/abexp-enformer.yaml"
+        ENFORMER_CONDA_ENV_YAML
     script:
         f"{ENFORMER_SCRIPTS_DIR}/tissue_expression.py"
 

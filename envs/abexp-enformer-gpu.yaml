@@ -1,4 +1,4 @@
-name: abexp-enformer
+name: abexp-enformer-gpu
 channels:
   - conda-forge
   - bioconda
@@ -17,5 +17,6 @@ dependencies:
   - xarray>=2024.5.0
   - tensorflow-hub==0.16.1
   - tensorflow==2.16.1
+  - tensorflow-gpu==2.16.1
   - pip:
     - "git+https://github.com/gtsitsiridis/kipoi_veff_analysis.git@master"

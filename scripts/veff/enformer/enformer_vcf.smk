@@ -67,7 +67,7 @@ rule enformer_variant_effect:
         VEFF_VCF_PQ_PATTERN
     input:
         gtf_path=rules.enformer_gtf_to_parquet.output[0],
-        vcf_tissue_path=enformer_tissue_alternative.output[0],
+        vcf_tissue_path=rules.enformer_tissue_alternative.output[0],
         ref_tissue_paths=ancient(expand(enformer_tissue_reference.output[0],chromosome=CHROMOSOMES)),
     wildcard_constraints:
         vcf_file='.*\.vcf\.gz'

@@ -29,7 +29,7 @@ if config['system']['enformer']['download_reference']:
             # wget -O - '{params.url}' > '{params.working_dir}/{params.dir_name}'.tar
             cp '{params.url}' '{params.working_dir}/{params.dir_name}'.tar
             tar -xvf '{params.working_dir}/{params.dir_name}'.tar -C '{params.working_dir}'
-            mv '{params.working_dir}/{params.dir_name}/*' '{params.output}'
+            mv {params.working_dir}/{params.dir_name}/* '{params.output}'
             rm -r '{params.working_dir}'
             """
 else:

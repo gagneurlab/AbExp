@@ -119,7 +119,7 @@ enformer:
   # we only care about the central bins (close to the TSS)
   num_output_bins: 21
   tissue_mapper_pkl: "{SNAKEMAKE_DIR}/resources/enformer/tissue_mapper.pkl"
-  tracks: "{SNAKEMAKE_DIR}/resources/enformer/tracks.yaml"
+  tracks_yml: "{SNAKEMAKE_DIR}/resources/enformer/tracks.yaml"
 
 models:
   abexp_v1.0:

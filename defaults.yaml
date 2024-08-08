@@ -122,6 +122,8 @@ enformer:
   num_output_bins: 21
   tissue_mapper_pkl: "{SNAKEMAKE_DIR}/resources/enformer/tissue_mapper.pkl"
   tracks_yml: "{SNAKEMAKE_DIR}/resources/enformer/tracks.yaml"
+  # Whether to download the reference or generate them locally
+  download_reference: true
 
 models:
   abexp_v1.0:

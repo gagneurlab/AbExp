@@ -10,4 +10,4 @@ splicemap:
     psi5: 'https://zenodo.org/record/6408906/files/{tissue}_splicemap_psi5_method%3Dkn_event_filter%3Dmedian_cutoff.csv.gz?download=1'
 
 # todo: add the correct URL
-enformer_reference: "https://zenodo.org/record/4780007/files/enformer_reference.tar.gz"
+enformer_reference_tar: "/data/nasif12/home_if12/tsi/downloads/enformer_ref.tar"

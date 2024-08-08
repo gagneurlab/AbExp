@@ -9,9 +9,6 @@ RAW_VCF_PQ_PATTERN = f"{OUTPUT_BASEDIR}/raw.parquet/{{vcf_file}}.parquet"
 AGG_VCF_PQ_PATTERN = f"{OUTPUT_BASEDIR}/agg.parquet/{{vcf_file}}.parquet"
 TISSUE_VCF_PQ_PATTERN = f"{OUTPUT_BASEDIR}/tissue.parquet/{{vcf_file}}.parquet"
 VEFF_VCF_PQ_PATTERN = f"{OUTPUT_BASEDIR}/veff.parquet/{{vcf_file}}.parquet"
-CHROMOSOMES = ["chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9", "chr10", "chr11", "chr12",
-               "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21", "chr22", "chrX", "chrY"]
-
 
 rule enformer_predict_alternative:
     resources:
@@ -65,7 +62,7 @@ rule enformer_variant_effect:
     input:
         gtf_path=rules.enformer_gtf_to_parquet.output[0],
         vcf_tissue_path=rules.enformer_tissue_alternative.output[0],
-        ref_tissue_paths=ancient(expand(rules.enformer_tissue_reference.output[0],chromosome=CHROMOSOMES)),
+        ref_tissue_paths=ancient(expand(TISSUE_REF_PQ_PATTERN, chromosome=CHROMOSOMES)),
     wildcard_constraints:
         vcf_file='.*\.vcf\.gz'
     conda:
@@ -78,4 +75,3 @@ del RAW_VCF_PQ_PATTERN
 del AGG_VCF_PQ_PATTERN
 del TISSUE_VCF_PQ_PATTERN
 del VEFF_VCF_PQ_PATTERN
-del CHROMOSOMES

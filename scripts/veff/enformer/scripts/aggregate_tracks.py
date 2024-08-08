@@ -5,6 +5,7 @@ from kipoi_veff_analysis.logger import setup_logger
 input_ = snakemake.input
 output = snakemake.output
 wildcards = snakemake.wildcards
+config = snakemake.config['system']['enformer']
 
 logger = setup_logger()
-EnformerAggregator().aggregate(input_[0], output_path=output[0], num_bins=3)
+EnformerAggregator().aggregate(input_[0], output_path=output[0], num_bins=config['num_agg_central_bins'])

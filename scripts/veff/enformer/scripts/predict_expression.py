@@ -11,6 +11,7 @@ input_ = snakemake.input
 output = snakemake.output
 wildcards = snakemake.wildcards
 params = snakemake.params
+config = snakemake.config['system']['enformer']
 
 logger = setup_logger()
 
@@ -30,19 +31,19 @@ elif params.type == 'alternative':
     logger.info('Using VCF file: %s', vcf_file)
 
     dl_args.update({'vcf_file': vcf_file,
-                    'variant_upstream_tss': 50,
-                    'variant_downstream_tss': 200,
+                    'variant_upstream_tss': config['variant_upstream_tss'],
+                    'variant_downstream_tss': config['variant_downstream_tss'],
                     'vcf_lazy': True})
 else:
     raise ValueError(f'invalid allele type {params["type"]}')
 
 dl_args = dl_args | {'fasta_file': input_['fasta_path'],
-                     'shift': 43,
+                     'shift': config['shift'],
                      'protein_coding_only': True,
                      'canonical_only': True,
                      'size': None,
                      'gtf': gtf_df}
 
 dl = TSSDataloader.from_allele_type(allele, **dl_args, )
-Enformer().predict(dl, batch_size=2, filepath=pathlib.Path(output[0]),
-                 num_output_bins=21)
+Enformer().predict(dl, batch_size=config['batch_size'], filepath=pathlib.Path(output[0]),
+                 num_output_bins=config['num_output_bins'])

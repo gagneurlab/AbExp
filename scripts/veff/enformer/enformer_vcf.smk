@@ -52,9 +52,6 @@ rule enformer_tissue_alternative:
         temp(TISSUE_VCF_PQ_PATTERN)
     input:
         rules.enformer_aggregate_alternative.output[0]
-    params:
-        tissue_mapper_path=config["system"]["enformer"]["tissue_mapper_pkl"],
-        tracks_path=config["system"]["enformer"]["tracks"]
     conda:
         ENFORMER_CONDA_ENV_YAML
     script:

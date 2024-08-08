@@ -107,6 +107,17 @@ absplice:
   spliceai_rocksdb_chromosomes: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', 'X', 'Y']
 
 enformer:
+  batch_size: 2
+  isoform_aggregation_mode: canonical
+  variant_upstream_tss: 50
+  variant_downstream_tss: 200
+  # How many central bins to average over?
+  num_agg_central_bins: 3
+  # Enformer will be run 3 times, once centered on the TSS, and +-<shift> from the TSS
+  shift: 43
+  # How many bins to save from each run. A smaller number will save space, since
+  # we only care about the central bins (close to the TSS)
+  num_output_bins: 21
   tissue_mapper_pkl: "{SNAKEMAKE_DIR}/resources/enformer/tissue_mapper.pkl"
   tracks: "{SNAKEMAKE_DIR}/resources/enformer/tracks.yaml"
 

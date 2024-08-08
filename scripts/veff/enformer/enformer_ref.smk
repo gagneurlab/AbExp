@@ -46,9 +46,6 @@ rule enformer_tissue_reference:
         TISSUE_REF_PQ_PATTERN
     input:
         rules.enformer_aggregate_reference.output[0]
-    params:
-        tissue_mapper_path=config["system"]["enformer"]["tissue_mapper_pkl"],
-        tracks_path=config["system"]["enformer"]["tracks"]
     conda:
         ENFORMER_CONDA_ENV_YAML
     script:

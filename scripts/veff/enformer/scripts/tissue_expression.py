@@ -6,8 +6,9 @@ params = snakemake.params
 input_ = snakemake.input
 output = snakemake.output
 wildcards = snakemake.wildcards
+config = snakemake.config['system']['enformer']
 
 logger = setup_logger()
 
-EnformerTissueMapper(tracks_path=params['tracks_path'], tissue_mapper_path=params['tissue_mapper_path']). \
+EnformerTissueMapper(tracks_path=config['tracks_path'], tissue_mapper_path=config['tissue_mapper_path']). \
     predict(input_[0], output_path=output[0])

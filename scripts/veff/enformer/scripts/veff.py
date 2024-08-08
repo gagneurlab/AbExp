@@ -7,6 +7,7 @@ input_ = snakemake.input
 output = snakemake.output
 wildcards = snakemake.wildcards
 params = snakemake.params
+config = snakemake.config['system']['enformer']
 
 logger = setup_logger()
 
@@ -16,7 +17,7 @@ logger.info(params)
 gtf_df = pd.read_parquet(input_['gtf_path'])
 veff = EnformerVeff(isoforms_path=None, gtf=gtf_df)
 veff.run(input_['ref_tissue_paths'], input_['vcf_tissue_path'], output[0],
-         aggregation_mode='canonical',
+         aggregation_mode=config['isoform_aggregation_mode'],
          upstream_tss=None,
          downstream_tss=None)
 

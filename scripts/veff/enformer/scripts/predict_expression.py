@@ -40,7 +40,7 @@ else:
 dl_args = dl_args | {'fasta_file': input_['fasta_path'],
                      'shift': config['shift'],
                      'protein_coding_only': True,
-                     'canonical_only': True,
+                     'canonical_only': config['canonical_only'],
                      'size': None,
                      'gtf': gtf_df}
 

@@ -111,6 +111,8 @@ enformer:
   isoform_aggregation_mode: canonical
   variant_upstream_tss: 50
   variant_downstream_tss: 200
+  # Whether to calculate the variant effect only for the canonical transcripts
+  canonical_only: true
   # How many central bins to average over?
   num_agg_central_bins: 3
   # Enformer will be run 3 times, once centered on the TSS, and +-<shift> from the TSS

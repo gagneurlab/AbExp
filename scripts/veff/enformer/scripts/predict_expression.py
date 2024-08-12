@@ -37,8 +37,9 @@ elif params.type == 'alternative':
 else:
     raise ValueError(f'invalid allele type {params["type"]}')
 
+shift = config['shift']
 dl_args = dl_args | {'fasta_file': input_['fasta_path'],
-                     'shift': config['shift'],
+                     'shifts': [0] if shift == 0 else [-shift, 0, shift],
                      'protein_coding_only': True,
                      'canonical_only': config['canonical_only'],
                      'size': None,

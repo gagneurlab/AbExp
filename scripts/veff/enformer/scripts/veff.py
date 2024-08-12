@@ -1,4 +1,4 @@
-from kipoi_veff_analysis.enformer import EnformerVeff
+from kipoi_veff_analysis.model.enformer import EnformerVeff
 from kipoi_veff_analysis.logger import setup_logger
 import pandas as pd
 

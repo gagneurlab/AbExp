@@ -1,6 +1,6 @@
 import pathlib
 
-from kipoi_veff_analysis.enformer import Enformer, EnformerAggregator
+from kipoi_veff_analysis.model.enformer import Enformer, EnformerAggregator
 from kipoi_veff_analysis.dataloader import TSSDataloader
 from kipoi_veff_analysis.logger import setup_logger
 from kipoi_veff_analysis import constants

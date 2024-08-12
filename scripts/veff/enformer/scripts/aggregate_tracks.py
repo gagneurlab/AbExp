@@ -1,4 +1,4 @@
-from kipoi_veff_analysis.enformer import EnformerAggregator
+from kipoi_veff_analysis.model.enformer import EnformerAggregator
 from kipoi_veff_analysis.logger import setup_logger
 
 # SNAKEMAKE SCRIPT

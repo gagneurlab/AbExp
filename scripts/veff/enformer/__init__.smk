@@ -20,7 +20,6 @@ CHROMOSOMES = ["chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "
                "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21", "chr22", "chrX", "chrY"]
 TISSUE_REF_PQ_PATTERN = f"{VEFF_BASEDIR}/enformer_ref/tissue.parquet/chrom={{chromosome}}/data.parquet"
 
-include: f"{SNAKEFILE_DIR}/enformer_common.smk"
 include: f"{SNAKEFILE_DIR}/enformer_ref.smk"
 include: f"{SNAKEFILE_DIR}/enformer_vcf.smk"
 

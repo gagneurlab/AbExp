@@ -41,7 +41,7 @@ else:
         output:
             temp(RAW_REF_PQ_PATTERN)
         input:
-            gtf_path=rules.enformer_gtf_to_parquet.output[0],
+            gtf_path=rules.gtf_transcripts.output[0],
             fasta_path=FASTA_FILE
         params:
             type='reference'

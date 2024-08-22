@@ -17,7 +17,7 @@ rule enformer_predict_alternative:
     output:
         temp(RAW_VCF_PQ_PATTERN)
     input:
-        gtf_path=rules.enformer_gtf_to_parquet.output[0],
+        gtf_path=rules.gtf_transcripts.output[0],
         fasta_path=FASTA_FILE,
         vcf_path=STRIPPED_VCF_FILE_PATTERN
     params:
@@ -59,7 +59,7 @@ rule enformer_variant_effect:
     output:
         VEFF_VCF_PQ_PATTERN
     input:
-        gtf_path=rules.enformer_gtf_to_parquet.output[0],
+        gtf_path=rules.gtf_transcripts.output[0],
         vcf_tissue_path=rules.enformer_tissue_alternative.output[0],
         ref_tissue_paths=ancient(expand(TISSUE_REF_PQ_PATTERN, chromosome=CHROMOSOMES)),
     wildcard_constraints:

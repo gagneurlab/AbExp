@@ -22,4 +22,4 @@ gtf_file: "example/chr22.gencode.v34.annotation.gtf.gz"
 # mapping of chromosome names. By default, maps them to "chr" prefix.
 chrom_alias_tsv: "{SNAKEMAKE_DIR}/resources/chromAlias.tsv"
 
-use_enformer_gpu: False
+use_enformer_gpu: false

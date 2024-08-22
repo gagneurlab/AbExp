@@ -40,7 +40,7 @@ else:
 shift = config['shift']
 dl_args = dl_args | {'fasta_file': input_['fasta_path'],
                      'shifts': [0] if shift == 0 else [-shift, 0, shift],
-                     'protein_coding_only': True,
+                     'protein_coding_only': config['protein_coding_only'],
                      'canonical_only': config['canonical_only'],
                      'size': None,
                      'gtf': gtf_df}

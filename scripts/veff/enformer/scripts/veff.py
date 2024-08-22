@@ -1,5 +1,5 @@
-from kipoi_veff_analysis.model.enformer import EnformerVeff
-from kipoi_veff_analysis.logger import setup_logger
+from kipoi_enformer.enformer import EnformerVeff
+from kipoi_enformer.logger import setup_logger
 import pandas as pd
 
 # SNAKEMAKE SCRIPT

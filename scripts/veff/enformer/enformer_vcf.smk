@@ -23,7 +23,6 @@ rule enformer_predict_alternative:
     params:
         type='alternative'
     conda:
-        # requires GPU on environment installation
         ENFORMER_CONDA_ENV_YAML
     script:
         "scripts/predict_expression.py"

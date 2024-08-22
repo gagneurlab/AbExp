@@ -1,5 +1,5 @@
-from kipoi_veff_analysis.model.enformer import EnformerTissueMapper
-from kipoi_veff_analysis.logger import setup_logger
+from kipoi_enformer.enformer import EnformerTissueMapper
+from kipoi_enformer.logger import setup_logger
 
 # SNAKEMAKE SCRIPT
 params = snakemake.params

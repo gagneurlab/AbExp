@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "abexp-utils"
+version = "0.0.1"
+description = "Utility functions for AbExp"
+authors = [
+    { name = "Florian Hölzlwimmer", email = "git.ich@frhoelzlwimmer.de" },
+    { name = "George Tsitsiridis", email = "gtsitsiridis@gmail.com" },
+]
+readme = "README.md"
+requires-python = ">=3.6"
+license = { text = "MIT licence" }
+keywords = ["model zoo", "deep learning",
+    "computational biology", "bioinformatics", "genomics"]
+dependencies = [
+    "pyarrow",
+    "numpy",
+    "pandas",
+    "scikit-learn",
+    "joblib",
+]
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "pytest-xdist",
+    "cython"
+]
+spark = [
+    "pyspark=3.2",
+]
+polars = [
+    "polars~=0.20.4",
+]

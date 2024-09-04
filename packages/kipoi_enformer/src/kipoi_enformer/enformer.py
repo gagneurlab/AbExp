@@ -404,7 +404,7 @@ class EnformerVeff:
               seq_start_col, seq_end_col, 'tissue']
 
         veff_ldf = alt_ldf.join(ref_ldf, how='left', on=on)
-        veff_ldf = veff_ldf.select(['seq_start', 'seq_end', 'tss', 'chrom', 'strand',
+        veff_ldf = veff_ldf.select([seq_start_col, seq_end_col, 'tss', 'chrom', 'strand',
                                     'gene_id', 'transcript_id', 'transcript_start', 'transcript_end',
                                     'variant_start', 'variant_end', 'ref', 'alt', 'tissue',
                                     'ref_score', 'alt_score'])

@@ -16,6 +16,7 @@ from scipy.special import logsumexp
 import xarray as xr
 from sklearn import linear_model, pipeline, preprocessing
 import pandas as pd
+import sklearn as sk
 
 __all__ = ['Enformer', 'EnformerAggregator', 'EnformerTissueMapper', 'EnformerVeff']
 
@@ -280,7 +281,7 @@ class EnformerTissueMapper:
             y = subtissue_xrds['tpm'].values
             y = np.log10(1 + y)
             lm_pipe = pipeline.Pipeline([('scaler', preprocessing.StandardScaler()),
-                                         ('model', model)])
+                                         ('model', sk.clone(model))])
             lm_pipe = lm_pipe.fit(X, y)
             logger.info('Training score: %f' % lm_pipe.score(X, y))
             model_dict[subtissue] = lm_pipe

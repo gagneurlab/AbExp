@@ -315,7 +315,7 @@ class EnformerTissueMapper:
             if len(scores) == 0:
                 res = []
             else:
-                res = lm.predict(scores)
+                res = lm.predict(scores).flatten()
             tissue_df = tissue_df.with_columns(pl.Series(name='score', values=res),
                                                pl.lit(tissue).alias('tissue'))
             dfs.append(tissue_df)

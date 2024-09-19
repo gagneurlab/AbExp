@@ -468,8 +468,8 @@ class EnformerVeff:
                     alias('alt_score'),
                 )
                 veff_ldf = veff_ldf.with_columns(
-                    ((pl.col("alt_score") - pl.col("ref_score")) / np.log10(2)).alias('log2fc')). \
-                    fill_nan(0)
+                    ((pl.col("alt_score") - pl.col("ref_score")) / np.log10(2)).alias('log2fc').fill_nan(0))
+
             elif aggregation_mode == 'weighted_sum':
                 veff_ldf = veff_ldf.with_columns(
                     (pl.col('isoform_proportion') * (pl.col("alt_score") - pl.col("ref_score")) / np.log10(2)).alias(

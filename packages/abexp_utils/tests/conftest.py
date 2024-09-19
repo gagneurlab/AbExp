@@ -1,11 +1,13 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""
-    Dummy conftest.py for rep.
+import pytest
+from pathlib import Path
 
-    If you don't know what this is for, just leave it empty.
-    Read more about conftest.py under:
-    https://pytest.org/latest/plugins.html
-"""
 
-# import pytest
+@pytest.fixture(autouse=True)
+def change_test_dir(request, monkeypatch):
+    monkeypatch.chdir(Path(request.fspath.dirname).parent.parent.parent)
+
+@pytest.fixture
+def output_dir():
+    output_dir = Path('output/test/')
+    output_dir.mkdir(parents=True, exist_ok=True)
+    return output_dir

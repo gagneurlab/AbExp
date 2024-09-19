@@ -30,7 +30,7 @@ dev = [
     "cython"
 ]
 spark = [
-    "pyspark=3.2",
+    "pyspark==3.2",
 ]
 polars = [
     "polars~=0.20.4",

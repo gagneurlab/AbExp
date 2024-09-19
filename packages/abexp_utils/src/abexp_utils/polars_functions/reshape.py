@@ -1,14 +1,8 @@
-from typing import Dict, Union, List, Tuple, Iterable
-import re
-
-from itertools import chain
-
+from typing import Dict, Union
 import logging
+import polars as pl
 
 log = logging.getLogger(__name__)
-
-import polars as pl
-import polars.datatypes as t
 
 
 def zip_explode_cols(
@@ -32,89 +26,15 @@ def zip_explode_cols(
     """
     if rename_fields is None:
         rename_fields = {}
-    
+
     df = df.explode(cols)
-    df = df.with_column(pl.struct([
+    df = df.with_columns(pl.struct([
         pl.col(c).alias(rename_fields[c]) if c in rename_fields else pl.col(c)
         for c in cols
     ]).alias(result_name))
     df = df.drop(cols)
 
     return df
-
-
-def normalise_name(raw: str):
-    """
-    Returns a url-encoded version of a raw string
-    """
-    from urllib.parse import quote, unquote
-
-    return quote(raw.strip())
-    # return re.sub('[^A-Za-z0-9_]+', '.', raw.strip())
-
-    
-def denormalise_name(raw: str):
-    """
-    Returns a url-encoded version of a raw string
-    """
-    from urllib.parse import quote, unquote
-
-    return unquote(raw.strip())
-
-
-def __rename_nested_field__(in_field: t.DataType, fieldname_normaliser):
-    if isinstance(in_field, t.List):
-        inner_type = __rename_nested_field__(in_field.inner, fieldname_normaliser)
-        dtype = t.List(inner_type)
-    elif isinstance(in_field, t.Struct):
-        fields = {}
-        for field in in_field.fields:
-            fields[fieldname_normaliser(field.name)] = __rename_nested_field__(field.dtype, fieldname_normaliser)
-        dtype = t.Struct(fields)
-    else:
-        dtype = in_field
-    return dtype
-
-
-def normalise_fields_names(df: Union[pl.DataFrame, pl.LazyFrame], fieldname_normaliser=normalise_name):
-    """
-    Normalize all field names s.t. there are no special characters in the DataFrame schema.
-    Uses URL-encoding of special characters by default.
-    """
-    return df.select([
-        pl.col(c).cast(__rename_nested_field__(c_dtype, fieldname_normaliser))
-            .alias(fieldname_normaliser(c)) for c, c_dtype in df.schema.items()
-    ])
-
-# def flatten(df: pyspark.sql.DataFrame, fieldname_normaliser=normalise_name):
-#     """
-#     Flatten all fields in dataframe s.t. it can be natively loaded without nested-type support (e.g. Pandas)
-#     """
-#     cols = []
-#     for child in __get_fields_info__(df.schema):
-#         if len(child) > 2:
-#             ex = "x.{}".format(child[-1])
-#             for seg in child[-2:0:-1]:
-#                 if seg != '``':
-#                     ex = "transform(x.{outer}, x -> {inner})".format(outer=seg, inner=ex)
-#             ex = "transform({outer}, x -> {inner})".format(outer=child[0], inner=ex)
-#         else:
-#             ex = ".".join(child)
-#         cols.append(f.expr(ex).alias(fieldname_normaliser("_".join(child).replace('`', ''))))
-#     return df.select(cols)
-
-
-# def rename_values(col, map_dict: dict, default=None):
-#     """
-#     Renames all values in a column according to `map_dict<old, new>`
-#     """
-#     if not isinstance(col, pyspark.sql.Column): # Allows either column name string or column instance to be passed
-#         col = pl.col(col)
-#     mapping_expr = pl.create_map([f.lit(x) for x in chain(*map_dict.items())])
-#     if default is None:
-#         return mapping_expr.getItem(col)
-#     else:
-#         return pl.coalesce(mapping_expr.getItem(col), default)
 
 
 def _recursive_select(fields, c=None, prefix: str = "", sep="."):
@@ -146,7 +66,7 @@ def _recursive_select(fields, c=None, prefix: str = "", sep="."):
             yield alias, pl.col(fields)
         else:
             # we want to select a single column from the 'fields'-struct
-            alias=f"{prefix}{sep}{fields}"
+            alias = f"{prefix}{sep}{fields}"
             yield alias, c.struct.field(fields).alias(alias)
     elif isinstance(fields, dict):
         # we want to select multiple columns from the 'fields'-struct,
@@ -194,4 +114,3 @@ def select_nested_fields(fields, sep="."):
     :param sep: separator of prefix and column alias
     """
     return _recursive_select(fields, sep=sep)
-

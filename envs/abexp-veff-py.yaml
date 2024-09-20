@@ -25,4 +25,4 @@ dependencies:
 - pip
 - pip:
   - snakemk_util
-  - git+https://github.com/gagneurlab/rep.git
+  - "git+https://github.com/gagneurlab/AbExp-utils.git@master#egg=abexp-utils&subdirectory=packages/abexp_utils"

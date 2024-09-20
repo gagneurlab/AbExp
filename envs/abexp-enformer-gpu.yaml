@@ -19,4 +19,4 @@ dependencies:
   - tensorflow==2.16.1
   - tensorflow-gpu==2.16.1
   - pip:
-    - "git+https://github.com/gtsitsiridis/kipoi_veff_analysis.git@aparent2#egg=kipoi-enformer&subdirectory=pkgs/kipoi_enformer"
+    - "git+https://github.com/gtsitsiridis/AbExp-utils.git@master#egg=kipoi-enformer&subdirectory=packages/kipoi_enformer"

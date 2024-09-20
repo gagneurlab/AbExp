@@ -24,11 +24,13 @@ if config['system']['enformer']['download_reference']:
         shell:
             """
             set -x
+            filename=$(basename '{params.url}')
+            filename_no_ext="${{filename%.tar}}"
             mkdir -p '{params.working_dir}'
-            wget -O - '{params.url}' > '{params.working_dir}/{params.dir_name}'.tar.gz
-            tar -xzvf '{params.working_dir}/{params.dir_name}'.tar.gz -C '{params.working_dir}'
-            rm -r '{params.output}'
-            mv {params.working_dir}/{params.dir_name} '{params.output}'
+            wget -O - '{params.url}' > '{params.working_dir}'/"${{filename}}"
+            tar -xvf '{params.working_dir}'/"${{filename}}" -C '{params.working_dir}'
+            rm -r '{params.output}' || true
+            mv '{params.working_dir}'/"${{filename_no_ext}}" '{params.output}'
             rm -r '{params.working_dir}'
             """
 else:

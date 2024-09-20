@@ -25,10 +25,8 @@ if config['system']['enformer']['download_reference']:
             """
             set -x
             mkdir -p '{params.working_dir}'
-            # todo replace cp with wget to download from url
-            # wget -O - '{params.url}' > '{params.working_dir}/{params.dir_name}'.tar
-            cp '{params.url}' '{params.working_dir}/{params.dir_name}'.tar
-            tar -xvf '{params.working_dir}/{params.dir_name}'.tar -C '{params.working_dir}'
+            wget -O - '{params.url}' > '{params.working_dir}/{params.dir_name}'.tar.gz
+            tar -xzvf '{params.working_dir}/{params.dir_name}'.tar.gz -C '{params.working_dir}'
             rm -r '{params.output}'
             mv {params.working_dir}/{params.dir_name} '{params.output}'
             rm -r '{params.working_dir}'

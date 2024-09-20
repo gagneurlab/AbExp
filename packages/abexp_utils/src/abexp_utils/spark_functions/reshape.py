@@ -1,15 +1,12 @@
-from typing import Dict, Union, List, Tuple, Iterable
-import re
-
+from typing import Dict, Iterable
 from itertools import chain
-
 import logging
-
-log = logging.getLogger(__name__)
-
 import pyspark.sql.types as t
 import pyspark.sql.functions as f
 import pyspark
+from abexp_utils.common import url_encode
+
+log = logging.getLogger(__name__)
 
 
 def displayHead(df: pyspark.sql.DataFrame, nrows: int = 5):
@@ -41,7 +38,7 @@ def zip_explode_cols(
         rename_fields: dictionary mapping column names to new struct field names.
             Used to rename columns in the newly created struct.
 
-    Returns: `df.withColumn(result_name, zip(explode(cols)))`
+    Returns: `df.withColumn(result_name, zip(explode(cols))).drop(*cols)`
 
     """
     df = df.withColumn(result_name, f.explode(f.arrays_zip(*cols)))
@@ -59,14 +56,9 @@ def zip_explode_cols(
         ])
 
         df = df.withColumn(result_name, f.col(result_name).cast(new_schema))
+        # drop all columns that were zipped
 
-        # # old method using withColumn and a new struct; breaks with PySpark 3.0
-        # df = df.withColumn(target_struct, f.struct(*[
-        #     f.col(target_struct + "." + actualName).alias(targetName)
-        #     for targetName, actualName in zip(target_colnames, df.schema[target_struct].dataType.fieldNames())
-        # ]))
-
-    return df
+    return df.drop(*cols)
 
 
 def __rename_nested_field__(in_field: t.DataType, fieldname_normaliser):
@@ -79,24 +71,6 @@ def __rename_nested_field__(in_field: t.DataType, fieldname_normaliser):
     else:
         dtype = in_field
     return dtype
-
-
-def normalise_name(raw: str):
-    """
-    Returns a url-encoded version of a raw string
-    """
-    from urllib.parse import quote, unquote
-
-    return quote(raw.strip())
-    # return re.sub('[^A-Za-z0-9_]+', '.', raw.strip())
-
-def denormalise_name(raw: str):
-    """
-    Returns a url-encoded version of a raw string
-    """
-    from urllib.parse import quote, unquote
-
-    return unquote(raw.strip())
 
 
 def __get_fields_info__(dtype: t.DataType, name: str = ""):
@@ -117,18 +91,18 @@ def __get_fields_info__(dtype: t.DataType, name: str = ""):
     return ret
 
 
-def normalise_fields_names(df: pyspark.sql.DataFrame, fieldname_normaliser=normalise_name):
+def normalise_fields_names(df: pyspark.sql.DataFrame, fieldname_normaliser=url_encode):
     """
     Normalize all field names s.t. there are no special characters in the DataFrame schema.
     Uses URL-encoding of special characters by default.
     """
     return df.select([
         f.col("`{}`".format(field.name)).cast(__rename_nested_field__(field.dataType, fieldname_normaliser))
-            .alias(fieldname_normaliser(field.name)) for field in df.schema.fields
+        .alias(fieldname_normaliser(field.name)) for field in df.schema.fields
     ])
 
 
-def flatten(df: pyspark.sql.DataFrame, fieldname_normaliser=normalise_name):
+def flatten(df: pyspark.sql.DataFrame, fieldname_normaliser=url_encode):
     """
     Flatten all fields in Spark dataframe s.t. it can be natively loaded without nested-type support (e.g. Pandas)
     """
@@ -149,12 +123,13 @@ def flatten(df: pyspark.sql.DataFrame, fieldname_normaliser=normalise_name):
 def rename_values(col, map_dict: dict, default=None):
     """
     Renames all values in a column according to `map_dict<old, new>`
+    Warning: If a name is not found in `map_dict`, the value will be set to `None` by default.
     """
-    if not isinstance(col, pyspark.sql.Column): # Allows either column name string or column instance to be passed
+    if not isinstance(col, pyspark.sql.Column):  # Allows either column name string or column instance to be passed
         col = f.col(col)
     mapping_expr = f.create_map([f.lit(x) for x in chain(*map_dict.items())])
     if default is None:
-        return  mapping_expr.getItem(col)
+        return mapping_expr.getItem(col)
     else:
         return f.coalesce(mapping_expr.getItem(col), default)
 
@@ -184,11 +159,11 @@ def _recursive_select(fields, c=None, prefix: str = "", sep="."):
     if isinstance(fields, str):
         if c is None:
             # 'fields' is leaf column
-            alias=fields
+            alias = fields
             yield alias, f.col(fields)
         else:
             # we want to select a single column from the 'fields'-struct
-            alias=f"{prefix}{sep}{fields}"
+            alias = f"{prefix}{sep}{fields}"
             yield alias, c[fields].alias(alias)
     elif isinstance(fields, dict):
         # we want to select multiple columns from the 'fields'-struct,
@@ -239,11 +214,11 @@ def select_nested_fields(fields, sep="."):
 
 
 def melt(
-    df: pyspark.sql.DataFrame,
-    id_vars: Iterable[str],
-    value_vars: Iterable[str],
-    var_name: str = "variable",
-    value_name: str = "value"
+        df: pyspark.sql.DataFrame,
+        id_vars: Iterable[str],
+        value_vars: Iterable[str],
+        var_name: str = "variable",
+        value_name: str = "value"
 ) -> pyspark.sql.DataFrame:
     """
     Convert :class:`DataFrame` from wide to long format.
@@ -259,7 +234,7 @@ def melt(
     # Create array<struct<variable: str, value: ...>>
     _vars_and_vals = f.array(*(
         f.struct(
-            f.lit(c).alias(var_name), 
+            f.lit(c).alias(var_name),
             f.col(c).alias(value_name)
         ) for c in value_vars
     ))
@@ -271,5 +246,3 @@ def melt(
         f.col("_vars_and_vals")[x].alias(x) for x in [var_name, value_name]
     ]
     return _tmp.select(*cols)
-
-

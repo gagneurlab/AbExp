@@ -133,9 +133,6 @@ def test_join_featuresets():
     # Define Index Columns
     index_cols = ["id"]
     fill_values = {'feature.df2@data2.nested.field4': 0}
-    broadcast_columns = {
-        "broadcast": pl.DataFrame({"test": [1, 2]})
-    }
 
     # Define Expected Output
     expected_df = pl.DataFrame({
@@ -149,8 +146,7 @@ def test_join_featuresets():
     # Apply Function
     dataframes = {"df1": df1, "df2": df2}
     result_df = pl_funcs.join_featuresets(dataframes, variables, index_cols,
-                                          fill_values=fill_values, broadcast_columns=broadcast_columns,
-                                          ignore_missing_columns=False)
+                                          fill_values=fill_values, ignore_missing_columns=False)
 
     # Assert Equality
     assert result_df.frame_equal(expected_df), f"Expected:\n{expected_df}\nGot:\n{result_df}"

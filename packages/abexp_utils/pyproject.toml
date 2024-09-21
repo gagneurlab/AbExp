@@ -35,3 +35,7 @@ spark = [
 polars = [
     "polars>=0.20.4",
 ]
+all = [
+    "pyspark>=3.4",
+    "polars>=0.20.4",
+]

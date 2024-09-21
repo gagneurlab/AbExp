@@ -25,4 +25,4 @@ dependencies:
 - pip
 - pip:
   - snakemk_util
-  - "git+https://github.com/gagneurlab/AbExp-utils.git@master#egg=abexp-utils&subdirectory=packages/abexp_utils"
+  - "abexp-utils[polars] @ git+https://github.com/gagneurlab/AbExp-utils.git#subdirectory=packages/abexp_utils"

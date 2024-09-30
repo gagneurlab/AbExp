@@ -10,7 +10,7 @@ dependencies:
   - pandas>=2.2.1
   - pyarrow>=16.1.0
   - pyranges>=0.0.129
-  - polars>=0.20.19
+  - polars~=1.0
   - scikit-learn>=1.4.1.post1
   - lightgbm>=4.3.0
   - zarr>=2.15.0

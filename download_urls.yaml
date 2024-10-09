@@ -1,5 +1,5 @@
-isoform_proportions_tsv: "https://zenodo.org/records/8427312/files/gtex_v8_isoform_proportions.tsv?download=1"
-expected_expression_tsv: "https://zenodo.org/records/8427312/files/gtex_v8_expected_expression.tsv?download=1"
+isoform_proportions_tsv: "https://zenodo.org/records/13895620/files/gtex_v8_isoform_proportions.tsv?download=1"
+expected_expression_tsv: "https://zenodo.org/records/13895620/files/gtex_v8_expected_expression.tsv?download=1"
 
 splicemap:
   hg19:

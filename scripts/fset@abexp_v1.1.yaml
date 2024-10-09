@@ -1,0 +1,37 @@
+---
+features:
+  vep: "{params.veff_dir}/tissue_specific_vep.py/veff.parquet/{{vcf_file}}.parquet"
+  splice_ensemble: "{params.veff_dir}/absplice.py/veff.parquet/{{vcf_file}}.parquet"
+  expected_expr: "{params.gtex_expected_expr}"
+
+variables:
+  "vep":
+  - "features":
+      - "3_prime_UTR_variant.proportion"
+      - "5_prime_UTR_variant.proportion"
+      - "LoF_HC.proportion" # 75
+      - "NMD_escaping_variant.proportion"
+      - "NMD_transcript_variant.proportion"
+      - "cadd_raw.max" # 160
+      - "coding_sequence_variant.proportion"
+      - "frameshift_variant.proportion"
+      - "inframe_deletion.proportion"
+      - "inframe_insertion.proportion"
+      - "missense_variant.proportion"
+      - "splice_acceptor_variant.proportion"
+      - "splice_donor_variant.proportion"
+      - "splice_region_variant.proportion"
+      - "start_lost.proportion"
+      - "stop_gained.proportion"
+      - "stop_lost.proportion"
+      - "transcript_ablation.proportion"
+  "splice_ensemble":
+  - "AbSplice"
+  - "MMSplice_SpliceMap_Psi_ref"
+  "expected_expr":
+  - "expression_dispersion"
+
+required_features:
+- 'feature.expected_expr@expression_dispersion'
+
+fill_values:

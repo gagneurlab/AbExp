@@ -114,6 +114,7 @@ slurm*out
 
 # log files
 logs/**
+logs
 
 # vim swap files
 **.swp

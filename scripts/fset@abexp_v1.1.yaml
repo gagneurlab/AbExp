@@ -24,6 +24,11 @@ variables:
       - "start_lost.proportion"
       - "stop_gained.proportion"
       - "stop_lost.proportion"
+      - "feature_elongation.proportion"
+      - "transcript_amplification.proportion"
+      - "regulatory_region_amplification.proportion"
+      - "TFBS_amplification.proportion"
+      - "TF_binding_site_variant.proportion"
       - "transcript_ablation.proportion"
   "splice_ensemble":
   - "AbSplice"

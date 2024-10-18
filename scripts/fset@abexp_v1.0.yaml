@@ -3,7 +3,6 @@ features:
   vep: "{params.veff_dir}/tissue_specific_vep.py/veff.parquet/{{vcf_file}}.parquet"
   splice_ensemble: "{params.veff_dir}/absplice.py/veff.parquet/{{vcf_file}}.parquet"
   expected_expr: "{params.gtex_expected_expr}"
-  enformer: "{params.veff_dir}/enformer_vcf/veff.parquet/{{vcf_file}}.parquet"
 
 variables:
   "vep":
@@ -34,8 +33,6 @@ variables:
   - "SpliceAI"
   "expected_expr":
   - "expression_dispersion"
-  "enformer":
-  - "Enformer"
 
 
 required_features:

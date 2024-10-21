@@ -84,7 +84,7 @@ rule all:
         expand(
             f"{RESULTS_DIR}/predict/{{model_type}}/{{vcf_file}}.parquet",
             vcf_file=vcf_input_file_names,
-            model_type=config["predict_abexp_models"], 
+            model_type=config["predict_abexp_models"],
         ),
 
 

@@ -1,0 +1,21 @@
+name: abexp-enformer
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python>=3.11
+  - attrs<=21.4.0 # because of kipoi
+  - cyvcf2>=0.30.28
+  - numpy>=1.26.4
+  - pandas>=2.2.1
+  - pyarrow>=16.1.0
+  - pyranges>=0.0.129
+  - polars~=1.5
+  - scikit-learn>=1.4.1.post1
+  - lightgbm>=4.3.0
+  - zarr>=2.15.0
+  - xarray>=2024.5.0
+  - tensorflow-hub==0.16.1
+  - tensorflow==2.16.1
+  - pip:
+    - "kipoi-enformer @ git+https://github.com/gagneurlab/AbExp-utils.git#subdirectory=packages/kipoi_enformer"

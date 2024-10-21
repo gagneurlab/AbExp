@@ -1,4 +1,4 @@
-classifier: &id002 !!python/object:rep.models.wrappers.AbExpBinaryClassifier
+classifier: &id002 !!python/object:abexp_utils.models.wrappers.AbExpBinaryClassifier
   model: !!python/object:sklearn.linear_model._logistic.LogisticRegression
     C: 1.0
     _sklearn_version: 1.0.2

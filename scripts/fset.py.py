@@ -31,7 +31,7 @@ import numpy as np
 import polars as pl
 import polars.datatypes as t
 
-import rep.polars_functions as plf
+import abexp_utils.polars_functions as plf
 
 # %%
 snakefile_path = os.getcwd() + "/../Snakefile"

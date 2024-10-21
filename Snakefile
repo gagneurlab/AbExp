@@ -10,19 +10,18 @@ import re
 include: "snakefile_utils.smk"
 
 workdir: "./"
-configfile: "config.yaml"
 
 SNAKEMAKE_DIR = os.path.abspath(os.path.dirname(workflow.snakefile))
 
 with open(SNAKEMAKE_DIR + "/defaults.yaml", "r") as fd:
     config["system"] = yaml.safe_load(fd)
-with open("system_config.yaml", "r") as fd:
+with open(SNAKEMAKE_DIR + "/system_config.yaml", "r") as fd:
     system_config = yaml.safe_load(fd)
     if system_config is None:
         system_config = {}
     config["system"] = deep_update(config["system"], system_config)
 
-with open("download_urls.yaml", "r") as fd:
+with open(SNAKEMAKE_DIR + "/download_urls.yaml", "r") as fd:
     download_urls = yaml.safe_load(fd)
 
 CONDA_ENV_YAML_DIR=f"{SNAKEMAKE_DIR}/envs"
@@ -76,7 +75,7 @@ CHROM_ALIAS_WSV=RESULTS_DIR + "/chrom_alias.wsv"
 CHROM_TARGETS_FILE=RESULTS_DIR + "/chrom_targets.txt"
 
 
-vcf_input_file_names = glob_wildcards(VCF_INPUT_FILE_PATTERN)._asdict()["vcf_file"]
+vcf_input_file_names = glob_wildcards(VCF_INPUT_FILE_PATTERN, followlinks=True)._asdict()["vcf_file"]
 vcf_input_file_names = [f for f in vcf_input_file_names if VCF_FILE_REGEX_PATTERN.match(f)]
 # eprint(vcf_input_file_names)
 

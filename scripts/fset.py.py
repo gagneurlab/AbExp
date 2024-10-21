@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.14.5
+#       jupytext_version: 1.16.2
 #   kernelspec:
 #     display_name: Python [conda env:anaconda-florian4]
 #     language: python
@@ -50,8 +50,9 @@ except NameError:
         rule_name = 'veff__fset',
         default_wildcards={
             # "vcf_file": "clinvar_chr22_pathogenic.vcf.gz",
-            "vcf_file": "chrom=chr12/6553032-6773308.vcf.gz",
-            "feature_set": "abexp_v1.0",
+            # "vcf_file": "chrom=chr12/6553032-6773308.vcf.gz",
+            "vcf_file": "chrom=chr1/64418-623053.vcf.gz",
+            "feature_set": "abexp_v1.1",
         },
         change_dir=True
     )
@@ -73,10 +74,8 @@ with open(snakemake.input["featureset_config"], "r") as fd:
 print(json.dumps(config, indent=2))
 
 # %%
-required_features = config.get("required_features", None)
-if required_features is None:
-    required_features = []
-required_features
+expressed_genes_df = pl.scan_parquet(snakemake.input["expressed_genes_pq"], hive_partitioning=False)
+expressed_genes_df.collect_schema()
 
 # %%
 feature_dfs = {}
@@ -87,7 +86,7 @@ for (fset, fset_path) in config["features"].items():
     this_df = pl.scan_parquet(fset_path, hive_partitioning=False)
 #     this_df = this_df.sort([p for p in snakemake.params["index_cols"] if p in this_df.columns])
     feature_dfs[fset] = this_df
-    print(f"""    rows: {this_df.select(pl.count()).collect()[0, 0]} """)
+    print(f"""    rows: {this_df.select(pl.len()).collect()[0, 0]} """)
 
 
 # %%
@@ -103,7 +102,7 @@ for col in broadcast_columns:
     # get all datasets that have the column
     dfs = []
     for df in feature_dfs.values():
-        if col in df.columns:
+        if col in df.collect_schema().names():
             # get distinct values from df
             df_distinct = df.select(pl.col(col)).unique()
             dfs.append(df_distinct)
@@ -127,11 +126,18 @@ features_df = plf.join_featuresets(
 features_df =(
     features_df
     .drop_nulls(subset=[
-        *[c for c in snakemake.params["index_cols"] if c in features_df.columns],
-        *required_features,
+        *[c for c in snakemake.params["index_cols"] if c in features_df.collect_schema().names()],
     ])
 )
-features_df.schema
+features_df = expressed_genes_df.join(
+    features_df,
+    on=[c for c in expressed_genes_df.collect_schema().names() if c in features_df.collect_schema().names()],
+    how="inner"
+)
+features_df = features_df.sort(
+    [c for c in snakemake.params["index_cols"] if c in features_df.collect_schema().names()]
+)
+features_df.collect_schema()
 
 # %%
 # features_df.show_graph()

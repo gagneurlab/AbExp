@@ -20,6 +20,7 @@ rule veff__fset:
         data_pq=f"{OUTPUT_PQ_PATTERN}",
     input:
         unpack(require_yaml_input(FSET_CONFIG)), # additional input from featureset config yaml
+        expressed_genes_pq=config["system"]["expected_expression_pq"],
         featureset_config=FSET_CONFIG,
     params:
         index_cols=['chrom', 'start', 'end', 'ref', 'alt', "gene", "transcript", "tissue"],

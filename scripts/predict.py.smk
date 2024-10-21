@@ -26,7 +26,6 @@ rule predict_veff:
     output:
         data_pq=f"{OUTPUT_PQ_PATTERN}",
     input:
-        expressed_genes_pq=config["system"]["expected_expression_pq"],
         featureset_config=FSET_CONFIG,
         featureset_pq=FSET_PQ_PATTERN,
         # the model to predict

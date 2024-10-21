@@ -14,7 +14,7 @@ configfile: "config.yaml"
 
 SNAKEMAKE_DIR = os.path.abspath(os.path.dirname(workflow.snakefile))
 
-with open("defaults.yaml", "r") as fd:
+with open(SNAKEMAKE_DIR + "/defaults.yaml", "r") as fd:
     config["system"] = yaml.safe_load(fd)
 with open("system_config.yaml", "r") as fd:
     system_config = yaml.safe_load(fd)

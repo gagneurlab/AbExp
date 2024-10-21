@@ -12,6 +12,8 @@ include: "snakefile_utils.smk"
 workdir: "./"
 configfile: "config.yaml"
 
+SNAKEMAKE_DIR = os.path.abspath(os.path.dirname(workflow.snakefile))
+
 with open("defaults.yaml", "r") as fd:
     config["system"] = yaml.safe_load(fd)
 with open("system_config.yaml", "r") as fd:
@@ -22,10 +24,6 @@ with open("system_config.yaml", "r") as fd:
 
 with open("download_urls.yaml", "r") as fd:
     download_urls = yaml.safe_load(fd)
-
-# TODO upload enformer reference; download reference rule
-
-SNAKEMAKE_DIR = os.path.abspath(os.path.dirname(workflow.snakefile))
 
 CONDA_ENV_YAML_DIR=f"{SNAKEMAKE_DIR}/envs"
 

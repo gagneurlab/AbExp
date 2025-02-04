@@ -45,7 +45,7 @@ The preprint to this method can be found on [BioRxiv](https://doi.org/10.1101/20
    ```
 4) configure `system_config.yaml`:
    - specify paths to the VEP cache, CADD cache, LOFTEE data and LOFTEE source code as defined in steps 2-4
-   - (optional) Disable downloading the SpliceAI-RocksDB cache for pre-computed SpliceAI annotations
+   - (optional) Disable downloading the SpliceAI-RocksDB cache for pre-computed SpliceAI annotations by setting absplice.use\_spliceai\_rocksdb to False
    - (optional) Change file paths of automatically downloaded annotations to shared location
    - (optional) Any options defined in `defaults.yaml` can be overwritten in this file if necessary
 2) run `mamba env create -f envs/abexp-veff-py.yaml`
@@ -64,7 +64,7 @@ The preprint to this method can be found on [BioRxiv](https://doi.org/10.1101/20
    
    An example is pre-configured and can be used to test the pipeline.
 
-2) Run `snakemake --use-conda -c all`.
+2) Run `snakemake --use-conda -c all --configfile=config.yaml`.
    All rules are annotated with resource requirements s.t. snakemake can submit jobs to HPC clusters or cloud environments.
    It is highly recommended to use snakemake with some batch submission system, e.g. SLURM.
    For further information, please visit the Snakemake documentation.

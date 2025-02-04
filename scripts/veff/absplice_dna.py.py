@@ -194,7 +194,6 @@ with pq.ParquetWriter(snakemake.output['absplice_dna'], output_schema) as pqwrit
             df_spliceai=batch_df_spliceai,
         )
         df = splicing_result.predict_absplice_dna()
-
         # result_dfs.append(df)
 
         if fake_variant is not None:
@@ -211,7 +210,7 @@ with pq.ParquetWriter(snakemake.output['absplice_dna'], output_schema) as pqwrit
         variant_idx = variant_idx.astype({"pos": "int"})
 
         # assign to output df and add start and end columns
-        out_df = out_df.assign(**variant_idx.to_dict())
+        out_df = out_df.assign(**variant_idx.to_dict(orient='series'))
         out_df = out_df.assign(**{
             "start": out_df["pos"] - 1,
             "end": out_df["pos"] - 1 + out_df["ref"].str.len(),

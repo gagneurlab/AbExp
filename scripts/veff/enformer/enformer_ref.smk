@@ -4,11 +4,12 @@ SNAKEFILE = workflow.included_stack[-1]
 SNAKEFILE_DIR = os.path.dirname(SNAKEFILE)
 SCRIPT = os.path.basename(SNAKEFILE)[:-4]
 
-OUTPUT_BASEDIR = f"{VEFF_BASEDIR}/{SCRIPT}"
+OUTPUT_BASEDIR = f"{VEFF_BASEDIR}/{SCRIPT}/{GENOME_VERSION}"
 RAW_REF_PQ_PATTERN = f"{OUTPUT_BASEDIR}/raw.parquet/chrom={{chromosome}}/data.parquet"
 AGG_REF_PQ_PATTERN = f"{OUTPUT_BASEDIR}/agg.parquet/chrom={{chromosome}}/data.parquet"
 
-if config['system']['enformer']['download_reference']:
+if (config['system']['enformer']['download_reference'] and
+        download_urls.get('enformer_reference', dict()).get(GENOME_VERSION, None)):
     rule:
         threads: 1
         resources:
@@ -18,7 +19,7 @@ if config['system']['enformer']['download_reference']:
             expand(TISSUE_REF_PQ_PATTERN, chromosome=CHROMOSOMES)
         params:
             working_dir=f'{VEFF_BASEDIR}/tmp',
-            url=download_urls['enformer_reference_tar'],
+            url=download_urls['enformer_reference'][GENOME_VERSION],
             dir_name=SCRIPT,
             output=OUTPUT_BASEDIR
         shell:
@@ -68,7 +69,7 @@ else:
         resources:
             mem_mb=lambda wildcards, attempt, threads: 6000 + (1000 * attempt)
         output:
-            TISSUE_REF_PQ_PATTERN
+            expand(TISSUE_REF_PQ_PATTERN, chromosome=CHROMOSOMES)
         input:
             rules.enformer_aggregate_reference.output[0]
         conda:

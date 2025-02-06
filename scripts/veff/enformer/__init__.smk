@@ -17,7 +17,8 @@ else:
     ENFORMER_CONDA_ENV_YAML = f"{CONDA_ENV_YAML_DIR}/abexp-enformer.yaml"
 
 CHROMOSOMES = config['system']['enformer']['chromosomes']
-TISSUE_REF_PQ_PATTERN = f"{VEFF_BASEDIR}/enformer_ref/tissue.parquet/chrom={{chromosome}}/data.parquet"
+GENOME_VERSION = config["human_genome_version"]
+TISSUE_REF_PQ_PATTERN = f"{VEFF_BASEDIR}/enformer_ref/{GENOME_VERSION}/tissue.parquet/chrom={{chromosome}}/data.parquet"
 
 include: f"{SNAKEFILE_DIR}/enformer_ref.smk"
 include: f"{SNAKEFILE_DIR}/enformer_vcf.smk"

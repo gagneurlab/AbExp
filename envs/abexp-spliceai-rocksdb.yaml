@@ -5,10 +5,9 @@ dependencies:
   - python>=3.6
   - python-rocksdb>=0.7
   - rocksdb
-  - tensorflow-gpu>=2.4
+  - tensorflow-gpu==2.4.1
   - cudnn
   - cudatoolkit>=11.0
-  - cudatoolkit-dev
   - pyarrow
   - tqdm
   - pip

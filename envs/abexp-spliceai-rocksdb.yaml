@@ -16,7 +16,7 @@ dependencies:
   - pooch
   - bioconda::kipoiseq
   - bioconda::spliceai
-  - numpy==2.0.0
+  - numpy<2.0
   #- bioconda::cyvcf2
   - pip:
     - git+https://github.com/gagneurlab/spliceai_rocksdb.git@master

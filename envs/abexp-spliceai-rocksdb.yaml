@@ -8,6 +8,7 @@ dependencies:
   - tensorflow-gpu>=2.4
   - cudnn
   - cudatoolkit>=11.0
+  - cudatoolkit-dev
   - pyarrow
   - tqdm
   - pip

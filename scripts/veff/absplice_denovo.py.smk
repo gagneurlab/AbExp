@@ -120,7 +120,7 @@ else:
         params:
             genome = ASSEMBLY.lower()
         conda:
-            f"{CONDA_ENV_YAML_DIR}/abexp-spliceai-rocksdb.yaml"
+            f"{CONDA_ENV_YAML_DIR}/abexp-spliceai.yaml"
         shell:
             'spliceai -I {input.vcf} -O {output.result} -R {input.fasta} -A {params.genome}'
     

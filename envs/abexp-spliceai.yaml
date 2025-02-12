@@ -5,6 +5,8 @@ dependencies:
   - python>=3.6
   - cudnn
   - cudatoolkit>=11.0
+  - pip
+  - setuptools
   #- bioconda::cyvcf2
   - pip:
     # this allows to predict multi-nucleotide polymorphisms

@@ -10,4 +10,4 @@ dependencies:
   #- bioconda::cyvcf2
   - pip:
     # this allows to predict multi-nucleotide polymorphisms
-    - git+https://github.com/hoeze/SpliceAI.git@mnp
+    - "spliceai[gpu] @ git+https://github.com/hoeze/SpliceAI.git@mnp"

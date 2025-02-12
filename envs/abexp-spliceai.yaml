@@ -5,10 +5,10 @@ dependencies:
   - python>=3.6
   - cudnn
   - cudatoolkit>=11.0
-  - tensorflow-gpu>2.4
   - pip
   - setuptools
   #- bioconda::cyvcf2
   - pip:
-    # this allows to predict multi-nucleotide polymorphisms
+    - tensorflow>2.4
+      # this allows to predict multi-nucleotide polymorphisms
     - "spliceai @ git+https://github.com/hoeze/SpliceAI.git@mnp"

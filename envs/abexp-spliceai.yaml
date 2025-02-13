@@ -7,7 +7,7 @@ dependencies:
   - cudatoolkit>=11.0
   - pip
   - setuptools
-  - tensorflow-gpu==2.6.0 # todo report bug in tensorflow-feedstock; CUDA_HOME is not set correctly
+  - tensorflow-gpu==2.11.0 # todo report bug in tensorflow-feedstock; CUDA_HOME is not set correctly
   - pandas<2.2.2 # numpy must be < 2.0, therefore pandas needs to be pandas<2.2.2
   - pip:
       # this allows to predict multi-nucleotide polymorphisms

@@ -5,7 +5,7 @@ dependencies:
   - python>=3.6
   - python-rocksdb>=0.7
   - rocksdb
-  - tensorflow-gpu==2.6.0 # todo report bug in tensorflow-feedstock; CUDA_HOME is not set correctly
+  - tensorflow-gpu==2.11.0 # todo report bug in tensorflow-feedstock; CUDA_HOME is not set correctly
   - cudnn
   - cudatoolkit>=11.0
   - pyarrow

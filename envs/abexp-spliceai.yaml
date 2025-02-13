@@ -5,6 +5,7 @@ dependencies:
   - python>=3.6
   - cudnn
   - cudatoolkit>=11.0
+  - cudatoolkit-dev
   - pip
   - setuptools
   - tensorflow-gpu==2.11.0 # todo report bug in tensorflow-feedstock; CUDA_HOME is not set correctly

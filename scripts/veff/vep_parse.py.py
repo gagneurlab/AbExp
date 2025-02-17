@@ -388,7 +388,7 @@ snakemake.output["veff_pq"]
 # %%
 (
     parsed_vep_df
-    .sink_parquet(snakemake.output["veff_pq"], compression="snappy", statistics=True)
+    .collect().write_parquet(snakemake.output["veff_pq"], compression="snappy", statistics=True)
 )
 
 # %%

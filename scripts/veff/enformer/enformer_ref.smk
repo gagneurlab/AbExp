@@ -9,37 +9,11 @@ RAW_REF_PQ_PATTERN = f"{OUTPUT_BASEDIR}/raw.parquet/chrom={{chromosome}}/data.pa
 AGG_REF_PQ_PATTERN = f"{OUTPUT_BASEDIR}/agg.parquet/chrom={{chromosome}}/data.parquet"
 TISSUE_REF_PQ_PATTERN = f"{OUTPUT_BASEDIR}/tissue.parquet/chrom={{chromosome}}/data.parquet"
 
-if (config['system']['enformer']['download_reference'] and
-        download_urls.get('enformer_reference', dict()).get(GENOME_VERSION, None)):
-    rule:
-        threads: 1
-        resources:
-            ntasks=1,
-            mem_mb=lambda wildcards, attempt, threads: (1000 * threads) * attempt
-        output:
-            expand(TISSUE_REF_PQ_PATTERN, chromosome=CHROMOSOMES)
-        params:
-            working_dir=f'{VEFF_BASEDIR}/tmp',
-            url=download_urls['enformer_reference'][GENOME_VERSION],
-            dir_name=SCRIPT,
-            output=OUTPUT_BASEDIR
-        shell:
-            """
-            set -x
-            filename=$(basename '{params.url}')
-            filename_no_ext="${{filename%.tar}}"
-            mkdir -p '{params.working_dir}'
-            wget -O - '{params.url}' > '{params.working_dir}'/"${{filename}}"
-            tar -xvf '{params.working_dir}'/"${{filename}}" -C '{params.working_dir}'
-            rm -r '{params.output}' || true
-            mv '{params.working_dir}'/"${{filename_no_ext}}" '{params.output}'
-            rm -r '{params.working_dir}'
-            """
-else:
+if not config['system']['enformer']['download_reference']:
     rule enformer_predict_reference:
         resources:
             mem_mb=lambda wildcards, attempt, threads: 12000 + (1000 * attempt),
-            gpu = 1,
+            gpu=1,
         output:
             temp(RAW_REF_PQ_PATTERN)
         input:
@@ -70,13 +44,38 @@ else:
         resources:
             mem_mb=lambda wildcards, attempt, threads: 6000 + (1000 * attempt)
         output:
-            expand(TISSUE_REF_PQ_PATTERN, chromosome=CHROMOSOMES)
+            expand(TISSUE_REF_PQ_PATTERN,chromosome=CHROMOSOMES)
         input:
             rules.enformer_aggregate_reference.output[0]
         conda:
             ENFORMER_CONDA_ENV_YAML
         script:
             "scripts/tissue_expression.py"
+elif download_urls['enformer_reference'][GENOME_VERSION]:
+    rule:
+        threads: 1
+        resources:
+            ntasks=1,
+            mem_mb=lambda wildcards, attempt, threads: (1000 * threads) * attempt
+        output:
+            expand(TISSUE_REF_PQ_PATTERN,chromosome=CHROMOSOMES)
+        params:
+            working_dir=f'{VEFF_BASEDIR}/tmp',
+            url=download_urls['enformer_reference'][GENOME_VERSION],
+            dir_name=SCRIPT,
+            output=OUTPUT_BASEDIR
+        shell:
+            """
+            set -x
+            filename=$(basename '{params.url}')
+            filename_no_ext="${{filename%.tar}}"
+            mkdir -p '{params.working_dir}'
+            wget -O - '{params.url}' > '{params.working_dir}'/"${{filename}}"
+            tar -xvf '{params.working_dir}'/"${{filename}}" -C '{params.working_dir}'
+            rm -r '{params.output}' || true
+            mv '{params.working_dir}'/"${{filename_no_ext}}" '{params.output}'
+            rm -r '{params.working_dir}'
+            """
 
 del OUTPUT_BASEDIR
 del RAW_REF_PQ_PATTERN

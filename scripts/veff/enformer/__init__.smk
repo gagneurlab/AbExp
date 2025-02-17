@@ -11,7 +11,7 @@ for p in smkpaths:
     eprint("Including '%s'..." % p)
     include: p
 
-if config.get('use_enformer_gpu',False):
+if config['system']['enformer']['use_gpu']:
     ENFORMER_CONDA_ENV_YAML = f"{CONDA_ENV_YAML_DIR}/abexp-enformer-gpu.yaml"
 else:
     ENFORMER_CONDA_ENV_YAML = f"{CONDA_ENV_YAML_DIR}/abexp-enformer.yaml"

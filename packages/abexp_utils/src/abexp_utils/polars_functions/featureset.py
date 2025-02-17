@@ -12,7 +12,6 @@ import logging
 
 log = logging.getLogger(__name__)
 
-
 __all__ = [
     "transform_featureset",
     "join_featuresets",
@@ -20,10 +19,10 @@ __all__ = [
 
 
 def transform_featureset(
-    fset_df: Union[pl.DataFrame, pl.LazyFrame],
-    fset_name: str,
-    variables: Dict[str, List[str]],
-    index_cols: List[str],
+        fset_df: Union[pl.DataFrame, pl.LazyFrame],
+        fset_name: str,
+        variables: Dict[str, List[str]],
+        index_cols: List[str],
 ):
     """
     Extracts selected features from some Spark dataframe and flattens them.
@@ -56,14 +55,14 @@ def transform_featureset(
 
 
 def join_featuresets(
-    dataframes: Dict[str, Union[pl.DataFrame, pl.LazyFrame]],
-    variables: Dict[str, Union[List, Dict, str]],
-    index_cols: List[str],
-    fill_values: Dict[str, object] = None,
-    join="outer_coalesce",
-    initial_df: Union[pl.DataFrame, pl.LazyFrame] = None,
-    broadcast_columns: Dict[str, Union[pl.DataFrame, pl.LazyFrame]]=None, 
-    ignore_missing_columns=True,
+        dataframes: Dict[str, Union[pl.DataFrame, pl.LazyFrame]],
+        variables: Dict[str, Union[List, Dict, str]],
+        index_cols: List[str],
+        fill_values: Dict[str, object] = None,
+        join="outer",
+        initial_df: Union[pl.DataFrame, pl.LazyFrame] = None,
+        broadcast_columns: Dict[str, Union[pl.DataFrame, pl.LazyFrame]] = None,
+        ignore_missing_columns=True,
 ):
     """
     Opens multiple parquet dataset, extracts selected features and joins them to a single dataframe.
@@ -74,7 +73,7 @@ def join_featuresets(
         All feature columns will be flattened and renamed to "feature.{fset_name}@{alias}"
     :param fill_values: Dictionary of column names and fill values to fill missing values
     :param index_cols: List of index columns on which to join
-    :param join: Type of the join.
+    :param join: Type of the join. Similar to polars.
     :param initial_df: dataframe to join on all loaded feature sets.
         Especially useful for left joins.
     :param broadcast_columns: A dictionary of column -> dataframe pairs where each dataframe has
@@ -122,7 +121,7 @@ def join_featuresets(
     joint_partial_column_sets = defaultdict(list)
     for (join_columns, fsets) in partial_column_sets.items():
         joint_fset = reduce(
-            lambda left, right: left.join(right, on=list(join_columns), how="outer_coalesce"), fsets
+            lambda left, right: left.join(right, on=list(join_columns), how="outer", coalesce=True), fsets
         )
         joint_partial_column_sets[join_columns] = joint_fset
 
@@ -157,11 +156,11 @@ def join_featuresets(
         joint_full_column_sets.append(df)
 
     # finally, join all full datasets
-    if initial_df is None and join == "outer_coalesce":
+    if initial_df is None and (join == "outer" or join == "outer_coalesce"):
         full_df = reduce(
             lambda left, right: left.join(right, on=[
                 c for c in index_cols if c in left.columns and c in right.columns
-            ], how="outer_coalesce"),
+            ], how="outer", coalesce=True),
             joint_full_column_sets,
         )
     else:

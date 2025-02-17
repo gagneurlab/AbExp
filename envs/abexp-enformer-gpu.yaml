@@ -15,8 +15,8 @@ dependencies:
   - lightgbm>=4.3.0
   - zarr>=2.15.0
   - xarray>=2024.5.0
-  - tensorflow-hub==0.16.1
-  - tensorflow-gpu==2.16.1
-  - cudatoolkit
+  - tensorflow-hub
+  - tensorflow-gpu>=2.14.0
+  - cudatoolkit>=11.0
   - pip:
     - "kipoi-enformer[gpu] @ git+https://github.com/gagneurlab/AbExp-utils.git#subdirectory=packages/kipoi_enformer"

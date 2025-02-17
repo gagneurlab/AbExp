@@ -10,6 +10,9 @@ output_dir: "example/output_hg38"
 
 predict_abexp_models:
   - "abexp_v1.1"
+#  - "abexp_v1.1_Enformer"
+#  - "abexp_v1.1_nobcv"
+
 
 human_genome_version: "hg38"
 # human_genome_version: "hg19"

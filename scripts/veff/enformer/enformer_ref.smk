@@ -7,6 +7,7 @@ SCRIPT = os.path.basename(SNAKEFILE)[:-4]
 OUTPUT_BASEDIR = f"{VEFF_BASEDIR}/{SCRIPT}/{GENOME_VERSION}"
 RAW_REF_PQ_PATTERN = f"{OUTPUT_BASEDIR}/raw.parquet/chrom={{chromosome}}/data.parquet"
 AGG_REF_PQ_PATTERN = f"{OUTPUT_BASEDIR}/agg.parquet/chrom={{chromosome}}/data.parquet"
+TISSUE_REF_PQ_PATTERN = f"{OUTPUT_BASEDIR}/tissue.parquet/chrom={{chromosome}}/data.parquet"
 
 if (config['system']['enformer']['download_reference'] and
         download_urls.get('enformer_reference', dict()).get(GENOME_VERSION, None)):

@@ -18,11 +18,9 @@ else:
 
 CHROMOSOMES = config['system']['enformer']['chromosomes']
 GENOME_VERSION = config["human_genome_version"]
-TISSUE_REF_PQ_PATTERN = f"{VEFF_BASEDIR}/enformer_ref/{GENOME_VERSION}/tissue.parquet/chrom={{chromosome}}/data.parquet"
 
 include: f"{SNAKEFILE_DIR}/enformer_ref.smk"
 include: f"{SNAKEFILE_DIR}/enformer_vcf.smk"
 
 del ENFORMER_CONDA_ENV_YAML
 del CHROMOSOMES
-del TISSUE_REF_PQ_PATTERN

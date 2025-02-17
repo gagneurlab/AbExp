@@ -4,11 +4,12 @@ SNAKEFILE = workflow.included_stack[-1]
 SNAKEFILE_DIR = os.path.dirname(SNAKEFILE)
 SCRIPT = os.path.basename(SNAKEFILE)[:-4]
 
-OUTPUT_BASEDIR = f"{VEFF_BASEDIR}/{SCRIPT}"
+OUTPUT_BASEDIR = f"{VEFF_BASEDIR}/{SCRIPT}/{GENOME_VERSION}"
 RAW_VCF_PQ_PATTERN = f"{OUTPUT_BASEDIR}/raw.parquet/{{vcf_file}}.parquet"
 AGG_VCF_PQ_PATTERN = f"{OUTPUT_BASEDIR}/agg.parquet/{{vcf_file}}.parquet"
 TISSUE_VCF_PQ_PATTERN = f"{OUTPUT_BASEDIR}/tissue.parquet/{{vcf_file}}.parquet"
 VEFF_VCF_PQ_PATTERN = f"{OUTPUT_BASEDIR}/veff.parquet/{{vcf_file}}.parquet"
+TISSUE_REF_PQ_PATTERN = f"{VEFF_BASEDIR}/enformer_ref/{GENOME_VERSION}/tissue.parquet/chrom={{chromosome}}/data.parquet"
 
 rule enformer_predict_alternative:
     resources:

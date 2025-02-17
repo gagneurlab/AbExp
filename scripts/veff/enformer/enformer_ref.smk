@@ -51,11 +51,6 @@ if not config['system']['enformer']['download_reference']:
             ENFORMER_CONDA_ENV_YAML
         script:
             "scripts/tissue_expression.py"
-elif not download_urls.get('enformer_reference', dict()).get(GENOME_VERSION):
-    raise KeyError(f'Precomputed Enformer reference scores for human genome version {GENOME_VERSION} is not available.'
-                   f' Set enformer.download_reference to False in system_config.yaml to compute the reference'
-                   f' enformer scores for this genome version. Alternatively set a different genome version (e.g. hg19)'
-                   f' in config.yaml.')
 else:
     rule:
         threads: 1
@@ -66,12 +61,23 @@ else:
             expand(TISSUE_REF_PQ_PATTERN,chromosome=CHROMOSOMES)
         params:
             working_dir=f'{VEFF_BASEDIR}/tmp',
-            url=download_urls['enformer_reference'][GENOME_VERSION],
+            genome_version=GENOME_VERSION,
+            url=download_urls.get('enformer_reference', dict()).get(GENOME_VERSION),
             dir_name=SCRIPT,
             output=OUTPUT_BASEDIR
         shell:
             """
             set -x
+                       
+            # Check if params.url is empty
+            if [ -z '{params.url}' ]; then
+                echo "Error: Precomputed Enformer reference scores for human genome version {params.genome_version} \
+                is not available. Set enformer.download_reference to False in system_config.yaml to compute \
+                the reference Enformer scores for this genome version. Alternatively, set a different genome \ 
+                version (e.g. hg19) in config.yaml." >&2
+                exit 1
+            fi
+
             filename=$(basename '{params.url}')
             filename_no_ext="${{filename%.tar}}"
             mkdir -p '{params.working_dir}'

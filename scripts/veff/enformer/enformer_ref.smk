@@ -53,9 +53,9 @@ if not config['system']['enformer']['download_reference']:
             "scripts/tissue_expression.py"
 elif not download_urls.get('enformer_reference', dict()).get(GENOME_VERSION):
     raise KeyError(f'Precomputed Enformer reference scores for human genome version {GENOME_VERSION} is not available.'
-                   f' Set enformer.download_reference to False in your system_config.yaml to compute the reference'
+                   f' Set enformer.download_reference to False in system_config.yaml to compute the reference'
                    f' enformer scores for this genome version. Alternatively set a different genome version (e.g. hg19)'
-                   f' in your config.yaml.')
+                   f' in config.yaml.')
 else:
     rule:
         threads: 1

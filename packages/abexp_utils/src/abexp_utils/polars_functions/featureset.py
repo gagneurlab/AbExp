@@ -60,7 +60,7 @@ def join_featuresets(
     variables: Dict[str, Union[List, Dict, str]],
     index_cols: List[str],
     fill_values: Dict[str, object] = None,
-    join="outer_coalesce",
+    join="outer",
     initial_df: Union[pl.DataFrame, pl.LazyFrame] = None,
     broadcast_columns: Dict[str, Union[pl.DataFrame, pl.LazyFrame]]=None, 
     ignore_missing_columns=True,
@@ -122,7 +122,7 @@ def join_featuresets(
     joint_partial_column_sets = defaultdict(list)
     for (join_columns, fsets) in partial_column_sets.items():
         joint_fset = reduce(
-            lambda left, right: left.join(right, on=list(join_columns), how="outer_coalesce"), fsets
+            lambda left, right: left.join(right, on=list(join_columns), how="outer", coalesce=True), fsets
         )
         joint_partial_column_sets[join_columns] = joint_fset
 
@@ -157,11 +157,11 @@ def join_featuresets(
         joint_full_column_sets.append(df)
 
     # finally, join all full datasets
-    if initial_df is None and join == "outer_coalesce":
+    if initial_df is None and join == "outer":
         full_df = reduce(
             lambda left, right: left.join(right, on=[
                 c for c in index_cols if c in left.columns and c in right.columns
-            ], how="outer_coalesce"),
+            ], how="outer", coalesce=True),
             joint_full_column_sets,
         )
     else:

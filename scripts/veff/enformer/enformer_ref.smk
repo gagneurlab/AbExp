@@ -4,7 +4,7 @@ SNAKEFILE = workflow.included_stack[-1]
 SNAKEFILE_DIR = os.path.dirname(SNAKEFILE)
 SCRIPT = os.path.basename(SNAKEFILE)[:-4]
 
-OUTPUT_BASEDIR = f"{VEFF_BASEDIR}/{SCRIPT}/{GENOME_VERSION}"
+OUTPUT_BASEDIR = f"{VEFF_BASEDIR}/{SCRIPT}"
 RAW_REF_PQ_PATTERN = f"{OUTPUT_BASEDIR}/raw.parquet/chrom={{chromosome}}/data.parquet"
 AGG_REF_PQ_PATTERN = f"{OUTPUT_BASEDIR}/agg.parquet/chrom={{chromosome}}/data.parquet"
 TISSUE_REF_PQ_PATTERN = f"{OUTPUT_BASEDIR}/tissue.parquet/chrom={{chromosome}}/data.parquet"

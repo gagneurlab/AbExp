@@ -5,7 +5,8 @@ vcf_input_dir: "example/clinvar_chr22"
 # and contig names start with "chr"
 vcf_is_normalized: False
 
-output_dir: "example/output"
+output_dir: "example/output_hg38"
+# output_dir: "example/output_hg19"
 
 predict_abexp_models:
   - "abexp_v1.1"

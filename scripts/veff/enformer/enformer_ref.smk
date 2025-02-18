@@ -61,20 +61,20 @@ else:
             expand(TISSUE_REF_PQ_PATTERN,chromosome=CHROMOSOMES)
         params:
             working_dir=f'{VEFF_BASEDIR}/tmp',
-            genome_version=GENOME_VERSION,
-            url=download_urls.get('enformer_reference', dict()).get(GENOME_VERSION, ''),
+            url=download_urls.get('enformer_reference',dict()).get(GENOME_VERSION,''),
             dir_name=SCRIPT,
-            output=OUTPUT_BASEDIR
+            output=OUTPUT_BASEDIR,
+            err_message=f"Error: Precomputed Enformer reference scores for human genome version {GENOME_VERSION}"
+                        f" is not available. Set enformer.download_reference to False in system_config.yaml to compute"
+                        f" the reference Enformer scores for this genome version. Alternatively, set a different genome"
+                        f" version (e.g. hg19) in config.yaml."
         shell:
             """
             set -x
                        
             # Check if params.url is empty
             if [ -z '{params.url}' ]; then
-                echo "Error: Precomputed Enformer reference scores for human genome version {params.genome_version} \
-                is not available. Set enformer.download_reference to False in system_config.yaml to compute \
-                the reference Enformer scores for this genome version. Alternatively, set a different genome \ 
-                version (e.g. hg19) in config.yaml." >&2
+                echo "{params.err_message}" >&2
                 exit 1
             fi
 

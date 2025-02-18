@@ -21,7 +21,8 @@ rule enformer_predict_alternative:
         gtf_path=rules.gtf_transcripts.output[0],
         fasta_path=FASTA_FILE,
         vcf_path=STRIPPED_VCF_FILE_PATTERN,
-        ref_tissue_paths=ancient(expand(TISSUE_REF_PQ_PATTERN,chromosome=CHROMOSOMES)),
+        # make sure that reference is available before starting vcf computation
+        ref_tissue_paths=ancient(expand(TISSUE_REF_PQ_PATTERN,chromosome=CHROMOSOMES))
     params:
         type='alternative'
     conda:

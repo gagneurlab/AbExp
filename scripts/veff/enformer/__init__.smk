@@ -17,7 +17,7 @@ else:
     ENFORMER_CONDA_ENV_YAML = f"{CONDA_ENV_YAML_DIR}/abexp-enformer.yaml"
 
 CHROMOSOMES = config['system']['enformer']['chromosomes']
-GENOME_VERSION = config["human_genome_version"]
+ENFORMER_DIR = f"{RESULTS_DIR}/enformer/{HUMAN_GENOME_VERSION}"
 
 include: f"{SNAKEFILE_DIR}/enformer_ref.smk"
 include: f"{SNAKEFILE_DIR}/enformer_vcf.smk"

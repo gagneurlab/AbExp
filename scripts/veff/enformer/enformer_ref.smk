@@ -4,18 +4,15 @@ SNAKEFILE = workflow.included_stack[-1]
 SNAKEFILE_DIR = os.path.dirname(SNAKEFILE)
 SCRIPT = os.path.basename(SNAKEFILE)[:-4]
 
-OUTPUT_BASEDIR = f"{VEFF_BASEDIR}/{SCRIPT}"
-RAW_REF_PQ_PATTERN = f"{OUTPUT_BASEDIR}/raw.parquet/chrom={{chromosome}}/data.parquet"
-AGG_REF_PQ_PATTERN = f"{OUTPUT_BASEDIR}/agg.parquet/chrom={{chromosome}}/data.parquet"
-TISSUE_REF_PQ_PATTERN = f"{OUTPUT_BASEDIR}/tissue.parquet/chrom={{chromosome}}/data.parquet"
+OUTPUT_BASEDIR = f"{ENFORMER_DIR}/{SCRIPT}"
 
 if not config['system']['enformer']['download_reference']:
-    rule enformer_predict_reference:
+    rule enformer__predict_ref:
         resources:
             mem_mb=lambda wildcards, attempt, threads: 12000 + (1000 * attempt),
             gpu=1,
         output:
-            temp(RAW_REF_PQ_PATTERN)
+            temp(f"{OUTPUT_BASEDIR}/raw.parquet/chrom={{chromosome}}/data.parquet")
         input:
             gtf_path=rules.gtf_transcripts.output[0],
             fasta_path=FASTA_FILE
@@ -27,67 +24,43 @@ if not config['system']['enformer']['download_reference']:
             "scripts/predict_expression.py"
 
 
-    rule enformer_aggregate_reference:
+    rule enformer__aggregate_ref:
         resources:
             mem_mb=lambda wildcards, attempt, threads: 6000 + (1000 * attempt)
         output:
-            temp(AGG_REF_PQ_PATTERN),
+            temp(f"{OUTPUT_BASEDIR}/agg.parquet/chrom={{chromosome}}/data.parquet"),
         input:
-            rules.enformer_predict_reference.output[0]
+            rules.enformer__predict_ref.output[0]
         conda:
             ENFORMER_CONDA_ENV_YAML
         script:
             "scripts/aggregate_tracks.py"
 
 
-    rule enformer_tissue_reference:
+    rule enformer__tissue_ref:
         resources:
             mem_mb=lambda wildcards, attempt, threads: 6000 + (1000 * attempt)
         output:
-            expand(TISSUE_REF_PQ_PATTERN,chromosome=CHROMOSOMES)
+            expand(config["system"]["enformer"]["enformer_ref"],chromosome=CHROMOSOMES)
         input:
-            rules.enformer_aggregate_reference.output[0]
+            rules.enformer__aggregate_ref.output[0]
         conda:
             ENFORMER_CONDA_ENV_YAML
         script:
             "scripts/tissue_expression.py"
 else:
-    rule download_enformer_reference:
+    rule enformer__download_tissue_ref:
         threads: 1
         resources:
             ntasks=1,
             mem_mb=lambda wildcards, attempt, threads: (1000 * threads) * attempt
         output:
-            expand(TISSUE_REF_PQ_PATTERN,chromosome=CHROMOSOMES)
+            expand(config["system"]["enformer"]["enformer_ref"],chromosome=CHROMOSOMES)
         params:
-            working_dir=f'{VEFF_BASEDIR}/tmp',
-            url=download_urls.get('enformer_reference',dict()).get(GENOME_VERSION,''),
-            dir_name=SCRIPT,
-            output=OUTPUT_BASEDIR,
-            err_message=f"Error: Precomputed Enformer reference scores for human genome version {GENOME_VERSION}"
-                        f" is not available. Set enformer.download_reference to False in system_config.yaml to compute"
-                        f" the reference Enformer scores for this genome version. Alternatively, set a different genome"
-                        f" version (e.g. hg19) in config.yaml."
-        shell:
-            """
-            set -x
-                       
-            # Check if params.url is empty
-            if [ -z '{params.url}' ]; then
-                echo "{params.err_message}" >&2
-                exit 1
-            fi
-
-            filename=$(basename '{params.url}')
-            filename_no_ext="${{filename%.tar}}"
-            mkdir -p '{params.working_dir}'
-            wget -O - '{params.url}' > '{params.working_dir}'/"${{filename}}"
-            tar -xvf '{params.working_dir}'/"${{filename}}" -C '{params.working_dir}'
-            rm -r '{params.output}' || true
-            mv '{params.working_dir}'/"${{filename_no_ext}}" '{params.output}'
-            rm -r '{params.working_dir}'
-            """
+            url=download_urls.get('enformer_reference',dict()).get(HUMAN_GENOME_VERSION, None),
+            genome_version=HUMAN_GENOME_VERSION,
+            output_dir=f'{RESOURCES_DIR}/enformer_{HUMAN_GENOME_VERSION}/'
+        script:
+            "scripts/download_ref.py"
 
 del OUTPUT_BASEDIR
-del RAW_REF_PQ_PATTERN
-del AGG_REF_PQ_PATTERN

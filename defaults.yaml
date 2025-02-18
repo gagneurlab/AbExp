@@ -109,6 +109,7 @@ absplice:
 enformer:
   # Whether to download the pre-calculated reference scores or generate them locally
   download_reference: true
+  enformer_ref: '{RESOURCES_DIR}/enformer_{{genome}}/chrom={{chromosome}}/data.parquet'
   tissue_mapper_pkl: "{SNAKEMAKE_DIR}/resources/enformer/tissue_mapper.pkl"
   tracks_yml: "{SNAKEMAKE_DIR}/resources/enformer/tracks.yaml"
   use_gpu: false

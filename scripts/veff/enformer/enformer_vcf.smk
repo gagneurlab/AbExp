@@ -1,9 +1,7 @@
 import os
 
 SNAKEFILE = workflow.included_stack[-1]
-SNAKEFILE_DIR = os.path.dirname(SNAKEFILE)
 SCRIPT = os.path.basename(SNAKEFILE)[:-4]
-
 OUTPUT_BASEDIR = f"{ENFORMER_DIR}/{SCRIPT}"
 VEFF_VCF_PQ_PATTERN = f"{VEFF_BASEDIR}/enformer/veff.parquet/{{vcf_file}}.parquet"
 
@@ -72,3 +70,5 @@ rule enformer_variant_effect:
 
 del OUTPUT_BASEDIR
 del VEFF_VCF_PQ_PATTERN
+del SNAKEFILE
+del SCRIPT

@@ -17,6 +17,8 @@ vep:
 #  download_reference: True
 #  use_gpu: True
 #  batch_size: 2
+# variant_upstream_tss: 50
+# variant_downstream_tss: 200
 
 # absplice:
 #   splicemap:

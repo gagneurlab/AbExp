@@ -55,9 +55,9 @@ else:
             ntasks=1,
             mem_mb=lambda wildcards, attempt, threads: (1000 * threads) * attempt
         output:
-            expand(config["system"]["enformer"]["enformer_ref"],chromosome=CHROMOSOMES)
+            expand(config["system"]["enformer"]["enformer_ref"][HUMAN_GENOME_VERSION],chromosome=CHROMOSOMES)
         params:
-            url=download_urls.get('enformer_reference',dict()).get(HUMAN_GENOME_VERSION, None),
+            url=download_urls.get('enformer_reference',dict()).get(HUMAN_GENOME_VERSION,None),
             genome_version=HUMAN_GENOME_VERSION,
             output_dir=f'{RESOURCES_DIR}/enformer_{HUMAN_GENOME_VERSION}/'
         script:

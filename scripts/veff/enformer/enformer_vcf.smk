@@ -18,7 +18,8 @@ rule enformer__predict_alt:
         fasta_path=FASTA_FILE,
         vcf_path=STRIPPED_VCF_FILE_PATTERN,
         # make sure that reference is available before starting vcf computation
-        ref_tissue_paths=ancient(expand(config["system"]["enformer"]["enformer_ref"],chromosome=CHROMOSOMES)),
+        ref_tissue_paths=ancient(expand(
+            config["system"]["enformer"]["enformer_ref"][HUMAN_GENOME_VERSION],chromosome=CHROMOSOMES)),
     params:
         type='alternative'
     conda:
@@ -60,7 +61,8 @@ rule enformer_variant_effect:
     input:
         gtf_path=rules.gtf_transcripts.output[0],
         vcf_tissue_path=rules.enformer__tissue_alt.output[0],
-        ref_tissue_paths=ancient(expand(config["system"]["enformer"]["enformer_ref"],chromosome=CHROMOSOMES)),
+        ref_tissue_paths=ancient(expand(
+            config["system"]["enformer"]["enformer_ref"][HUMAN_GENOME_VERSION],chromosome=CHROMOSOMES)),
     wildcard_constraints:
         vcf_file='.*\.vcf\.gz'
     conda:

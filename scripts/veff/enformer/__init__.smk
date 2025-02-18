@@ -1,7 +1,3 @@
-SNAKEFILE = workflow.included_stack[-1]
-SNAKEFILE_DIR = os.path.dirname(SNAKEFILE)
-
-SCRIPT = os.path.basename(SNAKEFILE)[:-4]
 
 # subdirectories
 smkpaths = [
@@ -19,8 +15,8 @@ else:
 CHROMOSOMES = config['system']['enformer']['chromosomes']
 ENFORMER_DIR = f"{RESULTS_DIR}/enformer/{HUMAN_GENOME_VERSION}"
 
-include: f"{SNAKEFILE_DIR}/enformer_ref.smk"
-include: f"{SNAKEFILE_DIR}/enformer_vcf.smk"
+include: f"{SNAKEFILE_DIR}/enformer/enformer_ref.smk"
+include: f"{SNAKEFILE_DIR}/enformer/enformer_vcf.smk"
 
 del ENFORMER_CONDA_ENV_YAML
 del CHROMOSOMES

@@ -52,7 +52,7 @@ if not config['system']['enformer']['download_reference']:
         script:
             "scripts/tissue_expression.py"
 else:
-    rule:
+    rule download_enformer_reference:
         threads: 1
         resources:
             ntasks=1,
@@ -62,7 +62,7 @@ else:
         params:
             working_dir=f'{VEFF_BASEDIR}/tmp',
             genome_version=GENOME_VERSION,
-            url=download_urls.get('enformer_reference', dict()).get(GENOME_VERSION),
+            url=download_urls.get('enformer_reference', dict()).get(GENOME_VERSION, ''),
             dir_name=SCRIPT,
             output=OUTPUT_BASEDIR
         shell:

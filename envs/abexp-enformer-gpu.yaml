@@ -15,7 +15,7 @@ dependencies:
   - lightgbm>=4.3.0
   - zarr>=2.15.0
   - xarray>=2024.5.0
-  - tensorflow-hub
+  - tensorflow-hub>=0.16.1
   - tensorflow-gpu>=2.14.0
   - cudatoolkit>=11.0
   - pip:

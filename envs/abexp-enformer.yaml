@@ -15,7 +15,7 @@ dependencies:
   - lightgbm>=4.3.0
   - zarr>=2.15.0
   - xarray>=2024.5.0
-  - tensorflow-hub
+  - tensorflow-hub>=0.16.1
   - tensorflow>=2.14.0
   - pip:
     - "kipoi-enformer @ git+https://github.com/gagneurlab/AbExp-utils.git#subdirectory=packages/kipoi_enformer"

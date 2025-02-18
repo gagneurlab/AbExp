@@ -10,4 +10,4 @@ splicemap:
     psi5: 'https://zenodo.org/record/6408906/files/{tissue}_splicemap_psi5_method%3Dkn_event_filter%3Dmedian_cutoff.csv.gz?download=1'
 
 enformer_reference:
-  hg19: "https://zenodo.org/records/14831859/files/enformer_hg19_ref.tar?download=1"
+  hg19: "https://zenodo.org/records/14887894/files/enformer_hg19.tar?download=1"

@@ -17,6 +17,7 @@ if not params.url:
           f" version (e.g. hg19) in config.yaml.", file=sys.stderr)
     sys.exit(1)
 
+print('Downloading precomputed Enformer reference scores for human genome version', params.genome_version)
 # Download the file to a temporary location
 with tempfile.NamedTemporaryFile() as temp_file:
     temp_filename = temp_file.name
@@ -25,6 +26,7 @@ with tempfile.NamedTemporaryFile() as temp_file:
 
     # Extract the tar file
     with tarfile.open(temp_filename, "r") as tar:
+        print('Extracting the tar file to', params.output_dir)
         tar.extractall(path=params.output_dir)
 
 

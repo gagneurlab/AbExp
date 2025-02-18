@@ -25,7 +25,7 @@ fasta_file: "example/chr22_hg38.fa"
 # fasta_file_idx: "example/chr22_hg19.fa.fai"
 
 gtf_file: "example/chr22.gencode.v34.annotation.gtf.gz"
-# gtf_gile: "chr22.gencode.v34lift37.annotation.gtf.gz"
+# gtf_gile: "example/chr22.gencode.v34lift37.annotation.gtf.gz"
 
 # mapping of chromosome names. By default, maps them to "chr" prefix.
 chrom_alias_tsv: "{SNAKEMAKE_DIR}/resources/chromAlias.tsv"

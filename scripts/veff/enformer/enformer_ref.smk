@@ -39,7 +39,7 @@ if not config['system']['enformer']['download_reference']:
         resources:
             mem_mb=lambda wildcards, attempt, threads: 6000 + (1000 * attempt)
         output:
-            expand(config["system"]["enformer"]["enformer_ref"],chromosome=CHROMOSOMES)
+            expand(config["system"]["enformer"]["enformer_ref"][HUMAN_GENOME_VERSION],chromosome=CHROMOSOMES)
         input:
             rules.enformer__aggregate_ref.output[0]
         conda:

@@ -12,7 +12,7 @@ params = snakemake.params
 
 if not params.url:
     print(f"Error: Precomputed Enformer reference scores for human genome version {params.genome_version}"
-          f" is not available. Set enformer.download_reference to False in system_config.yaml to compute"
+          f" are not available. Set enformer.download_reference to False in system_config.yaml to compute"
           f" the reference Enformer scores for this genome version. Alternatively, set a different genome"
           f" version (e.g. hg19) in config.yaml.", file=sys.stderr)
     sys.exit(1)

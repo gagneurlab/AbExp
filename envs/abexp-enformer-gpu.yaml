@@ -19,4 +19,4 @@ dependencies:
   - tensorflow-gpu>=2.14.0
   - cudatoolkit>=11.0
   - pip:
-    - "kipoi-enformer[gpu] @ git+https://github.com/gagneurlab/AbExp-utils.git#subdirectory=packages/kipoi_enformer"
+    - "kipoi-enformer @ git+https://github.com/gagneurlab/AbExp-utils.git#subdirectory=packages/kipoi_enformer"

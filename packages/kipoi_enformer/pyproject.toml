@@ -37,6 +37,3 @@ dev = [
     "pytest-xdist",
     "cython"
 ]
-gpu = [
-    "tensorflow-gpu>=2.14.0"
-]

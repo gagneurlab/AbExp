@@ -316,7 +316,7 @@ class EnformerTissueMapper:
                 res = []
             else:
                 res = lm.predict(scores).flatten()
-            tissue_df = tissue_df.with_columns(pl.Series(name='score', values=res),
+            tissue_df = tissue_df.with_columns(pl.Series(name='score', values=res, dtype=pl.Float32),
                                                pl.lit(tissue).alias('tissue'))
             dfs.append(tissue_df)
         enformer_df = pl.concat(dfs)
@@ -386,11 +386,17 @@ class EnformerVeff:
         # check if alt_ldf is empty and write empty file if that's the case
         if alt_ldf.select(pl.len()).collect().item() == 0:
             logger.warning('The alternate scores are empty. No variant effect to calculate.')
-            veff_ldf = (alt_ldf.select(['chrom', 'strand', 'gene_id', 'variant_start',
-                                        'variant_end', 'ref', 'alt', 'tissue', ]).
-                        with_columns(pl.Series('veff_score', [], dtype=pl.Float32)).
-                        collect())
-            veff_ldf.write_parquet(output_path)
+            pl.DataFrame(schema={
+                "chrom": pl.String,
+                "strand": pl.String,
+                "gene_id": pl.String,
+                "variant_start": pl.Int64,
+                "variant_end": pl.Int64,
+                "ref": pl.String,
+                "alt": pl.String,
+                "tissue": pl.String,
+                "veff_score": pl.Float32
+            }).write_parquet(output_path)
             return
 
         # refactored dataloader

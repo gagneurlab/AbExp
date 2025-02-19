@@ -20,5 +20,3 @@ dependencies:
   - pip
   - pip:
     - "kipoi-enformer @ git+https://github.com/gagneurlab/AbExp-utils.git#subdirectory=packages/kipoi_enformer"
-variables:
-  CONDA_OVERRIDE_CUDA: 12.6

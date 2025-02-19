@@ -16,8 +16,9 @@ dependencies:
   - zarr>=2.15.0
   - xarray>=2024.5.0
   - tensorflow-hub>=0.16.1
-  - tensorflow-gpu>=2.14.0
-  - cudatoolkit>=11.0
+  - tensorflow-gpu==2.16.1
   - pip
   - pip:
     - "kipoi-enformer @ git+https://github.com/gagneurlab/AbExp-utils.git#subdirectory=packages/kipoi_enformer"
+variables:
+  CONDA_OVERRIDE_CUDA: 12.6

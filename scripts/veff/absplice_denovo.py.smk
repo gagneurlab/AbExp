@@ -120,7 +120,7 @@ else:
         params:
             genome = ASSEMBLY.lower()
         conda:
-            f"{CONDA_ENV_YAML_DIR}/abexp-spliceai-rocksdb.yaml"
+            f"{CONDA_ENV_YAML_DIR}/abexp-spliceai.yaml"
         shell:
             'spliceai -I {input.vcf} -O {output.result} -R {input.fasta} -A {params.genome}'
     
@@ -135,10 +135,7 @@ else:
             spliceai_csv = temp(SPLICEAI_VEFF_CSV_PATTERN),
         conda:
             f"{CONDA_ENV_YAML_DIR}/abexp-absplice.yaml"
-        run:
-            from absplice.utils import read_spliceai_vcf
-            df = read_spliceai_vcf(input.spliceai_vcf)
-            df.to_csv(output.spliceai_csv, index=False)
+        script: "spliceai_vcf_to_csv.py"
 
 
 rule absplice_dna:

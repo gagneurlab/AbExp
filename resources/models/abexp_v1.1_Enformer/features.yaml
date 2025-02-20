@@ -1,4 +1,5 @@
 - feature.enformer@Enformer
+- feature.expected_expr@expression_dispersion
 - feature.splice_ensemble@AbSplice
 - feature.splice_ensemble@MMSplice_SpliceMap_Psi_ref
 - feature.vep@features.cadd_raw.max
@@ -24,4 +25,3 @@
 - feature.vep@features.regulatory_region_amplification.proportion
 - feature.vep@features.TFBS_amplification.proportion
 - feature.vep@features.TF_binding_site_variant.proportion
-- feature.expected_expr@theta

@@ -11,6 +11,7 @@ dependencies:
   - tqdm
   - click
   - pyarrow
+  - tensorflow
   - onnx
   - onnxruntime
   - pandas

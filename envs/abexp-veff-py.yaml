@@ -21,7 +21,7 @@ dependencies:
 - bioconda::pyfaidx
 - bioconda::pyranges
 - bioconda::vcf2parquet>=0.4
-- bioconda::snakemake
+- bioconda::snakemake<8.0
 - pip
 - pip:
   - snakemk_util

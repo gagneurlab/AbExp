@@ -44,6 +44,7 @@ dl_args = dl_args | {'fasta_file': input_['fasta_path'],
                      'canonical_only': config['canonical_only'],
                      'size': None,
                      'gtf': gtf_df}
+logger.info(dl_args)
 
 dl = TSSDataloader.from_allele_type(allele, **dl_args, )
 Enformer().predict(dl, batch_size=config['batch_size'], filepath=pathlib.Path(output[0]),

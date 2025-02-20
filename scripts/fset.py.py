@@ -121,8 +121,7 @@ features_df = plf.join_featuresets(
     index_cols=snakemake.params["index_cols"],
     fill_values=fill_values,
     broadcast_columns=distinct_values,
-    join="outer_coalesce",
-)
+    join="outer")
 features_df =(
     features_df
     .drop_nulls(subset=[

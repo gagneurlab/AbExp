@@ -1,6 +1,7 @@
 from kipoi_enformer.enformer import EnformerVeff
 from kipoi_enformer.logger import setup_logger
 import pandas as pd
+import polars as pl
 
 # SNAKEMAKE SCRIPT
 input_ = snakemake.input
@@ -22,4 +23,5 @@ veff.run(input_['ref_tissue_paths'], input_['vcf_tissue_path'], output[0],
          downstream_tss=None)
 
 # rename the veff_score column to Enformer
-pd.read_parquet(output[0]).rename(columns={'veff_score': 'Enformer'}).to_parquet(output[0])
+pl.read_parquet(output[0]).rename(
+    {'veff_score': 'Enformer', 'variant_start': 'start', 'variant_end': 'end', 'gene_id': 'gene'}).write_parquet(output[0])

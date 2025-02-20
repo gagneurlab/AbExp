@@ -169,7 +169,7 @@ def join_featuresets(
             full_df = full_df.join(
                 other_df,
                 on=[c for c in index_cols if c in full_df.columns and c in other_df.columns],
-                how=join,
+                how=join, coalesce=True
             )
 
     if fill_values is not None:

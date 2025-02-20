@@ -23,4 +23,5 @@ veff.run(input_['ref_tissue_paths'], input_['vcf_tissue_path'], output[0],
          downstream_tss=None)
 
 # rename the veff_score column to Enformer
-pl.read_parquet(output[0]).rename({'veff_score': 'Enformer'}).write_parquet(output[0])
+pl.read_parquet(output[0]).rename(
+    {'veff_score': 'Enformer', 'variant_start': 'start', 'variant_end': 'end', 'gene_id': 'gene'}).write_parquet(output[0])

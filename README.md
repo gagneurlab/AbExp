@@ -1,6 +1,6 @@
 # AbExp variant effect prediction pipeline
 
-AbExp is a tool to predict aberrant gene underexpression in 48 human tissue based on DNA sequence variants.
+AbExp is a tool to predict aberrant gene expression in 49 human tissue based on DNA sequence variants.
 It was trained on aberrant gene expression calls from the GTEx dataset.
 
 This repository contains a bioinformatics software pipeline for calculating **AbExp variant effect predictions**, taking vcf files as input.
@@ -18,7 +18,9 @@ The preprint to this method can be found in [bioRxiv](https://doi.org/10.1101/20
 
 ## Setup
 
-1) install conda and mamba on your system
+1) install conda and mamba on your system.
+
+   Tip: Use the [conda-libmamba-solver](https://conda.github.io/conda-libmamba-solver/user-guide/) for an improved experience when installing environments with `conda`!
 2) To download the VEP cache (if not existing yet):
    ```bash
    VEP_CACHE_PATH="<your cache path here>"

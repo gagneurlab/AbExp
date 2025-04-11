@@ -56,12 +56,12 @@ The publication to this method can be found in [Nature Communications](https://w
 
 ## Usage
 
-1) Edit `config.yaml` to your needs:
-   - Specify `vcf_input_dir`. All `.vcf|.vcf.gz|.vcf.bgz|.bcf` files in this folder will be annotated. Genotypes are not required.
-   - Specify `vcf_is_normalized: True` if all variants are left-normalized and biallelic (`bcftools norm -cs -m`).
+1) Edit the `config.yaml` and specify the following parameters:
+   - `vcf_input_dir`. All `.vcf|.vcf.gz|.vcf.bgz|.bcf` files in this folder will be annotated. Genotypes are not required.
+   - `vcf_is_normalized: True` if all variants are left-normalized and biallelic (`bcftools norm -cs -m`).
      Otherwise, the pipeline will normalize the variants before annotation.
-   - Specify the `output_dir`
-   - Specify `fasta_file` and `gtf_file` corresponding to the `human_genome_version`.
+   - `output_dir`
+   - `fasta_file` and `gtf_file` corresponding to the `human_genome_version`.
      The `gtf_file` needs to contain Ensembl gene and transcript identifiers.
      Therefore, it is highly recommended to use the [Gencode genome annotations](https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/).
 

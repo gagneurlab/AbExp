@@ -71,7 +71,7 @@ The publication to this method can be found in [Nature Communications](https://w
    All rules are annotated with resource requirements s.t. snakemake can submit jobs to HPC clusters or cloud environments.
    It is highly recommended to use snakemake with some batch submission system, e.g. SLURM.
    For further information, please visit the [Snakemake documentation](https://snakemake.readthedocs.io/).
-3) The resulting variant effect predictions will be stored in `<output_dir>/predict/abexp_v1.0/<input_vcf_file>.parquet`. It will contain the following columns:
+3) The resulting variant effect predictions will be stored in `<output_dir>/predict/abexp_v1.1/<input_vcf_file>.parquet`. It will contain the following columns:
    - 'chrom': chromosome of the variant
    - 'start': start position of the variant (0-based)
    - 'end': end position of the variant (1-based)

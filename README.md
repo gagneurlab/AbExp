@@ -4,7 +4,7 @@ AbExp is a tool to predict aberrant gene expression in 49 human tissue based on 
 It was trained on aberrant gene expression calls from the GTEx dataset.
 
 This repository contains a bioinformatics software pipeline for calculating **AbExp variant effect predictions**, taking vcf files as input.
-The publication to this method can be found in [Nature Communications](https://www.nature.com/articles/s41467-025-58210-w).
+The publication to this method can be found in [Nature Communications](https://www.nature.com/articles/s41467-025-58210-w). We also offer a [web interface](https://abexp.cmm.cit.tum.de/) for querying AbExp scores on any SNP.
 
 ## Minimum resource requirements
 

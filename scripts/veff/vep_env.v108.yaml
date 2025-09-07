@@ -11,6 +11,7 @@ dependencies:
 - bioconda::perl-bio-bigfile
 - bioconda::perl-bio-procedural
 - bioconda::perl-set-intervaltree
+- bioconda::perl-list-moreutils
 - bioconda::ensembl-vep=108
 - bioconda::samtools
 - bioconda::tabix

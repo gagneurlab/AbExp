@@ -2,7 +2,7 @@ name: abexp-absplice
 channels:
   - conda-forge
 dependencies:
-  - python==3.8
+  - python==3.10
   - cython
   - pytest
   - setuptools
@@ -15,11 +15,12 @@ dependencies:
   - onnx
   - onnxruntime
   - pandas
-  - numpy==1.23
+  - numpy>=1.23,<2
   # needed for splicemap
   - seaborn
   - scikit-learn
   - bioconda::pyfaidx
+  - bioconda::cyvcf2
   - bioconda::pyranges>=0.0.71
   - bioconda::tabix
   - bioconda::spliceai

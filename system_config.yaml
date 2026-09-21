@@ -12,6 +12,10 @@ vep:
   loftee_data_dir: "/s/raw/loftee/{human_genome_assembly}"
   loftee_src_path: "/s/raw/loftee/{human_genome_assembly}_src"
 
+# mehari:
+#   transcripts_db: "/s/raw/mehari/{human_genome_assembly}.txs.bin.zst"
+#   conda_env: "abexp-mehari"
+
 
 #enformer:
 #  download_reference: True

@@ -37,6 +37,11 @@ FASTA_FILE=os.path.abspath(config["fasta_file"])
 FASTA_INDEX_FILE=os.path.abspath(config.get("fasta_file_idx", config["fasta_file"] + ".fai"))
 GTF_FILE=os.path.abspath(config["gtf_file"])
 
+# transcript consequence annotator: "vep" (default) or "mehari"; see scripts/veff/{vep,mehari}.smk
+VEFF_ANNOTATOR=(config.get("veff") or {}).get("annotator", "vep")
+if VEFF_ANNOTATOR not in ("vep", "mehari"):
+    raise ValueError(f"Unknown veff.annotator: '{VEFF_ANNOTATOR}' (expected 'vep' or 'mehari')")
+
 config["system"] = recursive_format(
     config["system"],
     SafeDict(

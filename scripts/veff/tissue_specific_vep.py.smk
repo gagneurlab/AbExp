@@ -10,7 +10,8 @@ SCRIPT=os.path.basename(SNAKEFILE)[:-4]
 import yaml
 
 
-VEP_PQ_INPUT_PATTERN=f"{VEFF_BASEDIR}/vep/veff.parquet/{{vcf_file}}.parquet"
+# consequence table from the configured annotator (vep.smk or mehari.smk); both write the same layout
+VEP_PQ_INPUT_PATTERN=f"{VEFF_BASEDIR}/{VEFF_ANNOTATOR}/veff.parquet/{{vcf_file}}.parquet"
 
 OUTPUT_BASEDIR=f"{VEFF_BASEDIR}/{SCRIPT}"
 VEFF_VCF_PQ_PATTERN=f"{OUTPUT_BASEDIR}/veff.parquet/{{vcf_file}}.parquet"

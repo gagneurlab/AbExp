@@ -155,22 +155,28 @@ groupby = ["chrom", "start", "end", "ref", "alt", "gene", "tissue"]
 groupby
 
 # %%
+# `LoF` and the scores only come from VEP; the mehari table has neither
+has_lof = "LoF" in vep_df.schema
+score_aggregations = {
+    "sift_score": (-pl.col("sift_score").log10()).max().alias("sift_score.pval_max_significant"),
+    "CADD_RAW": pl.col("CADD_RAW").max().alias("cadd_raw.max"),
+    "polyphen_score": pl.col("polyphen_score").max().alias("polyphen_score.max"),
+    "condel_score": pl.col("condel_score").max().alias("condel_score.max"),
+}
+
 aggregations = pl.struct([
     *[pl.col("Consequence").struct.field(c.name).max().cast(t.Boolean).alias(f"{c.name}.max") for c in vep_df.schema["Consequence"].fields],
     *[pl.col("Consequence").struct.field(c.name).cast(t.Int32).sum().alias(f"{c.name}.sum") for c in vep_df.schema["Consequence"].fields],
     *[(pl.col("median_transcript_proportions") * pl.col("Consequence").struct.field(c.name)).sum().alias(f"{c.name}.proportion") for c in vep_df.schema["Consequence"].fields],
-    *[pl.col("LoF").struct.field(c.name).max().cast(t.Boolean).alias(f"LoF_{c.name}.max") for c in vep_df.schema["LoF"].fields],
-    *[pl.col("LoF").struct.field(c.name).cast(t.Int32).sum().alias(f"LoF_{c.name}.sum") for c in vep_df.schema["LoF"].fields],
-    *[(pl.col("median_transcript_proportions") * pl.col("LoF").struct.field(c.name)).sum().alias(f"LoF_{c.name}.proportion") for c in vep_df.schema["LoF"].fields],
+    *[pl.col("LoF").struct.field(c.name).max().cast(t.Boolean).alias(f"LoF_{c.name}.max") for c in (vep_df.schema["LoF"].fields if has_lof else [])],
+    *[pl.col("LoF").struct.field(c.name).cast(t.Int32).sum().alias(f"LoF_{c.name}.sum") for c in (vep_df.schema["LoF"].fields if has_lof else [])],
+    *[(pl.col("median_transcript_proportions") * pl.col("LoF").struct.field(c.name)).sum().alias(f"LoF_{c.name}.proportion") for c in (vep_df.schema["LoF"].fields if has_lof else [])],
 #     pl.max(-pl.log10(pl.col("sift_score"))).alias("sift_score.pval_max_significant"),
 #     pl.max(pl.col("CADD_RAW")).alias("cadd_raw.max"),
 #     pl.max(pl.col("polyphen_score")).alias("polyphen_score.max"),
 #     pl.max(pl.col("condel_score")).alias("condel_score.max"),
 #     pl.count("Consequence").alias("num_variants"),
-    (-pl.col("sift_score").log10()).max().alias("sift_score.pval_max_significant"),
-    pl.col("CADD_RAW").max().alias("cadd_raw.max"),
-    pl.col("polyphen_score").max().alias("polyphen_score.max"),
-    pl.col("condel_score").max().alias("condel_score.max"),
+    *[expr for col, expr in score_aggregations.items() if col in vep_df.schema],
     pl.count("Consequence").alias("num_transcripts"),
 ]).alias("features")
 aggregations

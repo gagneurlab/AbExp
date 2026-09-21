@@ -45,6 +45,16 @@ vep:
   loftee_data_dir: "{RESOURCES_DIR}/{{human_genome_assembly}}"
   loftee_src_path: "{RESOURCES_DIR}/{{human_genome_assembly}}_src"
 
+# only used with `veff.annotator: "mehari"` in the config
+mehari:
+  # transcript database. The pipeline builds it from the GENCODE files given as
+  # `veff.mehari_gencode_gff3` and `veff.mehari_gencode_transcripts_fasta` in the config.
+  transcripts_db: "{RESOURCES_DIR}/mehari/{{human_genome_assembly}}.txs.bin.zst"
+  # name of an existing conda environment with the mehari Python package. By default,
+  # `snakemake --use-conda` creates scripts/veff/mehari_env.yaml, which compiles mehari
+  # from source.
+  conda_env: null
+
 absplice:
   tissue_mapping_csv: "{SNAKEMAKE_DIR}/resources/AbSplice_tissue_mapping.csv"
   splicemap:

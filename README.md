@@ -65,6 +65,10 @@ The publication to this method can be found in [Nature Communications](https://w
      The `gtf_file` needs to contain Ensembl gene and transcript identifiers.
      Therefore, it is highly recommended to use the [Gencode genome annotations](https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/).
 
+   - (optional) `veff.annotator: "mehari"` to annotate transcript consequences with
+     [mehari](https://github.com/varfish-org/mehari) instead of VEP, together with
+     `veff.mehari_gencode_gff3` and `veff.mehari_gencode_transcripts_fasta`, see below.
+
    An example is pre-configured and can be used to test the pipeline.
 
 2) Run `snakemake --use-conda -c all --configfile=config.yaml`.
@@ -82,6 +86,28 @@ The publication to this method can be found in [Nature Communications](https://w
    - 'tissue_type', GTEx tissue type, e.g. "Blood Vessel"
    - 'abexp_v1.1': The predicted AbExp score
    - a set of features used to predict the AbExp score
+
+## Using mehari instead of VEP
+
+[mehari](https://github.com/varfish-org/mehari) can replace VEP for the transcript consequence annotation.
+It needs no VEP cache and no LOFTEE, and it runs much faster.
+The rules in `scripts/veff/mehari.smk` call the mehari Python package and keep its output.
+The per-transcript table has mehari's own consequence terms, and there are no LoF or NMD calls and no
+CADD, SIFT, PolyPhen or Condel scores.
+The shipped AbExp models were trained on VEP features and do not run on this route.
+It is meant for training new models.
+
+Setup:
+1) Download the GENCODE GFF3 annotation and transcript FASTA of the release of your `gtf_file`, e.g.
+   `bash misc/mehari/download_gencode.sh 42 GRCh38 data/gencode/release_42` (GENCODE 42 = Ensembl 108).
+2) In `config.yaml`, set `veff.annotator: "mehari"`, `veff.mehari_gencode_gff3` and
+   `veff.mehari_gencode_transcripts_fasta`.
+   The pipeline builds the mehari transcript database from the two files (about 6 minutes and 4 GB RAM for
+   a full GRCh38 release) and stores it at `mehari.transcripts_db` (see `defaults.yaml`).
+3) Run snakemake with `--use-conda`. The mehari rules use the environment `scripts/veff/mehari_env.yaml`,
+   which builds the mehari Python package from source (no wheels are published yet).
+   If you already have a conda environment with the mehari Python package, set `mehari.conda_env` in
+   `system_config.yaml` to its name instead.
 
 ## License
 All source code and model weights in this repository are licensed under the [MIT license](./LICENSE).

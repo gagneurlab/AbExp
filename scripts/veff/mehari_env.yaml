@@ -1,0 +1,34 @@
+name: abexp-mehari
+
+channels:
+- conda-forge
+- bioconda
+
+dependencies:
+- python>=3.12
+- ipykernel
+- numpy
+- pyyaml
+- polars>=1.39
+- pyarrow
+- tqdm
+- pip
+- git
+# build requirements of the mehari Python package; mehari_env.post-deploy.sh installs it
+# from source, since no wheels are published yet. mehari links against the RocksDB and
+# snappy libraries of this environment.
+- rust
+- maturin
+- cmake
+- clangdev
+- protobuf
+- pkg-config
+- openssl
+- sqlite
+- zlib
+- rocksdb
+- snappy
+- lz4-c
+- zstd
+- bzip2
+- gflags

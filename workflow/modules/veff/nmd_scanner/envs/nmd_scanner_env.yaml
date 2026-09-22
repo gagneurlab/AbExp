@@ -1,0 +1,16 @@
+name: abexp-nmd-scanner
+
+channels:
+- conda-forge
+- bioconda
+
+dependencies:
+- python>=3.12
+- ipykernel
+- pip
+# nmd_scanner does not depend on pyarrow by default; it is needed to write parquet
+- pyarrow
+- pip:
+  # NMD-Scanner (https://github.com/gagneurlab/NMD-Scanner) is published on PyPI; this pins
+  # the release that this module was written and tested against.
+  - nmd-scanner==0.2.0

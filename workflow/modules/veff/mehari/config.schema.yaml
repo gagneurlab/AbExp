@@ -30,8 +30,8 @@ properties:
   gencode_gff3:
     type: string
     description: >-
-      GENCODE annotation (GFF3), of the same release as the GTF file of the other steps.
-      The module builds the mehari transcript database from it.
+      GENCODE annotation (GFF3). The veff module passes its `gff3_file` by default. The module
+      builds the mehari transcript database from it.
   gencode_transcripts_fasta:
     type: string
     description: GENCODE transcript sequences (FASTA) of the same release.

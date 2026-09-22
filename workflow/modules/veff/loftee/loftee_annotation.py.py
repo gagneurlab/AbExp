@@ -21,9 +21,9 @@
 # variant-key convention as the other veff modules; reloftee's own `chrom`, `ref`, `alt`,
 # `gene` and `transcript` columns stay as they are.
 #
-# reloftee calls its own loss-of-function consequences from the VCF and an Ensembl-style
-# GTF/GFF3 (`biotype`/`transcript_biotype` attributes); it does not take VEP's or mehari's
-# consequence table as input, so there is no term translation here.
+# reloftee calls its own loss-of-function consequences from the VCF and a GTF/GFF3 annotation
+# (Ensembl or GENCODE); it does not take VEP's or mehari's consequence table as input, so
+# there is no term translation here.
 
 # %%
 from IPython.display import display

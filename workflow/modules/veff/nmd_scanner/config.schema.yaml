@@ -31,8 +31,8 @@ properties:
   gtf_file:
     type: string
     description: >-
-      Genome annotation (GTF) with the CDS and exon rows, e.g. the pipeline's own gtf_file.
-      NMD-Scanner reads it directly; no GENCODE GFF3 or transcript FASTA is needed.
+      Genome annotation (GTF) with the CDS and exon rows, e.g. the GENCODE GTF of the same
+      release as the pipeline's `gff3_file`. NMD-Scanner 0.2.0 reads only GTF.
   reassign_exons:
     type: boolean
     description: >-

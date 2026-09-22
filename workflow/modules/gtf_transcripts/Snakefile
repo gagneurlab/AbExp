@@ -4,7 +4,7 @@ from snakemake.utils import min_version, validate
 
 min_version("9.0")
 
-# Converts the transcripts of a GTF file to parquet. See config.schema.yaml.
+# Converts the transcripts of a GENCODE GFF3 file to parquet. See config.schema.yaml.
 validate(config, "config.schema.yaml")
 
 # Rules use `conda: CONDA_ENV_YAML_DIR.join("<env>.yaml")`, which does not depend on the folder
@@ -12,7 +12,7 @@ validate(config, "config.schema.yaml")
 CONDA_ENV_YAML_DIR = workflow.current_basedir.join("envs")
 
 OUTPUT_DIR = os.path.abspath(config["output_dir"])
-GTF_FILE = os.path.abspath(config["gtf_file"])
+GFF3_FILE = os.path.abspath(config["gff3_file"])
 
 
 include: "gtf_transcripts.py.smk"

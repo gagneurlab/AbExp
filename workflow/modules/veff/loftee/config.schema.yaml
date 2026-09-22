@@ -36,10 +36,10 @@ properties:
   genome_annotation:
     type: string
     description: >-
-      Ensembl GTF or GFF3 transcript annotation (gzip allowed), of the same assembly as
-      fasta_file. reloftee reads the Ensembl-style attributes `biotype`/`transcript_biotype`;
-      GENCODE annotation (`gene_type`/`transcript_type`) is not recognized and yields zero
-      transcript models, so this cannot be the same file as the pipeline's `gtf_file`.
+      GTF or GFF3 transcript annotation from Ensembl or GENCODE (gzip allowed), of the same
+      assembly as fasta_file. The veff module passes its `gff3_file` by default. GENCODE
+      annotation needs a reloftee version that reads GENCODE; older versions build zero
+      transcript models from it.
   gerp_bigwig:
     type: ["string", "null"]
     default: null
@@ -70,6 +70,12 @@ properties:
       repository to install from, so `snakemake --sdm conda` cannot build a working
       environment on its own: envs/loftee_env.yaml only provides reloftee's other
       dependencies. Set this to an environment that already has reloftee installed.
+  enabled:
+    type: boolean
+    default: false
+    description: >-
+      Runs this module. Off by default: reloftee needs an existing conda environment
+      (`conda_env`), and its output is not read by tissue_specific_vep, fset or predict.
 
 required:
   - vcf

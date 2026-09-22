@@ -61,15 +61,34 @@ os.getcwd()
 # # Get gene annotation
 
 # %%
-gtf_file = snakemake.input["gtf_file"]
-gtf_file
+gff3_file = snakemake.input["gff3_file"]
+gff3_file
 
 # %%
-gtf_df = pyranges.read_gtf(gtf_file, as_df=True, duplicate_attr=True)
-gtf_df
+gff3_df = pyranges.read_gff3(gff3_file, as_df=True)
+gff3_df
 
 # %%
-transcripts = gtf_df.query("Feature == 'transcript'")
+transcripts = gff3_df.query("Feature == 'transcript'")
+transcripts
+
+# %%
+# GENCODE GFF3 marks the chrY PAR copies only in `ID` and `Parent`: with the suffix "_PAR_Y",
+# or with the older prefix "ENSTR" in some lift37 entries (e.g. ENSTR0000302805.2). Their
+# `transcript_id` and `gene_id` are those of the chrX copy. Add the suffix "_PAR_Y", as in the
+# GENCODE GTF, so that the IDs stay unique.
+is_par_y = transcripts["ID"].str.endswith("_PAR_Y") | transcripts["ID"].str.startswith("ENSTR")
+
+
+def add_par_y_suffix(ids):
+    missing = is_par_y & ~ids.str.endswith("_PAR_Y")
+    return ids.where(~missing, ids + "_PAR_Y")
+
+
+transcripts = transcripts.assign(
+    transcript_id=add_par_y_suffix(transcripts["transcript_id"]),
+    gene_id=add_par_y_suffix(transcripts["gene_id"]),
+).drop(columns=["ID", "Parent"])
 transcripts
 
 # %%

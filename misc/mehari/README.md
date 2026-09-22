@@ -1,10 +1,10 @@
 # GENCODE files for the mehari transcript database
 
 tl;dr: run `download_gencode.sh` to fetch the GENCODE GFF3 annotation and transcript
-FASTA of one release, then point `veff.mehari_gencode_gff3` and
-`veff.mehari_gencode_transcripts_fasta` in `config/config.yaml` at the two files. The pipeline
-rule `veff__mehari_transcripts_db` (`workflow/modules/veff/mehari/mehari_transcripts_db.py.py`) builds
-the mehari transcript database from them.
+FASTA of one release, then point `gff3_file` and `veff.mehari_gencode_transcripts_fasta` in
+`config/config.yaml` at the two files. The pipeline rule `veff__mehari_transcripts_db`
+(`workflow/modules/veff/mehari/mehari_transcripts_db.py.py`) builds the mehari transcript
+database from them.
 
 ## Command
 
@@ -18,7 +18,7 @@ Example, GENCODE 42 (= Ensembl 108) for GRCh38:
 misc/mehari/download_gencode.sh 42 GRCh38 data/gencode/release_42
 ```
 
-Use the GENCODE release of your `gtf_file`. Human GENCODE release N corresponds to
+Use the GENCODE release of your `gff3_file`. Human GENCODE release N corresponds to
 Ensembl release N + 66.
 
 ## mehari version requirement

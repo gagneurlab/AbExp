@@ -63,13 +63,13 @@ The publication to this method can be found in [Nature Communications](https://w
    - `vcf_is_normalized: True` if all variants are left-normalized and biallelic (`bcftools norm -cs -m`).
      Otherwise, the pipeline will normalize the variants before annotation.
    - `output_dir`
-   - `fasta_file` and `gtf_file` corresponding to the `human_genome_version`.
-     The `gtf_file` needs to contain Ensembl gene and transcript identifiers.
-     Therefore, it is highly recommended to use the [Gencode genome annotations](https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/).
+   - `fasta_file` and `gff3_file` corresponding to the `human_genome_version`.
+     `gff3_file` is a [GENCODE genome annotation](https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/) in GFF3 format,
+     e.g. `gencode.v42.annotation.gff3.gz`.
 
    - (optional) `veff.annotator: "mehari"` to annotate transcript consequences with
      [mehari](https://github.com/varfish-org/mehari) instead of VEP, together with
-     `veff.mehari_gencode_gff3` and `veff.mehari_gencode_transcripts_fasta`, see below.
+     `veff.mehari_gencode_transcripts_fasta`, see below.
 
    An example is pre-configured and can be used to test the pipeline.
 
@@ -101,11 +101,11 @@ The shipped AbExp models were trained on VEP features and do not run on this rou
 It is meant for training new models.
 
 Setup:
-1) Download the GENCODE GFF3 annotation and transcript FASTA of the release of your `gtf_file`, e.g.
+1) Download the GENCODE transcript FASTA of the release of your `gff3_file`, e.g.
    `bash misc/mehari/download_gencode.sh 42 GRCh38 data/gencode/release_42` (GENCODE 42 = Ensembl 108).
-2) In `config/config.yaml`, set `veff.annotator: "mehari"`, `veff.mehari_gencode_gff3` and
-   `veff.mehari_gencode_transcripts_fasta`.
-   The pipeline builds the mehari transcript database from the two files (about 6 minutes and 4 GB RAM for
+   The script also fetches the GFF3 of that release.
+2) In `config/config.yaml`, set `veff.annotator: "mehari"` and `veff.mehari_gencode_transcripts_fasta`.
+   The pipeline builds the mehari transcript database from `gff3_file` and the FASTA (about 6 minutes and 4 GB RAM for
    a full GRCh38 release) and stores it at `system.mehari.transcripts_db` (see `workflow/modules/veff/mehari/config.schema.yaml`).
 3) Run snakemake with `--sdm conda`. The mehari rules use the environment `workflow/modules/veff/mehari/envs/mehari_env.yaml`,
    which builds the mehari Python package from source (no wheels are published yet).
@@ -120,7 +120,7 @@ with the Snakemake [`module`](https://snakemake.readthedocs.io/en/stable/snakefi
 ```
 workflow/Snakefile                          # AbExp: vcf_prep, gtf_transcripts, veff, feature sets, prediction
 workflow/modules/vcf_prep/                  # normalizes and strips the VCFs, sets the variant IDs
-workflow/modules/gtf_transcripts/           # transcripts of the GTF file as parquet
+workflow/modules/gtf_transcripts/           # transcripts of the GFF3 file as parquet
 workflow/modules/veff/Snakefile             # variant annotation: prepared VCFs in, per-variant features out
 workflow/modules/veff/vep/                  # VEP with LOFTEE and CADD
 workflow/modules/veff/mehari/               # mehari
@@ -132,14 +132,16 @@ workflow/modules/veff/nmd_scanner/          # NMD-Scanner
 ```
 
 `workflow/modules/veff/loftee` runs [reloftee](https://github.com/gagneurlab/reloftee), a
-VEP-free reimplementation of LOFTEE. It calls its own loss-of-function consequences from an
-Ensembl-style GTF/GFF3 annotation and is only loaded when `system.loftee.genome_annotation`
-is set; see its config.schema.yaml for the required and optional inputs.
+VEP-free reimplementation of LOFTEE. It calls its own loss-of-function consequences from
+`gff3_file`, or from another Ensembl or GENCODE annotation in `system.loftee.genome_annotation`.
+It is off by default; set `system.loftee.enabled: true` and `system.loftee.conda_env` to run it.
+See its config.schema.yaml for the required and optional inputs.
 
 `workflow/modules/veff/nmd_scanner` adds [NMD-Scanner](https://github.com/gagneurlab/NMD-Scanner),
 which scans variants for premature termination codons and evaluates the NMD escape rules on the
-transcripts of the GTF file, and keeps its own per-transcript, per-variant table. It is off by
-default; set `system.nmd_scanner.enabled: true` to run it.
+transcripts of a GTF file, and keeps its own per-transcript, per-variant table. It is off by
+default; set `system.nmd_scanner.enabled: true` to run it. NMD-Scanner 0.2.0 reads only GTF, so
+also set `system.nmd_scanner.gtf_file` to the GENCODE GTF of the same release as `gff3_file`.
 
 Both modules keep the output of their tool as it is, and neither is read by tissue_specific_vep,
 fset or predict.
@@ -175,7 +177,6 @@ VEP_CONFIG = {
     "output_dir": "results/abexp/veff",
     "human_genome_version": "hg38",
     "fasta_file": "genome.fa",
-    "gtf_file": "annotation.gtf.gz",
     "chrom_alias_tsv": CHROM_ALIAS,
     "vep_cache_dir": "<VEP cache>/{vep_version}",
     "cadd_dir": "<CADD v1.6>/{human_genome_assembly}",

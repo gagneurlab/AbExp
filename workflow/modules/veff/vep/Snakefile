@@ -20,7 +20,6 @@ HUMAN_GENOME_VERSION = config["human_genome_version"]
 ASSEMBLY = {"hg19": "GRCh37", "hg38": "GRCh38"}[HUMAN_GENOME_VERSION]
 
 FASTA_FILE = os.path.abspath(config["fasta_file"])
-GTF_FILE = os.path.abspath(config["gtf_file"])
 CHROM_ALIAS_TSV = config["chrom_alias_tsv"]
 VCF_FILE_PATTERN = config["vcf"]
 

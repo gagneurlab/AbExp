@@ -24,17 +24,17 @@ fasta_file: "example/chr22_hg38.fa"
 # fasta_file_idx: "example/chr22_hg38.fa.fai"
 # fasta_file_idx: "example/chr22_hg19.fa.fai"
 
-gtf_file: "example/chr22.gencode.v40.annotation.gtf.gz"
-# gtf_file: "example/chr22.gencode.v40lift37.annotation.gtf.gz"
+# GENCODE genome annotation (GFF3)
+gff3_file: "example/chr22.gencode.v40.annotation.gff3.gz"
+# gff3_file: "example/chr22.gencode.v40lift37.annotation.gff3.gz"
 
 veff:
   # tool for the transcript consequence annotation: "vep" (default) or "mehari".
   annotator: "vep"
-  # only for "mehari": GENCODE annotation (GFF3) and transcript sequences (FASTA) of the
-  # same release as `gtf_file`. The pipeline builds the mehari transcript database from
-  # them; misc/mehari/download_gencode.sh fetches them. See "Using mehari instead of VEP"
-  # in the README.
-  # mehari_gencode_gff3: "data/gencode/release_40/gencode.v40.annotation.gff3.gz"
+  # only for "mehari": GENCODE transcript sequences (FASTA) of the same release as
+  # `gff3_file`. The pipeline builds the mehari transcript database from the two files;
+  # misc/mehari/download_gencode.sh fetches them. See "Using mehari instead of VEP" in the
+  # README.
   # mehari_gencode_transcripts_fasta: "data/gencode/release_40/gencode.v40.transcripts.fa.gz"
 
 # mapping of chromosome names. By default, maps them to "chr" prefix
@@ -62,6 +62,16 @@ system:
   # mehari:
   #   transcripts_db: "/s/raw/mehari/{human_genome_assembly}.txs.bin.zst"
   #   conda_env: "abexp-mehari"
+
+  # reloftee on `gff3_file`; needs an existing conda environment with reloftee
+  # loftee:
+  #   enabled: True
+  #   conda_env: "reloftee"
+
+  # NMD-Scanner 0.2.0 reads only GTF: set the GTF of the same GENCODE release
+  # nmd_scanner:
+  #   enabled: True
+  #   gtf_file: "data/gencode/release_40/gencode.v40.annotation.gtf.gz"
 
 
   #enformer:

@@ -1,0 +1,64 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+title: nmd_scanner module
+description: >-
+  Scans variants for premature termination codons and evaluates the NMD escape rules with
+  NMD-Scanner, on the transcripts of a GTF file. Writes NMD-Scanner's own per-transcript,
+  per-variant table.
+type: object
+additionalProperties: false
+
+properties:
+  vcf:
+    type: string
+    pattern: "\\{vcf_file\\}"
+    description: >-
+      Input VCFs, left-normalized and single-allelic, as a pattern with the wildcard
+      {vcf_file}, e.g. the stripped VCFs of the vcf_prep module.
+  output_dir:
+    type: string
+    description: The output is <output_dir>/nmd_scanner/veff.parquet/<vcf_file>.parquet.
+  resources_dir:
+    type: string
+    description: Not used by this module; kept for consistency with the other veff submodules.
+  human_genome_version:
+    type: string
+    enum: ["hg19", "hg38"]
+  fasta_file:
+    type: string
+  fasta_file_idx:
+    type: string
+    description: Index of `fasta_file`. Default is `fasta_file` + ".fai".
+  gtf_file:
+    type: string
+    description: >-
+      Genome annotation (GTF) with the CDS and exon rows, e.g. the pipeline's own gtf_file.
+      NMD-Scanner reads it directly; no GENCODE GFF3 or transcript FASTA is needed.
+  reassign_exons:
+    type: boolean
+    description: >-
+      Recompute the exon numbers before the scan. NMD-Scanner recommends this for GENCODE
+      annotations built against hg19, which numbered the exons of minus-strand transcripts
+      the other way round; hg38 annotations do not need it. Default is true if
+      human_genome_version is "hg19", false otherwise.
+  conda_env:
+    type: ["string", "null"]
+    default: null
+    description: >-
+      Name or path of an existing conda environment with the nmd_scanner Python package. By
+      default, `snakemake --sdm conda` creates envs/nmd_scanner_env.yaml, which installs it
+      from PyPI.
+  enabled:
+    type: boolean
+    default: false
+    description: >-
+      The veff module loads this module only with `enabled: true`. Its outputs are built only
+      as targets, see output_dir. Off by default: NMD-Scanner needs its own conda environment
+      and scans every variant against every overlapping transcript, and its output is not read
+      by tissue_specific_vep, fset or predict.
+
+required:
+  - vcf
+  - output_dir
+  - human_genome_version
+  - fasta_file
+  - gtf_file

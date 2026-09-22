@@ -138,6 +138,10 @@ properties:
         type: object
         default: {}
         description: Options of the enformer module (workflow/modules/veff/enformer/config.schema.yaml).
+      nmd_scanner:
+        type: object
+        default: {}
+        description: Options of the nmd_scanner module (workflow/modules/veff/nmd_scanner/config.schema.yaml).
       models:
         type: object
         default: {}

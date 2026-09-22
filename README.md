@@ -130,12 +130,21 @@ workflow/modules/veff/loftee/               # reloftee: LOFTEE loss-of-function 
 workflow/modules/veff/tissue_specific_vep/  # consequences per GTEx tissue
 workflow/modules/veff/absplice/             # AbSplice-DNA
 workflow/modules/veff/enformer/             # Enformer
+workflow/modules/veff/nmd_scanner/          # NMD-Scanner
 ```
 
 `workflow/modules/veff/loftee` runs [reloftee](https://github.com/gagneurlab/reloftee), a
 VEP-free reimplementation of LOFTEE. It calls its own loss-of-function consequences from an
 Ensembl-style GTF/GFF3 annotation and is only loaded when `system.loftee.genome_annotation`
 is set; see its config.schema.yaml for the required and optional inputs.
+
+`workflow/modules/veff/nmd_scanner` adds [NMD-Scanner](https://github.com/gagneurlab/NMD-Scanner),
+which scans variants for premature termination codons and evaluates the NMD escape rules on the
+transcripts of the GTF file, and keeps its own per-transcript, per-variant table. It is off by
+default; set `system.nmd_scanner.enabled: true` to run it.
+
+Both modules keep the output of their tool as it is, and neither is read by tissue_specific_vep,
+fset or predict.
 
 Each module has its own `config.schema.yaml` with its options and defaults, its own scripts and
 conda environments (`envs/`), and the files it ships. Every rule that needs more than a shell has a

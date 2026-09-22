@@ -1,0 +1,79 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+title: loftee module
+description: >-
+  Annotates loss-of-function variants with reloftee (https://github.com/gagneurlab/reloftee),
+  a VEP-free reimplementation of LOFTEE, and writes its per-transcript table unchanged.
+type: object
+additionalProperties: false
+
+properties:
+  vcf:
+    type: string
+    pattern: "\\{vcf_file\\}"
+    description: >-
+      Input VCFs, as a pattern with the wildcard {vcf_file}. They must be left-normalized
+      and single-allelic, e.g. the stripped VCFs of the vcf_prep module.
+  output_dir:
+    type: string
+    description: The output is <output_dir>/loftee/veff.parquet/<vcf_file>.parquet.
+  resources_dir:
+    type: string
+    description: >-
+      Accepted for consistency with the other veff modules; this module does not use it.
+      Default is <output_dir>/resources.
+  human_genome_version:
+    type: string
+    enum: ["hg19", "hg38"]
+  fasta_file:
+    type: string
+    description: >-
+      Genome FASTA, the same file used by the rest of the pipeline. reloftee matches
+      chromosome names with and without a "chr" prefix, so it does not need to match
+      genome_annotation's own naming.
+  fasta_file_idx:
+    type: string
+    description: Index of `fasta_file`. Default is `fasta_file` + ".fai".
+  genome_annotation:
+    type: string
+    description: >-
+      Ensembl GTF or GFF3 transcript annotation (gzip allowed), of the same assembly as
+      fasta_file. reloftee reads the Ensembl-style attributes `biotype`/`transcript_biotype`;
+      GENCODE annotation (`gene_type`/`transcript_type`) is not recognized and yields zero
+      transcript models, so this cannot be the same file as the pipeline's `gtf_file`.
+  gerp_bigwig:
+    type: ["string", "null"]
+    default: null
+    description: >-
+      GERP conservation bigWig. Enables the END_TRUNC filter; omitted, reloftee skips it.
+  human_ancestor_fa:
+    type: ["string", "null"]
+    default: null
+    description: >-
+      Human-ancestor FASTA, samtools/pyfaidx-indexed. Enables the ANC_ALLELE flag; omitted,
+      reloftee skips it.
+  phylocsf_sqlite:
+    type: ["string", "null"]
+    default: null
+    description: >-
+      PhyloCSF SQLite database (table phylocsf_summary). Enables the PHYLOCSF_* flags and
+      the SINGLE_EXON filter; omitted, reloftee skips them.
+  min_intron_size:
+    type: integer
+    default: 15
+    description: Introns shorter than this are flagged SMALL_INTRON. Default is reloftee's own.
+  conda_env:
+    type: ["string", "null"]
+    default: null
+    description: >-
+      Name or path of an existing conda environment with the reloftee Python package
+      installed. reloftee (https://github.com/gagneurlab/reloftee) has no public git
+      repository to install from, so `snakemake --sdm conda` cannot build a working
+      environment on its own: envs/loftee_env.yaml only provides reloftee's other
+      dependencies. Set this to an environment that already has reloftee installed.
+
+required:
+  - vcf
+  - output_dir
+  - human_genome_version
+  - fasta_file
+  - genome_annotation

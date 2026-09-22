@@ -7,9 +7,9 @@ description: |
     {ABEXP_DIR}: the AbExp repository; only as prefix, e.g. "{ABEXP_DIR}/resources/models/...".
     Double braces, e.g. {{vcf_file}}: Snakemake wildcards or values filled in by the rules.
   The workflow combines the modules workflow/modules/vcf_prep, gtf_transcripts and veff
-  (variant annotation). The sections system.vep, system.mehari, system.absplice and
-  system.enformer go to the submodules of veff; the config.schema.yaml of each submodule
-  lists their options.
+  (variant annotation). The sections system.vep, system.mehari, system.loftee,
+  system.absplice and system.enformer go to the submodules of veff; the config.schema.yaml
+  of each submodule lists their options.
 type: object
 
 properties:
@@ -126,6 +126,10 @@ properties:
         type: object
         default: {}
         description: Options of the mehari module (workflow/modules/veff/mehari/config.schema.yaml).
+      loftee:
+        type: object
+        default: {}
+        description: Options of the loftee module (workflow/modules/veff/loftee/config.schema.yaml).
       absplice:
         type: object
         default: {}

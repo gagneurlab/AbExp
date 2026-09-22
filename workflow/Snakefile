@@ -133,6 +133,7 @@ VEFF_CONFIG = {
     "tissue_specific_vep": optional(config["system"], "isoform_proportions_tsv", "isoform_proportions_pq"),
     "absplice": config["system"]["absplice"],
     "enformer": config["system"]["enformer"],
+    "nmd_scanner": config["system"]["nmd_scanner"],
 }
 
 module veff:

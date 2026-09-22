@@ -136,3 +136,23 @@ module enformer:
     config: ENFORMER_CONFIG
 
 use rule * from enformer
+
+
+# off by default: needs its own conda environment, and its output is not read by
+# tissue_specific_vep, fset or predict
+if config["nmd_scanner"].get("enabled"):
+    NMD_SCANNER_CONFIG = {
+        **config["nmd_scanner"],
+        "vcf": STRIPPED_VCF,
+        "output_dir": VEFF_DIR,
+        "resources_dir": RESOURCES_DIR,
+        **GENOME,
+        **optional(config, "fasta_file_idx"),
+        "gtf_file": config["gtf_file"],
+    }
+
+    module nmd_scanner:
+        snakefile: "nmd_scanner/Snakefile"
+        config: NMD_SCANNER_CONFIG
+
+    use rule * from nmd_scanner

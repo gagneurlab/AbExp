@@ -81,6 +81,12 @@ properties:
     type: object
     default: {}
     description: Options of the enformer module.
+  nmd_scanner:
+    type: object
+    default: {}
+    description: >-
+      Options of the nmd_scanner module. The module is only loaded for
+      `nmd_scanner.enabled: true`.
 
 if:
   properties:

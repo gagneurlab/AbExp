@@ -124,10 +124,16 @@ workflow/modules/gtf_transcripts/           # transcripts of the GTF file as par
 workflow/modules/veff/Snakefile             # variant annotation: prepared VCFs in, per-variant features out
 workflow/modules/veff/vep/                  # VEP with LOFTEE and CADD
 workflow/modules/veff/mehari/               # mehari
+workflow/modules/veff/loftee/               # reloftee: LOFTEE loss-of-function calls
 workflow/modules/veff/tissue_specific_vep/  # consequences per GTEx tissue
 workflow/modules/veff/absplice/             # AbSplice-DNA
 workflow/modules/veff/enformer/             # Enformer
 ```
+
+`workflow/modules/veff/loftee` runs [reloftee](https://github.com/gagneurlab/reloftee), a
+VEP-free reimplementation of LOFTEE. It calls its own loss-of-function consequences from an
+Ensembl-style GTF/GFF3 annotation and is only loaded when `system.loftee.genome_annotation`
+is set; see its config.schema.yaml for the required and optional inputs.
 
 Each module has its own `config.schema.yaml` with its options and defaults, its own scripts and
 conda environments (`envs/`), and the files it ships. Every rule that needs more than a shell has a

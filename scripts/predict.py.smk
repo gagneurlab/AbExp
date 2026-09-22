@@ -1,10 +1,3 @@
-SNAKEFILE = workflow.included_stack[-1]
-SNAKEFILE_DIR = os.path.dirname(SNAKEFILE)
-
-SCRIPT=os.path.basename(SNAKEFILE)[:-4]
-
-import yaml
-
 OUTPUT_BASEDIR=f"{RESULTS_DIR}/predict/{{model_type}}"
 
 FSET_BASEDIR=(
@@ -31,22 +24,19 @@ rule predict_veff:
         # the model to predict
         model_joblib=lambda wildcards: config["system"]["models"][wildcards.model_type]["model"],
         features_yaml=lambda wildcards: config["system"]["models"][wildcards.model_type]["features"],
-    params: 
+    params:
         index_cols=['chrom', 'start', 'end', 'ref', 'alt', "gene", "transcript", "tissue", "tissue_type"],
         keep_features=True,
         output_basedir=f"{OUTPUT_BASEDIR}",
-        nb_script=f"{SCRIPT}",
     wildcard_constraints:
         ds_dir="[^/]+",
         model_type="[^/]+",
         feature_set="[^/]+",
         template="[^/]+",
-#     log:
-#         notebook=f"{DS_DIR}/feature_sets/{SCRIPT}@{{id}}.ipynb"
-#     notebook:
-#         "{params.nb_script}.ipynb"
+    conda:
+        "../envs/abexp-veff-py.yaml"
     script:
-        "{params.nb_script}.py"
+        "predict.py.py"
 
 
 del (

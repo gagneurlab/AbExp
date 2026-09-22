@@ -1,9 +1,3 @@
-SNAKEFILE = workflow.included_stack[-1]
-SNAKEFILE_DIR = os.path.dirname(SNAKEFILE)
-
-SCRIPT=os.path.basename(SNAKEFILE)[:-4]
-
-
 rule gtf_transcripts:
     threads: 4
     resources:
@@ -13,8 +7,7 @@ rule gtf_transcripts:
         gtf_transcripts=f"{RESULTS_DIR}/gtf_transcripts.parquet",
     input:
         gtf_file=GTF_FILE,
-    params:
-        nb_script=f"{SCRIPT}",
+    conda:
+        "../envs/abexp-veff-py.yaml"
     script:
-        "{params.nb_script}.py"
-        
+        "gtf_transcripts.py.py"

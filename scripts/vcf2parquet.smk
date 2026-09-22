@@ -1,8 +1,3 @@
-SNAKEFILE = workflow.included_stack[-1]
-SNAKEFILE_DIR = os.path.dirname(SNAKEFILE)
-
-SCRIPT=os.path.basename(SNAKEFILE)[:-4]
-
 rule vcf_to_parquet:
     threads: 1
     resources:
@@ -14,6 +9,8 @@ rule vcf_to_parquet:
         vcf_file=STRIPPED_VCF_FILE_PATTERN,
     wildcard_constraints:
         vcf_file=f".+(?:{'|'.join(VCF_FILE_ENDINGS)})",
+    conda:
+        "../envs/abexp-veff-py.yaml"
     shell:
         """
         env

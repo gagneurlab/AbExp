@@ -1,17 +1,6 @@
-import os
-import sys
-import numpy as np
-
-SNAKEFILE = workflow.included_stack[-1]
-SNAKEFILE_DIR = os.path.dirname(SNAKEFILE)
-
-SCRIPT=os.path.basename(SNAKEFILE)[:-4]
-
-import yaml
-
 ABSPLICE_DENOVO_PRED_PQ=f"{VEFF_BASEDIR}/absplice_denovo.py/veff.parquet/{{vcf_file}}.parquet"
 
-OUTPUT_BASEDIR=f"{VEFF_BASEDIR}/{SCRIPT}"
+OUTPUT_BASEDIR=f"{VEFF_BASEDIR}/absplice.py"
 VEFF_VCF_PQ_PATTERN=f"{OUTPUT_BASEDIR}/veff.parquet/{{vcf_file}}.parquet"
 
 rule veff__absplice:
@@ -25,14 +14,11 @@ rule veff__absplice:
         vcf=VCF_PQ_FILE_PATTERN,
         absplice_denovo_pred_pq=ABSPLICE_DENOVO_PRED_PQ,
         chrom_alias=ancient(CHROM_ALIAS_TSV),
-        tissue_mapping=ancient(config["system"]["absplice"].get(
-            "tissue_mapping_csv",
-            "{SNAKEMAKE_DIR}/resources/AbSplice_tissue_mapping.csv",
-        ).format(SNAKEMAKE_DIR=SNAKEMAKE_DIR)),
-    params:
-        nb_script=f"{SCRIPT}",
+        tissue_mapping=ancient(config["system"]["absplice"]["tissue_mapping_csv"]),
+    conda:
+        "../../envs/abexp-veff-py.yaml"
     script:
-        "{params.nb_script}.py"
+        "absplice.py.py"
 
 
 del (

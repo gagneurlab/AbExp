@@ -1,17 +1,11 @@
-SNAKEFILE = workflow.included_stack[-1]
-SNAKEFILE_DIR = os.path.dirname(SNAKEFILE)
-
-SCRIPT=os.path.basename(SNAKEFILE)[:-4]
-
 for k in download_urls.keys():
     if k not in config["system"]:
         continue
     url = download_urls[k]
     file = config["system"][k]
 
-    # eprint(f"download '{file}' from '{url}'")
-    
     rule:
+        name: f"download_{k}"
         threads: 1
         resources:
             ntasks=1,
@@ -20,6 +14,8 @@ for k in download_urls.keys():
             file=file,
         params:
             url=url,
+        conda:
+            "../envs/abexp-veff-py.yaml"
         shell:
             """
     		set -x
@@ -35,25 +31,22 @@ rule expected_expression_tsv_to_parquet:
         file=config["system"]["expected_expression_tsv"],
     output:
         file=config["system"]["expected_expression_pq"],
-    run:
-        import polars as pl
+    params:
+        dtypes={
+            'gene': "Utf8",
+            'tissue_type': "Utf8",
+            'tissue': "Utf8",
+            'transcript': "Utf8",
+            'gene_is_expressed': "Boolean",
+            'median_expression': "Float32",
+            'expression_dispersion': "Float32",
+        },
+    conda:
+        "../envs/abexp-veff-py.yaml"
+    script:
+        "tsv_to_parquet.py"
 
-        df = pl.read_csv(
-            input["file"],
-            separator="\t",
-            dtypes={
-                'gene': pl.Utf8,
-                'tissue_type': pl.Utf8,
-                'tissue': pl.Utf8,
-                'transcript': pl.Utf8,
-                'gene_is_expressed': pl.Boolean,
-                'median_expression': pl.Float32,
-                'expression_dispersion': pl.Float32,
-            }
-        )
-        df.write_parquet(output["file"], statistics=True, use_pyarrow=True)
 
- 
 rule isoform_proportions_tsv_to_parquet:
     threads: 2
     resources:
@@ -63,20 +56,17 @@ rule isoform_proportions_tsv_to_parquet:
         file=config["system"]["isoform_proportions_tsv"],
     output:
         file=config["system"]["isoform_proportions_pq"],
-    run:
-        import polars as pl
-
-        df = pl.read_csv(
-            input["file"],
-            separator="\t",
-            dtypes={
-                'gene': pl.Utf8,
-                'tissue_type': pl.Utf8,
-                'tissue': pl.Utf8,
-                'transcript': pl.Utf8,
-                'mean_transcript_proportions': pl.Float32,
-                'median_transcript_proportions': pl.Float32,
-                'sd_transcript_proportions': pl.Float32,
-            }
-        )
-        df.write_parquet(output["file"], statistics=True, use_pyarrow=True)
+    params:
+        dtypes={
+            'gene': "Utf8",
+            'tissue_type': "Utf8",
+            'tissue': "Utf8",
+            'transcript': "Utf8",
+            'mean_transcript_proportions': "Float32",
+            'median_transcript_proportions': "Float32",
+            'sd_transcript_proportions': "Float32",
+        },
+    conda:
+        "../envs/abexp-veff-py.yaml"
+    script:
+        "tsv_to_parquet.py"

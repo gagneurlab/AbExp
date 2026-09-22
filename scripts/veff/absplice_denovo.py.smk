@@ -1,16 +1,4 @@
-import os
-import sys
-import numpy as np
-import yaml
-
-from snakemake.io import Namedlist
-
-SNAKEFILE = workflow.included_stack[-1]
-SNAKEFILE_DIR = os.path.dirname(SNAKEFILE)
-
-SCRIPT=os.path.basename(SNAKEFILE)[:-4]
-
-OUTPUT_BASEDIR=f"{VEFF_BASEDIR}/{SCRIPT}"
+OUTPUT_BASEDIR=f"{VEFF_BASEDIR}/absplice_denovo.py"
 
 MMSPLICE_SPLICEMAP_VEFF_CSV_PATTERN=f"{OUTPUT_BASEDIR}/mmsplice_splicemap/{{vcf_file}}.csv"
 SPLICEAI_VEFF_VCF_PATTERN=f"{OUTPUT_BASEDIR}/SpliceAI/{{vcf_file}}.vcf"
@@ -46,6 +34,8 @@ rule veff__absplice_download_splicemaps:
     params:
         splicemap_psi5_url = lambda wildcards: download_urls['splicemap'][wildcards.genome]['psi5'].format(tissue=wildcards.tissue),
         splicemap_psi3_url = lambda wildcards: download_urls['splicemap'][wildcards.genome]['psi3'].format(tissue=wildcards.tissue),
+    conda:
+        "../../envs/abexp-veff-py.yaml"
     shell:
         """
         set -x
@@ -67,7 +57,7 @@ rule veff__mmsplice_splicemap:
     output:
         result = temp(MMSPLICE_SPLICEMAP_VEFF_CSV_PATTERN),
     conda:
-        f"{CONDA_ENV_YAML_DIR}/abexp-absplice.yaml"
+        "../../envs/abexp-absplice.yaml"
     script:
         "absplice_mmsplice_splicemap.py"
 
@@ -80,7 +70,7 @@ if config['system']['absplice']['use_spliceai_rocksdb'] == True:
         params:
             version = ASSEMBLY.lower()
         conda:
-            f"{CONDA_ENV_YAML_DIR}/abexp-spliceai-rocksdb.yaml"
+            "../../envs/abexp-spliceai-rocksdb.yaml"
         output:
             spliceai_rocksdb = directory(config["system"]["absplice"]["spliceai_rocksdb_path"][HUMAN_GENOME_VERSION])
         shell:
@@ -103,7 +93,7 @@ if config['system']['absplice']['use_spliceai_rocksdb'] == True:
             lookup_only = False,
             genome = ASSEMBLY.lower()
         conda:
-            f"{CONDA_ENV_YAML_DIR}/abexp-spliceai-rocksdb.yaml"
+            "../../envs/abexp-spliceai-rocksdb.yaml"
         script:
             "absplice_spliceai.py"
 else:
@@ -120,7 +110,7 @@ else:
         params:
             genome = ASSEMBLY.lower()
         conda:
-            f"{CONDA_ENV_YAML_DIR}/abexp-spliceai.yaml"
+            "../../envs/abexp-spliceai.yaml"
         shell:
             'spliceai -I {input.vcf} -O {output.result} -R {input.fasta} -A {params.genome}'
     
@@ -134,7 +124,7 @@ else:
         output:
             spliceai_csv = temp(SPLICEAI_VEFF_CSV_PATTERN),
         conda:
-            f"{CONDA_ENV_YAML_DIR}/abexp-absplice.yaml"
+            "../../envs/abexp-absplice.yaml"
         script: "spliceai_vcf_to_csv.py"
 
 
@@ -145,17 +135,14 @@ rule absplice_dna:
     input:
         mmsplice_splicemap = MMSPLICE_SPLICEMAP_VEFF_CSV_PATTERN,
         spliceai = SPLICEAI_VEFF_CSV_PATTERN,
-        tissue_mapping=ancient(config["system"]["absplice"].get(
-            "tissue_mapping_csv",
-            "{SNAKEMAKE_DIR}/resources/AbSplice_tissue_mapping.csv",
-        ).format(SNAKEMAKE_DIR=SNAKEMAKE_DIR)),
+        tissue_mapping=ancient(config["system"]["absplice"]["tissue_mapping_csv"]),
         chrom_alias=ancient(CHROM_ALIAS_TSV),
     output:
         absplice_dna = VEFF_VCF_PQ_PATTERN,
     params:
         variants_per_batch=5000,
     conda:
-        f"{CONDA_ENV_YAML_DIR}/abexp-absplice.yaml"
+        "../../envs/abexp-absplice.yaml"
     script:
         "absplice_dna.py.py"
 

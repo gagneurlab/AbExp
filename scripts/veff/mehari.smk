@@ -1,13 +1,4 @@
 import os
-import sys
-import numpy as np
-
-SNAKEFILE = workflow.included_stack[-1]
-SNAKEFILE_DIR = os.path.dirname(SNAKEFILE)
-
-SCRIPT=os.path.basename(SNAKEFILE)[:-4]
-
-import yaml
 
 # mehari (https://github.com/varfish-org/mehari) as an alternative to VEP for the
 # transcript consequence annotation. Selected with `veff.annotator: "mehari"` in the
@@ -29,24 +20,13 @@ VEFF_VCF_PQ_PATTERN=f"{OUTPUT_BASEDIR}/veff.parquet/{{vcf_file}}.parquet"
 MEHARI_TRANSCRIPTS_DB=config["system"]["mehari"]["transcripts_db"].format(
     human_genome_assembly=ASSEMBLY,
 )
-# conda environment of the mehari rules: `mehari_env.yaml` (built by `snakemake --use-conda`),
+# conda environment of the mehari rules: `mehari_env.yaml` (built by `snakemake --sdm conda`),
 # or the name of an existing environment with the mehari Python package (`mehari.conda_env`)
-MEHARI_CONDA_ENV=config["system"]["mehari"].get("conda_env") or f"{SNAKEFILE_DIR}/mehari_env.yaml"
+MEHARI_CONDA_ENV=config["system"]["mehari"]["conda_env"] or "mehari_env.yaml"
 
-_veff_config = config.get("veff") or {}
-MEHARI_GENCODE_GFF3 = _veff_config.get("mehari_gencode_gff3")
-MEHARI_GENCODE_TRANSCRIPTS_FASTA = _veff_config.get("mehari_gencode_transcripts_fasta")
-del _veff_config
-
-if (MEHARI_GENCODE_GFF3 is None) != (MEHARI_GENCODE_TRANSCRIPTS_FASTA is None):
-    raise ValueError(
-        "veff.mehari_gencode_gff3 and veff.mehari_gencode_transcripts_fasta must be set together"
-    )
-if VEFF_ANNOTATOR == "mehari" and MEHARI_GENCODE_GFF3 is None:
-    raise ValueError(
-        "veff.annotator 'mehari' needs veff.mehari_gencode_gff3 and "
-        "veff.mehari_gencode_transcripts_fasta to build the mehari transcript database"
-    )
+# the config schema requires both or none of them, and both for `veff.annotator: "mehari"`
+MEHARI_GENCODE_GFF3 = config["veff"].get("mehari_gencode_gff3")
+MEHARI_GENCODE_TRANSCRIPTS_FASTA = config["veff"].get("mehari_gencode_transcripts_fasta")
 
 
 if MEHARI_GENCODE_GFF3 is not None:
@@ -69,17 +49,16 @@ if MEHARI_GENCODE_GFF3 is not None:
             gff3=os.path.abspath(MEHARI_GENCODE_GFF3),
             transcripts_fasta=os.path.abspath(MEHARI_GENCODE_TRANSCRIPTS_FASTA),
         params:
-            nb_script="mehari_transcripts_db.py",
             assembly=ASSEMBLY.lower(),
         conda:
             MEHARI_CONDA_ENV
         script:
-            "{params.nb_script}.py"
+            "mehari_transcripts_db.py.py"
 
 
 rule veff__mehari_annotation:
     """
-    Annotates the variants of one VCF with mehari and writes the VEP parquet layout.
+    Annotates the variants of one VCF with mehari and writes mehari's per-transcript table.
     """
     threads: 4
     resources:
@@ -93,15 +72,13 @@ rule veff__mehari_annotation:
         transcripts_db=MEHARI_TRANSCRIPTS_DB,
         fasta=FASTA_FILE,
         fasta_index=FASTA_INDEX_FILE,
-    params:
-        nb_script="mehari_annotation.py",
     wildcard_constraints:
         ds_dir="[^/]+",
         feature_set="[^/]+",
     conda:
         MEHARI_CONDA_ENV
     script:
-        "{params.nb_script}.py"
+        "mehari_annotation.py.py"
 
 
 del OUTPUT_BASEDIR

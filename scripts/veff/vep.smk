@@ -1,13 +1,4 @@
 import os
-import sys
-import numpy as np
-
-SNAKEFILE = workflow.included_stack[-1]
-SNAKEFILE_DIR = os.path.dirname(SNAKEFILE)
-
-SCRIPT=os.path.basename(SNAKEFILE)[:-4]
-
-import yaml
 
 
 OUTPUT_BASEDIR=f"{VEFF_BASEDIR}/vep"
@@ -203,7 +194,7 @@ rule veff__vep_annotation:
         loftee_src_path=_loftee_src_path,
         vep_cli_options=_vep_cli_options,
     conda:
-        f"""{SNAKEFILE_DIR}/vep_env.v{config["system"]["vep"]["version"]}.yaml"""
+        f"""vep_env.v{config["system"]["vep"]["version"]}.yaml"""
     shell: r"""#!/bin/bash
     
 set -x
@@ -278,13 +269,13 @@ rule veff__vep_parse:
         veff_tsv=VEFF_VCF_TSV_PATTERN,
         veff_header=VEFF_VCF_TSV_HEADER_PATTERN,
         veff_done=VEFF_VCF_TSV_PATTERN_DONE,
-    params:
-        nb_script="vep_parse.py"
     wildcard_constraints:
         ds_dir="[^/]+",
         feature_set="[^/]+",
+    conda:
+        "../../envs/abexp-veff-py.yaml"
     script:
-        "{params.nb_script}.py"
+        "vep_parse.py.py"
         
 
 del OUTPUT_BASEDIR

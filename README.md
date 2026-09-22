@@ -46,13 +46,14 @@ The publication to this method can be found in [Nature Communications](https://w
 
    bash misc/install_vep_cache/download_loftee.sh $LOFTEE_DIR
    ```
-4) Configure `system_config.yaml`:
+5) Configure the `system` section of `config.yaml`:
    - specify paths to the VEP cache, CADD cache, LOFTEE data and LOFTEE source code as defined in steps 2-4
    - (optional) Disable downloading the SpliceAI-RocksDB cache for pre-computed SpliceAI annotations by setting absplice.use\_spliceai\_rocksdb to False
    - (optional) Change file paths of automatically downloaded annotations to shared location
-   - (optional) Any options defined in `defaults.yaml` can be overwritten in this file if necessary
-2) Run `mamba env create -f envs/abexp-veff-py.yaml`
-3) Activate the created environment: `conda activate abexp-veff-py`
+   - (optional) Any option in `schemas/config.schema.yaml` can be set in this section.
+     The schema also lists the defaults.
+6) Run `mamba env create -f envs/abexp-veff-py.yaml`. The environment contains Snakemake 9.
+7) Activate the created environment: `conda activate abexp-veff-py`
 
 ## Usage
 
@@ -71,7 +72,8 @@ The publication to this method can be found in [Nature Communications](https://w
 
    An example is pre-configured and can be used to test the pipeline.
 
-2) Run `snakemake --use-conda -c all --configfile=config.yaml`.
+2) Run `snakemake --sdm conda -c all`. Snakemake reads `config.yaml` by default;
+   use `--configfile my_config.yaml` for another config file.
    All rules are annotated with resource requirements s.t. snakemake can submit jobs to HPC clusters or cloud environments.
    It is highly recommended to use snakemake with some batch submission system, e.g. SLURM.
    For further information, please visit the [Snakemake documentation](https://snakemake.readthedocs.io/).
@@ -103,11 +105,32 @@ Setup:
 2) In `config.yaml`, set `veff.annotator: "mehari"`, `veff.mehari_gencode_gff3` and
    `veff.mehari_gencode_transcripts_fasta`.
    The pipeline builds the mehari transcript database from the two files (about 6 minutes and 4 GB RAM for
-   a full GRCh38 release) and stores it at `mehari.transcripts_db` (see `defaults.yaml`).
-3) Run snakemake with `--use-conda`. The mehari rules use the environment `scripts/veff/mehari_env.yaml`,
+   a full GRCh38 release) and stores it at `system.mehari.transcripts_db` (see `schemas/config.schema.yaml`).
+3) Run snakemake with `--sdm conda`. The mehari rules use the environment `scripts/veff/mehari_env.yaml`,
    which builds the mehari Python package from source (no wheels are published yet).
-   If you already have a conda environment with the mehari Python package, set `mehari.conda_env` in
-   `system_config.yaml` to its name instead.
+   If you already have a conda environment with the mehari Python package, set `system.mehari.conda_env`
+   in the config to its name instead.
+
+## Using AbExp as a Snakemake module
+
+Other workflows can reuse the AbExp rules, e.g. the variant annotation, with the Snakemake
+[`module`](https://snakemake.readthedocs.io/en/stable/snakefiles/modularization.html) directive:
+
+```python
+module abexp:
+    snakefile: github("gagneurlab/AbExp", path="Snakefile", tag="<release tag>")
+    config: config["abexp"]
+
+use rule * from abexp as abexp_*
+```
+
+- `config["abexp"]` takes the same keys as `config.yaml`. The defaults come from `schemas/config.schema.yaml`.
+- The rules of the importing workflow request AbExp outputs as input, e.g.
+  `<output_dir>/veff/tissue_specific_vep.py/veff.parquet/<vcf_file>.parquet`.
+- Every AbExp rule that needs more than a shell has a `conda:` environment,
+  so the importing workflow needs only Snakemake 9 and `--sdm conda`.
+- For several configurations, e.g. hg19 and hg38, declare one module per configuration with its own `output_dir`.
+  The modules must not share `system.dirs.resources_dir`, or their download rules produce the same files.
 
 ## License
 All source code and model weights in this repository are licensed under the [MIT license](./LICENSE).

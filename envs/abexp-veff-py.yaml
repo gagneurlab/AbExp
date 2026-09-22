@@ -4,7 +4,8 @@ channels:
 - conda-forge
 
 dependencies:
-- python
+# Snakemake 9 needs >=3.11; lightgbm 3.3 (for the shipped models) has builds for 3.11
+- python=3.11
 - ipykernel
 - pandas
 - pyarrow
@@ -21,8 +22,10 @@ dependencies:
 - bioconda::pyfaidx
 - bioconda::pyranges
 - bioconda::vcf2parquet>=0.4
-- bioconda::snakemake<8.0
+- wget
+# Snakemake and snakemk_util allow to run the scripts as notebooks (see README)
+- bioconda::snakemake>=9
+- bioconda::snakemk_util>=3
 - pip
 - pip:
-  - snakemk_util
   - "abexp-utils[polars] @ git+https://github.com/gagneurlab/AbExp-utils.git#subdirectory=packages/abexp_utils"

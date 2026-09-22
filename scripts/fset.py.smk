@@ -1,7 +1,4 @@
-SNAKEFILE = workflow.included_stack[-1]
-SNAKEFILE_DIR = os.path.dirname(SNAKEFILE)
-
-SCRIPT=os.path.basename(SNAKEFILE)[:-4]
+import types
 
 import yaml
 
@@ -9,6 +6,40 @@ OUTPUT_BASEDIR=config["system"]["dirs"]["fset_dir_pattern"]
 
 FSET_CONFIG=f"{OUTPUT_BASEDIR}/config.yaml"
 OUTPUT_PQ_PATTERN=f"{OUTPUT_BASEDIR}/veff.parquet/{{vcf_file}}.parquet"
+
+
+def fset_template(wildcards):
+    # The feature set templates `fset@<feature_set>.yaml` are next to this file.
+    # Not usable as rule input: Snakemake would check for the source cache copy before
+    # this function creates it.
+    return workflow.source_path(f"fset@{wildcards.feature_set}.yaml")
+
+
+def format_fset_config(config_template, params, wildcards):
+    with open(config_template, "r") as fd:
+        cfg = yaml.safe_load(fd)
+
+    cfg = recursive_format(cfg, params=dict(params=params, wildcards=wildcards))
+
+    features = cfg["features"].values()
+    cfg["snakemake"] = {
+        "input": {
+            "features": [f for f in features]
+        }
+    }
+    return cfg
+
+
+def fset_feature_input(wildcards):
+    """
+    The feature tables of the feature set, read from its template
+    """
+    params = types.SimpleNamespace(
+        veff_dir=VEFF_BASEDIR,
+        gtex_expected_expr=config["system"]["expected_expression_pq"],
+    )
+    cfg = format_fset_config(fset_template(wildcards), params, wildcards)
+    return recursive_format(cfg["snakemake"]["input"], wildcards)
 
 
 rule veff__fset:
@@ -19,17 +50,18 @@ rule veff__fset:
     output:
         data_pq=f"{OUTPUT_PQ_PATTERN}",
     input:
-        unpack(require_yaml_input(FSET_CONFIG)), # additional input from featureset config yaml
+        unpack(fset_feature_input),
         expressed_genes_pq=config["system"]["expected_expression_pq"],
         featureset_config=FSET_CONFIG,
     params:
         index_cols=['chrom', 'start', 'end', 'ref', 'alt', "gene", "transcript", "tissue"],
         output_basedir=f"{OUTPUT_BASEDIR}",
-        nb_script=f"{SCRIPT}",
     wildcard_constraints:
         template="[^/]+",
+    conda:
+        "../envs/abexp-veff-py.yaml"
     script:
-        "{params.nb_script}.py"
+        "fset.py.py"
 
 
 # format the featureset config yaml
@@ -37,8 +69,6 @@ rule veff__fset:
 rule veff__fset_config:
     output:
         config=f"{FSET_CONFIG}"
-    input:
-        config_template=ancient(f"{SNAKEFILE_DIR}/fset@{{feature_set}}.yaml")
     params:
         output_basedir=f"{OUTPUT_BASEDIR}",
         veff_dir=f"{VEFF_BASEDIR}",
@@ -47,17 +77,7 @@ rule veff__fset_config:
         feature_set="[^/]+",
     localrule: True
     run:
-        with open(input["config_template"], "r") as fd:
-            cfg = yaml.safe_load(fd)
-
-        cfg = recursive_format(cfg, params=dict(params=params, wildcards=wildcards))
-
-        features = cfg["features"].values()
-        cfg["snakemake"] = {
-            "input": {
-                "features": [f for f in features]
-            }
-        }
+        cfg = format_fset_config(fset_template(wildcards), params, wildcards)
 
         with open(output.config, "w") as fd:
             yaml.dump(cfg, fd)

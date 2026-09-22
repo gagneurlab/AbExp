@@ -1,8 +1,3 @@
-SNAKEFILE = workflow.included_stack[-1]
-SNAKEFILE_DIR = os.path.dirname(SNAKEFILE)
-
-SCRIPT=os.path.basename(SNAKEFILE)[:-4]
-
 rule convert_chromalias_bcftools_format:
     threads: 1
     resources:
@@ -38,17 +33,19 @@ rule tabix_vcf:
         ntasks=1,
         mem_mb=lambda wildcards, attempt, threads: (1000 * threads) * attempt
     input:
-        vcf_file="{dir}/{vcf_file}",
+        vcf_file=f"{RESULTS_DIR}/{{dir}}/{{vcf_file}}",
     output:
-        vcf_file_tbi="{dir}/{vcf_file}.tbi",
+        vcf_file_tbi=f"{RESULTS_DIR}/{{dir}}/{{vcf_file}}.tbi",
     wildcard_constraints:
         vcf_file="[^/]+" + VCF_FILE_REGEX,
+    conda:
+        "../envs/abexp-veff-py.yaml"
     shell:
         '''
         tabix -f "{input.vcf_file}"
         '''
 
-if not config.get("vcf_is_normalized", False):
+if not config["vcf_is_normalized"]:
     rule normalize_vcf:
         threads: 1
         resources:
@@ -67,6 +64,8 @@ if not config.get("vcf_is_normalized", False):
             vcf_header=config["system"]["vcf_header"],
         wildcard_constraints:
             vcf_file=f".+(?:{'|'.join(VCF_FILE_ENDINGS)})",
+        conda:
+            "../envs/abexp-veff-py.yaml"
         shell:
             """
             set -x
@@ -95,6 +94,8 @@ rule format_vcf_header:
         vcf_header_file=config["system"]["vcf_header"],
         # fasta_file=FASTA_FILE,
         fasta_file_index=FASTA_INDEX_FILE,
+    conda:
+        "../envs/abexp-veff-py.yaml"
     shell:
         """
         set -x
@@ -119,6 +120,8 @@ rule extract_vcf_variants:
     params:
     wildcard_constraints:
         vcf_file=f".+(?:{'|'.join(VCF_FILE_ENDINGS)})",
+    conda:
+        "../envs/abexp-veff-py.yaml"
     shell:
         """
         set -x
@@ -143,6 +146,8 @@ rule extract_valid_vcf_variants:
         vcf_file=VALID_VARIANTS_VCF_FILE_PATTERN,
     input:
         vcf_file=STRIPPED_VCF_FILE_PATTERN,
+    conda:
+        "../envs/abexp-veff-py.yaml"
     shell:
         """
         set -x

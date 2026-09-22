@@ -1,8 +1,4 @@
-import os
-
-SNAKEFILE = workflow.included_stack[-1]
-SCRIPT = os.path.basename(SNAKEFILE)[:-4]
-OUTPUT_BASEDIR = f"{ENFORMER_DIR}/{SCRIPT}"
+OUTPUT_BASEDIR = f"{ENFORMER_DIR}/enformer_ref"
 
 if not config['system']['enformer']['download_reference']:
     rule enformer__predict_ref:
@@ -62,5 +58,3 @@ else:
             "scripts/download_ref.py"
 
 del OUTPUT_BASEDIR
-del SNAKEFILE
-del SCRIPT

@@ -1,19 +1,8 @@
-import os
-import sys
-import numpy as np
 
-SNAKEFILE = workflow.included_stack[-1]
-SNAKEFILE_DIR = os.path.dirname(SNAKEFILE)
-
-SCRIPT=os.path.basename(SNAKEFILE)[:-4]
-
-import yaml
-
-
-# consequence table from the configured annotator (vep.smk or mehari.smk); both write the same layout
+# consequence table from the configured annotator (vep.smk or mehari.smk)
 VEP_PQ_INPUT_PATTERN=f"{VEFF_BASEDIR}/{VEFF_ANNOTATOR}/veff.parquet/{{vcf_file}}.parquet"
 
-OUTPUT_BASEDIR=f"{VEFF_BASEDIR}/{SCRIPT}"
+OUTPUT_BASEDIR=f"{VEFF_BASEDIR}/tissue_specific_vep.py"
 VEFF_VCF_PQ_PATTERN=f"{OUTPUT_BASEDIR}/veff.parquet/{{vcf_file}}.parquet"
 
 
@@ -29,13 +18,13 @@ rule veff__tissue_specific_vep:
         isoform_proportions_pq=config["system"]["isoform_proportions_pq"],
         gtf_transcripts=f"{RESULTS_DIR}/gtf_transcripts.parquet",
         chrom_alias=ancient(CHROM_ALIAS_TSV),
-    params:
-        nb_script=f"{SCRIPT}",
     wildcard_constraints:
         ds_dir="[^/]+",
+    conda:
+        "../../envs/abexp-veff-py.yaml"
     script:
-        "{params.nb_script}.py"
-        
+        "tissue_specific_vep.py.py"
+
 
 del VEP_PQ_INPUT_PATTERN
 

@@ -1,0 +1,37 @@
+import os
+
+from snakemake.utils import min_version, validate
+
+min_version("9.0")
+
+# mehari (https://github.com/varfish-org/mehari) as an alternative to VEP for the transcript
+# consequence annotation. It writes mehari's per-transcript annotation with mehari's own
+# consequence terms. LoF and NMD calls are not part of this module. See config.schema.yaml.
+validate(config, "config.schema.yaml")
+
+# Rules use `conda: CONDA_ENV_YAML_DIR.join("<env>.yaml")`, which does not depend on the folder
+# of the rule file. `workflow.current_basedir` is also correct if this is a module.
+CONDA_ENV_YAML_DIR = workflow.current_basedir.join("envs")
+
+OUTPUT_DIR = os.path.abspath(config["output_dir"])
+RESOURCES_DIR = os.path.abspath(config.get("resources_dir", f"{OUTPUT_DIR}/resources"))
+
+HUMAN_GENOME_VERSION = config["human_genome_version"]
+ASSEMBLY = {"hg19": "GRCh37", "hg38": "GRCh38"}[HUMAN_GENOME_VERSION]
+
+FASTA_FILE = os.path.abspath(config["fasta_file"])
+FASTA_INDEX_FILE = os.path.abspath(config.get("fasta_file_idx", config["fasta_file"] + ".fai"))
+CHROM_ALIAS_TSV = config["chrom_alias_tsv"]
+VCF_FILE_PATTERN = config["vcf"]
+
+MEHARI_GENCODE_GFF3 = os.path.abspath(config["gencode_gff3"])
+MEHARI_GENCODE_TRANSCRIPTS_FASTA = os.path.abspath(config["gencode_transcripts_fasta"])
+MEHARI_TRANSCRIPTS_DB = config.get(
+    "transcripts_db", f"{RESOURCES_DIR}/mehari/{{human_genome_assembly}}.txs.bin.zst"
+).format(human_genome_assembly=ASSEMBLY)
+# conda environment of the mehari rules: envs/mehari_env.yaml (built by `snakemake --sdm conda`),
+# or the name of an existing environment with the mehari Python package (`conda_env`)
+MEHARI_CONDA_ENV = config.get("conda_env") or CONDA_ENV_YAML_DIR.join("mehari_env.yaml")
+
+
+include: "mehari.smk"

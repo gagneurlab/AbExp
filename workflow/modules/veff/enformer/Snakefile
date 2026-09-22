@@ -1,0 +1,58 @@
+import os
+
+from snakemake.utils import min_version, validate
+
+min_version("9.0")
+
+# Enformer variant effects on the expression of the closest transcripts, mapped to GTEx
+# tissues. See config.schema.yaml.
+validate(config, "config.schema.yaml")
+
+# Rules use `conda: CONDA_ENV_YAML_DIR.join("<env>.yaml")`, which does not depend on the folder
+# of the rule file. `workflow.current_basedir` is also correct if this is a module.
+CONDA_ENV_YAML_DIR = workflow.current_basedir.join("envs")
+
+OUTPUT_DIR = os.path.abspath(config["output_dir"])
+RESOURCES_DIR = os.path.abspath(config.get("resources_dir", f"{OUTPUT_DIR}/resources"))
+
+HUMAN_GENOME_VERSION = config["human_genome_version"]
+
+FASTA_FILE = os.path.abspath(config["fasta_file"])
+GTF_TRANSCRIPTS_PQ = config["gtf_transcripts"]
+VCF_FILE_PATTERN = config["vcf"]
+
+if config["use_gpu"]:
+    ENFORMER_CONDA_ENV_YAML = CONDA_ENV_YAML_DIR.join("abexp-enformer-gpu.yaml")
+else:
+    ENFORMER_CONDA_ENV_YAML = CONDA_ENV_YAML_DIR.join("abexp-enformer.yaml")
+
+CHROMOSOMES = config["chromosomes"]
+ENFORMER_DIR = f"{OUTPUT_DIR}/enformer/{HUMAN_GENOME_VERSION}"
+
+# reference scores per chromosome; `{chromosome}` is filled in by the rules
+ENFORMER_REF = config.get("enformer_ref", {}).get(
+    HUMAN_GENOME_VERSION,
+    f"{RESOURCES_DIR}/enformer_{HUMAN_GENOME_VERSION}/chrom={{chromosome}}/data.parquet",
+)
+ENFORMER_TISSUE_MAPPER_PKL = config.get("tissue_mapper_pkl") or workflow.source_path("resources/tissue_mapper.pkl")
+ENFORMER_TRACKS_YML = config.get("tracks_yml") or workflow.source_path("resources/tracks.yaml")
+
+# settings for the scripts, passed as `params`
+ENFORMER = {
+    k: config[k]
+    for k in [
+        "batch_size",
+        "isoform_aggregation_mode",
+        "variant_upstream_tss",
+        "variant_downstream_tss",
+        "canonical_only",
+        "protein_coding_only",
+        "num_agg_central_bins",
+        "shift",
+        "num_output_bins",
+    ]
+}
+
+
+include: "enformer_ref.smk"
+include: "enformer_vcf.smk"

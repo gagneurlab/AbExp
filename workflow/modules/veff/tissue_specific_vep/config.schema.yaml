@@ -1,0 +1,42 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+title: tissue_specific_vep module
+description: >-
+  Aggregates a per-transcript consequence table per variant, gene and GTEx tissue, weighted
+  by the GTEx isoform proportions.
+type: object
+additionalProperties: false
+
+properties:
+  consequences:
+    type: string
+    pattern: "\\{vcf_file\\}"
+    description: >-
+      Per-transcript consequence tables, as a pattern with the wildcard {vcf_file}, e.g. the
+      output of the vep or mehari module.
+  gtf_transcripts:
+    type: string
+    description: Transcripts of the genome annotation, e.g. the output of the gtf_transcripts module.
+  output_dir:
+    type: string
+    description: The output is <output_dir>/tissue_specific_vep.py/veff.parquet/<vcf_file>.parquet.
+  resources_dir:
+    type: string
+    description: Base of the default isoform proportion paths. Default is <output_dir>/resources.
+  chrom_alias_tsv:
+    type: string
+    description: Mapping of chromosome names, the same as for the vcf_prep module, e.g. its resources/chromAlias.tsv.
+  isoform_proportions_tsv:
+    type: string
+    description: Download location. Default is <resources_dir>/gtex_v8_isoform_proportions.tsv.
+  isoform_proportions_pq:
+    type: string
+    description: Default is <resources_dir>/gtex_v8_isoform_proportions.parquet.
+  isoform_proportions_url:
+    type: string
+    default: "https://zenodo.org/records/13895620/files/gtex_v8_isoform_proportions.tsv?download=1"
+
+required:
+  - consequences
+  - gtf_transcripts
+  - output_dir
+  - chrom_alias_tsv

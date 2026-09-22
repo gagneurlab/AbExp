@@ -1,0 +1,57 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+title: mehari module
+description: >-
+  Annotates the transcript consequences with mehari and writes mehari's per-transcript table.
+type: object
+additionalProperties: false
+
+properties:
+  vcf:
+    type: string
+    pattern: "\\{vcf_file\\}"
+    description: Input VCFs, as a pattern with the wildcard {vcf_file}, e.g. the stripped VCFs of the vcf_prep module.
+  output_dir:
+    type: string
+    description: The output is <output_dir>/mehari/veff.parquet/<vcf_file>.parquet.
+  resources_dir:
+    type: string
+    description: Base of the default `transcripts_db` path. Default is <output_dir>/resources.
+  human_genome_version:
+    type: string
+    enum: ["hg19", "hg38"]
+  fasta_file:
+    type: string
+  fasta_file_idx:
+    type: string
+    description: Index of `fasta_file`. Default is `fasta_file` + ".fai".
+  chrom_alias_tsv:
+    type: string
+    description: Mapping of chromosome names, the same as for the vcf_prep module, e.g. its resources/chromAlias.tsv.
+  gencode_gff3:
+    type: string
+    description: >-
+      GENCODE annotation (GFF3), of the same release as the GTF file of the other steps.
+      The module builds the mehari transcript database from it.
+  gencode_transcripts_fasta:
+    type: string
+    description: GENCODE transcript sequences (FASTA) of the same release.
+  transcripts_db:
+    type: string
+    description: >-
+      Path of the transcript database; `{human_genome_assembly}` is filled in. Default is
+      <resources_dir>/mehari/{human_genome_assembly}.txs.bin.zst.
+  conda_env:
+    type: ["string", "null"]
+    default: null
+    description: >-
+      Name of an existing conda environment with the mehari Python package. By default,
+      `snakemake --sdm conda` creates envs/mehari_env.yaml, which compiles mehari from source.
+
+required:
+  - vcf
+  - output_dir
+  - human_genome_version
+  - fasta_file
+  - chrom_alias_tsv
+  - gencode_gff3
+  - gencode_transcripts_fasta

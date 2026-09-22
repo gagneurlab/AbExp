@@ -1,0 +1,13 @@
+name: abexp-gtf-transcripts
+
+channels:
+- conda-forge
+- bioconda
+
+dependencies:
+- python
+- numpy
+- pandas
+- pyarrow
+- pyyaml
+- bioconda::pyranges

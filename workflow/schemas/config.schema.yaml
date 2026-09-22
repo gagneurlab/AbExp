@@ -8,8 +8,8 @@ description: |
     Double braces, e.g. {{vcf_file}}: Snakemake wildcards or values filled in by the rules.
   The workflow combines the modules workflow/modules/vcf_prep, gtf_transcripts and veff
   (variant annotation). The sections system.vep, system.mehari, system.loftee,
-  system.absplice and system.enformer go to the submodules of veff; the config.schema.yaml
-  of each submodule lists their options.
+  system.absplice, system.enformer and system.nmd_scanner go to the submodules of veff; the
+  config.schema.yaml of each submodule lists their options.
 type: object
 
 properties:
@@ -38,9 +38,11 @@ properties:
   fasta_file_idx:
     type: string
     description: Index of `fasta_file`. Default is `fasta_file` + ".fai".
-  gtf_file:
+  gff3_file:
     type: string
-    description: Genome annotation with Ensembl gene and transcript identifiers, e.g. from GENCODE.
+    description: >-
+      GENCODE genome annotation (GFF3) of the `human_genome_version`. gtf_transcripts and
+      mehari read it; the loftee module also reads it by default.
   chrom_alias_tsv:
     type: string
     description: >-
@@ -56,25 +58,18 @@ properties:
         enum: ["vep", "mehari"]
         default: "vep"
         description: Tool for the transcript consequence annotation.
-      mehari_gencode_gff3:
-        type: string
-        description: >-
-          Only for "mehari": GENCODE annotation (GFF3) of the same release as `gtf_file`.
-          The pipeline builds the mehari transcript database from it.
       mehari_gencode_transcripts_fasta:
         type: string
         description: >-
-          Only for "mehari": GENCODE transcript sequences (FASTA) of the same release.
-    dependentRequired:
-      mehari_gencode_gff3: ["mehari_gencode_transcripts_fasta"]
-      mehari_gencode_transcripts_fasta: ["mehari_gencode_gff3"]
+          Only for "mehari": GENCODE transcript sequences (FASTA) of the same release as
+          `gff3_file`. The pipeline builds the mehari transcript database from the two files.
     if:
       properties:
         annotator:
           const: "mehari"
       required: ["annotator"]
     then:
-      required: ["mehari_gencode_gff3", "mehari_gencode_transcripts_fasta"]
+      required: ["mehari_gencode_transcripts_fasta"]
 
   system:
     type: object
@@ -291,7 +286,7 @@ required:
   - output_dir
   - human_genome_version
   - fasta_file
-  - gtf_file
+  - gff3_file
 
 $defs:
   model:

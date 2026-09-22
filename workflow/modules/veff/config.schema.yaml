@@ -2,9 +2,10 @@ $schema: "https://json-schema.org/draft/2020-12/schema"
 title: veff module
 description: >-
   Variant effect annotation: prepared VCFs in, per-variant features out. Combines the modules
-  vep, mehari, loftee, tissue_specific_vep, absplice and enformer; the inputs come from the
-  modules vcf_prep and gtf_transcripts. The sections vep, mehari, loftee, tissue_specific_vep,
-  absplice and enformer are passed to these modules; their config.schema.yaml lists the options.
+  vep, mehari, loftee, tissue_specific_vep, absplice, enformer and nmd_scanner; the inputs come
+  from the modules vcf_prep and gtf_transcripts. The sections vep, mehari, loftee,
+  tissue_specific_vep, absplice, enformer and nmd_scanner are passed to these modules; their
+  config.schema.yaml lists the options.
 type: object
 additionalProperties: false
 
@@ -42,9 +43,11 @@ properties:
   fasta_file_idx:
     type: string
     description: Index of `fasta_file`. Default is `fasta_file` + ".fai".
-  gtf_file:
+  gff3_file:
     type: string
-    description: The genome annotation that `gtf_transcripts` comes from; VEP checks that it exists.
+    description: >-
+      The GENCODE genome annotation (GFF3) that `gtf_transcripts` comes from. mehari builds its
+      transcript database from it, and loftee reads it by default.
   chrom_alias_tsv:
     type: string
     description: Mapping of chromosome names, the same as for the vcf_prep module, e.g. its resources/chromAlias.tsv.
@@ -62,13 +65,13 @@ properties:
     default: {}
     description: >-
       Options of the mehari module. The module is only loaded for `annotator: "mehari"` or if
-      `gencode_gff3` is given.
+      `gencode_transcripts_fasta` is given. Its `gencode_gff3` defaults to `gff3_file`.
   loftee:
     type: object
     default: {}
     description: >-
-      Options of the loftee module (reloftee). The module is only loaded if `genome_annotation`
-      is given.
+      Options of the loftee module (reloftee). The module is only loaded for
+      `loftee.enabled: true`. Its `genome_annotation` defaults to `gff3_file`.
   tissue_specific_vep:
     type: object
     default: {}
@@ -86,7 +89,8 @@ properties:
     default: {}
     description: >-
       Options of the nmd_scanner module. The module is only loaded for
-      `nmd_scanner.enabled: true`.
+      `nmd_scanner.enabled: true`, and then needs its own `gtf_file`: NMD-Scanner 0.2.0 reads
+      only GTF.
 
 if:
   properties:
@@ -96,7 +100,7 @@ if:
 then:
   properties:
     mehari:
-      required: ["gencode_gff3", "gencode_transcripts_fasta"]
+      required: ["gencode_transcripts_fasta"]
 
 required:
   - vcf
@@ -106,5 +110,5 @@ required:
   - output_dir
   - human_genome_version
   - fasta_file
-  - gtf_file
+  - gff3_file
   - chrom_alias_tsv

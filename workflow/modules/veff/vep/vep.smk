@@ -20,7 +20,6 @@ def get_loftee_src_path(
 def get_vep_cli_options(
     human_genome_version,
     human_genome_assembly,
-    gtf_file,
     fasta_file,
     # system-dependent params that need to be adjusted for each cluster
     vep_cache_dir,
@@ -40,10 +39,8 @@ def get_vep_cli_options(
     )
 
     FASTA = fasta_file
-    GTF = gtf_file
 
     assert os.path.exists(FASTA), f"'{FASTA}' does not exist!"
-    assert os.path.exists(GTF), f"'{GTF}' does not exist!"
 
     ## configure LOFTEE
     assert os.path.exists(loftee_data_dir), f"'{loftee_data_dir}' does not exist!"
@@ -109,7 +106,6 @@ def get_vep_cli_options(
         "--merged",
         f"--assembly {human_genome_assembly}",
         f"--fasta {FASTA}",
-#         f"--gtf {GTF}",
         "--species homo_sapiens",
 #         "--everything",
 #         "--allele_number",
@@ -163,7 +159,6 @@ def _vep_cli_options(wildcards):
     return get_vep_cli_options(
         human_genome_version=HUMAN_GENOME_VERSION,
         human_genome_assembly=ASSEMBLY,
-        gtf_file=GTF_FILE,
         fasta_file=FASTA_FILE,
         vep_version=int(VEP["version"]),
         # system-dependent params that need to be adjusted

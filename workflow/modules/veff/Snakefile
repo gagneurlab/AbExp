@@ -35,7 +35,6 @@ VEP_CONFIG = {
     "output_dir": VEFF_DIR,
     "resources_dir": RESOURCES_DIR,
     **GENOME,
-    "gtf_file": config["gtf_file"],
     "chrom_alias_tsv": CHROM_ALIAS_TSV,
 }
 
@@ -48,9 +47,11 @@ use rule * from vep
 CONSEQUENCES = str(rules.veff__vep_parse.output.veff_pq)
 
 
-# needs the GENCODE files; the config schema requires them for `annotator: "mehari"`
-if ANNOTATOR == "mehari" or "gencode_gff3" in config["mehari"]:
+# builds its transcript database from gff3_file and the GENCODE transcript FASTA; the config
+# schema requires the FASTA for `annotator: "mehari"`
+if ANNOTATOR == "mehari" or "gencode_transcripts_fasta" in config["mehari"]:
     MEHARI_CONFIG = {
+        "gencode_gff3": config["gff3_file"],
         **config["mehari"],
         "vcf": STRIPPED_VCF,
         "output_dir": VEFF_DIR,
@@ -70,10 +71,12 @@ if ANNOTATOR == "mehari" or "gencode_gff3" in config["mehari"]:
         CONSEQUENCES = str(rules.veff__mehari_annotation.output.veff_pq)
 
 
-# reloftee calls its own consequences from the VCF and an Ensembl GTF/GFF3, independently of
-# the annotator above; the config schema requires genome_annotation for it to run at all
-if "genome_annotation" in config["loftee"]:
+# off by default: needs a conda environment with reloftee (see loftee/config.schema.yaml).
+# reloftee calls its own consequences from the VCF and its genome_annotation (default
+# gff3_file), independently of the annotator above.
+if config["loftee"].get("enabled"):
     LOFTEE_CONFIG = {
+        "genome_annotation": config["gff3_file"],
         **config["loftee"],
         "vcf": STRIPPED_VCF,
         "output_dir": VEFF_DIR,
@@ -139,7 +142,8 @@ use rule * from enformer
 
 
 # off by default: needs its own conda environment, and its output is not read by
-# tissue_specific_vep, fset or predict
+# tissue_specific_vep, fset or predict. NMD-Scanner 0.2.0 reads only GTF, so the section
+# nmd_scanner has its own gtf_file.
 if config["nmd_scanner"].get("enabled"):
     NMD_SCANNER_CONFIG = {
         **config["nmd_scanner"],
@@ -148,7 +152,6 @@ if config["nmd_scanner"].get("enabled"):
         "resources_dir": RESOURCES_DIR,
         **GENOME,
         **optional(config, "fasta_file_idx"),
-        "gtf_file": config["gtf_file"],
     }
 
     module nmd_scanner:

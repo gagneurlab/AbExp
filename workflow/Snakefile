@@ -18,6 +18,14 @@ if not workflow.overwrite_configfiles:
 include: "snakefile_utils.smk"
 
 
+# The schema allows unknown top-level keys, so it would not report the old key.
+if "gtf_file" in config:
+    raise ValueError(
+        "gtf_file is no longer supported: AbExp reads the genome annotation from a GENCODE GFF3 file. "
+        "In the config, replace gtf_file with gff3_file and point it at the GFF3 file of the same "
+        "GENCODE release, e.g. gencode.v42.annotation.gff3.gz instead of gencode.v42.annotation.gtf.gz."
+    )
+
 # checks the configuration and fills in the defaults of the schema
 validate(config, "schemas/config.schema.yaml")
 
@@ -52,7 +60,7 @@ HUMAN_GENOME_VERSION=config["human_genome_version"]
 
 FASTA_FILE=os.path.abspath(config["fasta_file"])
 FASTA_INDEX_FILE=os.path.abspath(config.get("fasta_file_idx", config["fasta_file"] + ".fai"))
-GTF_FILE=os.path.abspath(config["gtf_file"])
+GFF3_FILE=os.path.abspath(config["gff3_file"])
 
 config["system"] = recursive_format(
     config["system"],
@@ -102,7 +110,7 @@ module vcf_prep:
 
 use rule * from vcf_prep
 
-GTF_TRANSCRIPTS_CONFIG = {"gtf_file": GTF_FILE, "output_dir": RESULTS_DIR}
+GTF_TRANSCRIPTS_CONFIG = {"gff3_file": GFF3_FILE, "output_dir": RESULTS_DIR}
 
 module gtf_transcripts:
     snakefile: "modules/gtf_transcripts/Snakefile"
@@ -122,7 +130,7 @@ VEFF_CONFIG = {
     "human_genome_version": HUMAN_GENOME_VERSION,
     "fasta_file": FASTA_FILE,
     "fasta_file_idx": FASTA_INDEX_FILE,
-    "gtf_file": GTF_FILE,
+    "gff3_file": GFF3_FILE,
     "chrom_alias_tsv": CHROM_ALIAS_TSV,
     "annotator": config["veff"]["annotator"],
     "vep": config["system"]["vep"],

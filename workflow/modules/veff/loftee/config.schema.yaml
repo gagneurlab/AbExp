@@ -1,7 +1,7 @@
 $schema: "https://json-schema.org/draft/2020-12/schema"
 title: loftee module
 description: >-
-  Annotates loss-of-function variants with reloftee (https://github.com/gagneurlab/reloftee),
+  Annotates loss-of-function variants with reloftee (not published yet),
   a VEP-free reimplementation of LOFTEE, and writes its per-transcript table unchanged.
 type: object
 additionalProperties: false
@@ -36,10 +36,10 @@ properties:
   genome_annotation:
     type: string
     description: >-
-      Ensembl GTF or GFF3 transcript annotation (gzip allowed), of the same assembly as
-      fasta_file. reloftee reads the Ensembl-style attributes `biotype`/`transcript_biotype`;
-      GENCODE annotation (`gene_type`/`transcript_type`) is not recognized and yields zero
-      transcript models, so this cannot be the same file as the pipeline's `gtf_file`.
+      GTF or GFF3 transcript annotation from Ensembl or GENCODE (gzip allowed), of the same
+      assembly as fasta_file. The veff module passes its `gff3_file` by default. GENCODE
+      annotation needs a reloftee version that reads GENCODE; older versions build zero
+      transcript models from it.
   gerp_bigwig:
     type: ["string", "null"]
     default: null
@@ -66,10 +66,17 @@ properties:
     default: null
     description: >-
       Name or path of an existing conda environment with the reloftee Python package
-      installed. reloftee (https://github.com/gagneurlab/reloftee) has no public git
-      repository to install from, so `snakemake --sdm conda` cannot build a working
-      environment on its own: envs/loftee_env.yaml only provides reloftee's other
-      dependencies. Set this to an environment that already has reloftee installed.
+      installed. reloftee has no public git repository to install from, so
+      `snakemake --sdm conda` cannot build a working environment on its own:
+      envs/loftee_env.yaml only provides reloftee's other dependencies. Set this to an
+      environment that already has reloftee installed.
+  enabled:
+    type: boolean
+    default: false
+    description: >-
+      The veff module loads this module only with `enabled: true`. Its output is built only
+      as a target, see output_dir. Off by default: reloftee needs an existing conda environment
+      (`conda_env`), and its output is not read by tissue_specific_vep, fset or predict.
 
 required:
   - vcf
@@ -77,3 +84,19 @@ required:
   - human_genome_version
   - fasta_file
   - genome_annotation
+
+if:
+  properties:
+    enabled:
+      const: true
+  required:
+    - enabled
+then:
+  properties:
+    conda_env:
+      type: string
+      description: >-
+        `enabled: true` needs `conda_env`: envs/loftee_env.yaml lacks reloftee. Set it to an
+        existing conda environment with the reloftee Python package.
+  required:
+    - conda_env

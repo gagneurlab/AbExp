@@ -24,8 +24,6 @@ properties:
     enum: ["hg19", "hg38"]
   fasta_file:
     type: string
-  gtf_file:
-    type: string
   chrom_alias_tsv:
     type: string
     description: Mapping of chromosome names, the same as for the vcf_prep module, e.g. its resources/chromAlias.tsv.
@@ -63,5 +61,4 @@ required:
   - output_dir
   - human_genome_version
   - fasta_file
-  - gtf_file
   - chrom_alias_tsv

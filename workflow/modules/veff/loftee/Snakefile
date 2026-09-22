@@ -4,9 +4,9 @@ from snakemake.utils import min_version, validate
 
 min_version("9.0")
 
-# reloftee (https://github.com/gagneurlab/reloftee), a VEP-free reimplementation of LOFTEE.
-# It calls its own loss-of-function consequences from the VCF and an Ensembl-style GTF/GFF3
-# annotation, then writes its own per-transcript table. See config.schema.yaml.
+# reloftee (not published yet), a VEP-free reimplementation of LOFTEE.
+# It calls its own loss-of-function consequences from the VCF and a GTF/GFF3 annotation
+# (Ensembl or GENCODE), then writes its own per-transcript table. See config.schema.yaml.
 validate(config, "config.schema.yaml")
 
 # Rules use `conda: CONDA_ENV_YAML_DIR.join("<env>.yaml")`, which does not depend on the folder

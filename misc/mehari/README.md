@@ -23,10 +23,10 @@ Ensembl release N + 66.
 
 ## mehari version requirement
 
-mehari 0.45.1 imports GENCODE GFF3 files incorrectly. This is fixed upstream (pull
-requests #1046, #1048, #1050 and #1052) but not yet in a release, so
-`workflow/modules/veff/mehari/envs/mehari_env.post-deploy.sh` installs the mehari Python package from a
-pinned upstream commit that contains the fixes.
+mehari 0.45.1 imports GENCODE GFF3 files incorrectly and pads incomplete CDS on
+minus-strand transcripts wrong (fixed upstream in pull request #1062). Both are fixed
+in the 0.46.0 release, which `workflow/modules/veff/mehari/envs/mehari_env.yaml`
+installs from bioconda.
 
 ## GRCh37
 

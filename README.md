@@ -108,7 +108,7 @@ Setup:
    The pipeline builds the mehari transcript database from `gff3_file` and the FASTA (about 6 minutes and 4 GB RAM for
    a full GRCh38 release) and stores it at `system.mehari.transcripts_db` (see `workflow/modules/veff/mehari/config.schema.yaml`).
 3) Run snakemake with `--sdm conda`. The mehari rules use the environment `workflow/modules/veff/mehari/envs/mehari_env.yaml`,
-   which builds the mehari Python package from source (no wheels are published yet).
+   which installs the mehari Python package from bioconda.
    If you already have a conda environment with the mehari Python package, set `system.mehari.conda_env`
    in the config to its name instead.
 

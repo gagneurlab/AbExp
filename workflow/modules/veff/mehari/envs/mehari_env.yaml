@@ -5,30 +5,17 @@ channels:
 - bioconda
 
 dependencies:
-- python>=3.12
+# bioconda publishes mehari-python (the Python bindings; the bioconda package "mehari" is
+# only the CLI binary) for py312 and py313 builds. Pinned to py313: the py312 build of
+# 0.46.0 (py312hb3c3c00_0) does not contain the CDS-padding fix (mehari pull request
+# #1062) that this version bump is for, even though it carries the same version number;
+# the py313 build (py313h045a65b_0) does. Revisit the pin once bioconda ships a corrected
+# py312 build.
+- python>=3.13,<3.14
 - ipykernel
 - numpy
 - pyyaml
 - polars>=1.39
 - pyarrow
 - tqdm
-- pip
-- git
-# build requirements of the mehari Python package; mehari_env.post-deploy.sh installs it
-# from source, since no wheels are published yet. mehari links against the RocksDB and
-# snappy libraries of this environment.
-- rust
-- maturin
-- cmake
-- clangdev
-- protobuf
-- pkg-config
-- openssl
-- sqlite
-- zlib
-- rocksdb
-- snappy
-- lz4-c
-- zstd
-- bzip2
-- gflags
+- bioconda::mehari-python=0.46.0

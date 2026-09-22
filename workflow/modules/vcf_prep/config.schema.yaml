@@ -1,0 +1,43 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+title: vcf_prep module
+description: Prepares the input VCFs for the annotation modules.
+type: object
+additionalProperties: false
+
+properties:
+  vcf:
+    type: string
+    pattern: "\\{vcf_file\\}"
+    description: Input VCFs, as a pattern with the wildcard {vcf_file}, e.g. "input/{vcf_file}".
+  vcf_is_normalized:
+    type: boolean
+    default: false
+    description: >-
+      True if all variants are left-normalized and biallelic (`bcftools norm -cs -m`) and the
+      contig names start with "chr". Otherwise, the module normalizes the variants.
+  output_dir:
+    type: string
+    description: >-
+      The outputs go to <output_dir>/normalized_vcf, stripped_vcf, valid_variants_vcf and vcf.parquet.
+      The stripped VCFs are the input of the annotation modules.
+  fasta_file:
+    type: string
+  fasta_file_idx:
+    type: string
+    description: Index of `fasta_file`. Default is `fasta_file` + ".fai".
+  chrom_alias_tsv:
+    type: string
+    description: Mapping of chromosome names. Default is resources/chromAlias.tsv of this module, which maps them to the "chr" prefix.
+  vcf_header:
+    type: string
+    description: Header of the stripped VCFs. Default is resources/header.vcf of this module.
+  vcf_file_endings:
+    type: array
+    items:
+      type: string
+    default: [".vcf", ".vcf.gz", ".vcf.bgz", ".bcf"]
+
+required:
+  - vcf
+  - output_dir
+  - fasta_file

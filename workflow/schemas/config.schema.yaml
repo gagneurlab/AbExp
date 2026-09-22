@@ -4,8 +4,12 @@ description: |
   Configuration of the AbExp pipeline. `validate` in the Snakefile fills in the defaults.
   String values may use these placeholders:
     {RESULTS_DIR}, {RESOURCES_DIR}, {VCF_INPUT_DIR}, {HUMAN_GENOME_VERSION}: set by the Snakefile.
-    {ABEXP_DIR}: the AbExp repository; only as prefix, e.g. "{ABEXP_DIR}/resources/chromAlias.tsv".
+    {ABEXP_DIR}: the AbExp repository; only as prefix, e.g. "{ABEXP_DIR}/resources/models/...".
     Double braces, e.g. {{vcf_file}}: Snakemake wildcards or values filled in by the rules.
+  The workflow combines the modules workflow/modules/vcf_prep, gtf_transcripts and veff
+  (variant annotation). The sections system.vep, system.mehari, system.absplice and
+  system.enformer go to the submodules of veff; the config.schema.yaml of each submodule
+  lists their options.
 type: object
 
 properties:
@@ -39,8 +43,9 @@ properties:
     description: Genome annotation with Ensembl gene and transcript identifiers, e.g. from GENCODE.
   chrom_alias_tsv:
     type: string
-    default: "{ABEXP_DIR}/resources/chromAlias.tsv"
-    description: Mapping of chromosome names. The default maps them to the "chr" prefix.
+    description: >-
+      Mapping of chromosome names. Default is resources/chromAlias.tsv of the vcf_prep module,
+      which maps them to the "chr" prefix.
   veff:
     type: object
     default: {}
@@ -74,6 +79,7 @@ properties:
   system:
     type: object
     default: {}
+    additionalProperties: false
     description: Settings of the local installation, e.g. the paths to the VEP cache, CADD and LOFTEE.
     properties:
       dirs:
@@ -81,31 +87,6 @@ properties:
         default: {}
         additionalProperties: false
         properties:
-          vcf_input_file_pattern:
-            type: string
-            description: non-normalized VCF
-            default: "{VCF_INPUT_DIR}/{{vcf_file}}"
-          normalized_vcf_file_pattern:
-            type: string
-            description: normalized VCF
-            default: "{RESULTS_DIR}/normalized_vcf/{{vcf_file}}.vcf.gz"
-          stripped_vcf_file_pattern:
-            type: string
-            description: >-
-              Stripped-down VCF file only containing required variant information.
-              Needs to be .vcf.gz to allow tabix indexing (e.g. required for random access in mmsplice).
-            default: "{RESULTS_DIR}/stripped_vcf/{{vcf_file}}.vcf.gz"
-          valid_variants_vcf_file_pattern:
-            type: string
-            default: "{RESULTS_DIR}/valid_variants_vcf/{{vcf_file}}.vcf.gz"
-          vcf_pq_file_pattern:
-            type: string
-            description: Stripped-down VCF file converted to Parquet format
-            default: "{RESULTS_DIR}/vcf.parquet/{{vcf_file}}.parquet"
-          veff_basedir:
-            type: string
-            description: base dir for variant effect predictions
-            default: "{RESULTS_DIR}/veff"
           fset_dir_pattern:
             type: string
             description: feature set directory
@@ -115,18 +96,21 @@ properties:
             description: default directory for downloaded resources
             default: "{RESULTS_DIR}/resources"
 
-      isoform_proportions_tsv:
-        type: string
-        default: "{RESOURCES_DIR}/gtex_v8_isoform_proportions.tsv"
-      isoform_proportions_pq:
-        type: string
-        default: "{RESOURCES_DIR}/gtex_v8_isoform_proportions.parquet"
       expected_expression_tsv:
         type: string
         default: "{RESOURCES_DIR}/gtex_v8_expected_expression.tsv"
       expected_expression_pq:
         type: string
         default: "{RESOURCES_DIR}/gtex_v8_expected_expression.parquet"
+      expected_expression_url:
+        type: string
+        default: "https://zenodo.org/records/13895620/files/gtex_v8_expected_expression.tsv?download=1"
+      isoform_proportions_tsv:
+        type: string
+        description: Passed to the tissue_specific_vep module.
+      isoform_proportions_pq:
+        type: string
+        description: Passed to the tissue_specific_vep module.
 
       vcf_file_endings:
         type: array
@@ -134,235 +118,22 @@ properties:
           type: string
         default: [".vcf", ".vcf.gz", ".vcf.bgz", ".bcf"]
 
-      assembly_mapping:
-        type: object
-        additionalProperties:
-          type: string
-        default:
-          hg19: "GRCh37"
-          hg38: "GRCh38"
-
-      vcf_header:
-        type: string
-        default: "{ABEXP_DIR}/resources/header.vcf"
-      formatted_vcf_header:
-        type: string
-        default: "{RESULTS_DIR}/header.vcf"
-
       vep:
         type: object
         default: {}
-        additionalProperties: false
-        properties:
-          version:
-            type: integer
-            default: 108
-          vep_bin:
-            type: string
-            default: "vep"
-          perl_bin:
-            type: string
-            default: "perl"
-          vep_cache_dir:
-            type: string
-            default: "{RESOURCES_DIR}/{{vep_version}}"
-          cadd_dir:
-            type: string
-            default: "{RESOURCES_DIR}/{{human_genome_assembly}}"
-          loftee_data_dir:
-            type: string
-            default: "{RESOURCES_DIR}/{{human_genome_assembly}}"
-          loftee_src_path:
-            type: string
-            default: "{RESOURCES_DIR}/{{human_genome_assembly}}_src"
-
+        description: Options of the vep module (workflow/modules/veff/vep/config.schema.yaml).
       mehari:
         type: object
         default: {}
-        additionalProperties: false
-        description: >-
-          only used with `veff.annotator: "mehari"`
-        properties:
-          transcripts_db:
-            type: string
-            description: >-
-              Transcript database. The pipeline builds it from the GENCODE files given as
-              `veff.mehari_gencode_gff3` and `veff.mehari_gencode_transcripts_fasta`.
-            default: "{RESOURCES_DIR}/mehari/{{human_genome_assembly}}.txs.bin.zst"
-          conda_env:
-            type: ["string", "null"]
-            description: >-
-              Name of an existing conda environment with the mehari Python package. By default,
-              `snakemake --sdm conda` creates workflow/scripts/veff/mehari_env.yaml, which compiles mehari
-              from source.
-            default: null
-
+        description: Options of the mehari module (workflow/modules/veff/mehari/config.schema.yaml).
       absplice:
         type: object
         default: {}
-        additionalProperties: false
-        properties:
-          tissue_mapping_csv:
-            type: string
-            default: "{ABEXP_DIR}/resources/AbSplice_tissue_mapping.csv"
-          splicemap:
-            type: object
-            default: {}
-            additionalProperties: false
-            properties:
-              psi3:
-                type: string
-                default: "{RESOURCES_DIR}/splicemap_{{genome}}/{{tissue}}_splicemap_psi3_method=kn_event_filter=median_cutoff.csv.gz"
-              psi5:
-                type: string
-                default: "{RESOURCES_DIR}/splicemap_{{genome}}/{{tissue}}_splicemap_psi5_method=kn_event_filter=median_cutoff.csv.gz"
-          splicemap_tissues:
-            type: array
-            items:
-              type: string
-            default:
-              - Adipose_Subcutaneous
-              - Adipose_Visceral_Omentum
-              - Adrenal_Gland
-              - Artery_Aorta
-              - Artery_Coronary
-              - Artery_Tibial
-              - Brain_Amygdala
-              - Brain_Anterior_cingulate_cortex_BA24
-              - Brain_Caudate_basal_ganglia
-              - Brain_Cerebellar_Hemisphere
-              - Brain_Cerebellum
-              - Brain_Cortex
-              - Brain_Frontal_Cortex_BA9
-              - Brain_Hippocampus
-              - Brain_Hypothalamus
-              - Brain_Nucleus_accumbens_basal_ganglia
-              - Brain_Putamen_basal_ganglia
-              - Brain_Spinal_cord_cervical_c_1
-              - Brain_Substantia_nigra
-              - Breast_Mammary_Tissue
-              - Cells_Cultured_fibroblasts
-              - Cells_EBV_transformed_lymphocytes
-              - Colon_Sigmoid
-              - Colon_Transverse
-              - Esophagus_Gastroesophageal_Junction
-              - Esophagus_Mucosa
-              - Esophagus_Muscularis
-              - Heart_Atrial_Appendage
-              - Heart_Left_Ventricle
-              - Kidney_Cortex
-              - Liver
-              - Lung
-              - Minor_Salivary_Gland
-              - Muscle_Skeletal
-              - Nerve_Tibial
-              - Ovary
-              - Pancreas
-              - Pituitary
-              - Prostate
-              - Skin_Not_Sun_Exposed_Suprapubic
-              - Skin_Sun_Exposed_Lower_leg
-              - Small_Intestine_Terminal_Ileum
-              - Spleen
-              - Stomach
-              - Testis
-              - Thyroid
-              - Uterus
-              - Vagina
-              - Whole_Blood
-          use_spliceai_rocksdb:
-            type: boolean
-            default: true
-          spliceai_rocksdb_path:
-            type: object
-            default: {}
-            additionalProperties: false
-            properties:
-              hg19:
-                type: string
-                default: "{RESOURCES_DIR}/spliceai_rocksdb/spliceAI_hg19_chr{chromosome}.db"
-              hg38:
-                type: string
-                default: "{RESOURCES_DIR}/spliceai_rocksdb/spliceAI_hg38_chr{chromosome}.db"
-          spliceai_rocksdb_chromosomes:
-            type: array
-            items:
-              type: string
-            default: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
-                      "16", "17", "18", "19", "20", "21", "22", "X", "Y"]
-
+        description: Options of the absplice module (workflow/modules/veff/absplice/config.schema.yaml).
       enformer:
         type: object
         default: {}
-        additionalProperties: false
-        properties:
-          download_reference:
-            type: boolean
-            description: Whether to download the pre-calculated reference scores or generate them locally
-            default: true
-          enformer_ref:
-            type: object
-            default: {}
-            additionalProperties: false
-            properties:
-              hg19:
-                type: string
-                default: "{RESOURCES_DIR}/enformer_hg19/chrom={{chromosome}}/data.parquet"
-              hg38:
-                type: string
-                default: "{RESOURCES_DIR}/enformer_hg38/chrom={{chromosome}}/data.parquet"
-          tissue_mapper_pkl:
-            type: string
-            default: "{ABEXP_DIR}/resources/enformer/tissue_mapper.pkl"
-          tracks_yml:
-            type: string
-            default: "{ABEXP_DIR}/resources/enformer/tracks.yaml"
-          use_gpu:
-            type: boolean
-            default: false
-          batch_size:
-            type: integer
-            default: 2
-          isoform_aggregation_mode:
-            type: string
-            default: "canonical"
-          variant_upstream_tss:
-            type: integer
-            default: 50
-          variant_downstream_tss:
-            type: integer
-            default: 200
-          canonical_only:
-            type: boolean
-            description: Whether to calculate the variant effect only for the canonical transcripts
-            default: true
-          protein_coding_only:
-            type: boolean
-            description: Whether to calculate the variant effect only for the protein coding transcripts
-            default: true
-          chromosomes:
-            type: array
-            items:
-              type: string
-            description: the chromosomes in which to look for transcripts
-            default: ["chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9", "chr10", "chr11",
-                      "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21",
-                      "chr22", "chrX", "chrY"]
-          num_agg_central_bins:
-            type: integer
-            description: How many central bins to average over?
-            default: 3
-          shift:
-            type: integer
-            description: Enformer will be run 3 times, once centered on the TSS, and +-<shift> from the TSS
-            default: 43
-          num_output_bins:
-            type: integer
-            description: >-
-              How many bins to save from each run. A smaller number will save space, since
-              we only care about the central bins (close to the TSS)
-            default: 21
-
+        description: Options of the enformer module (workflow/modules/veff/enformer/config.schema.yaml).
       models:
         type: object
         default: {}

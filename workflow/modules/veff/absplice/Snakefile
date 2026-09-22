@@ -1,0 +1,55 @@
+import os
+
+from snakemake.utils import min_version, validate
+
+min_version("9.0")
+
+# AbSplice-DNA: MMSplice with SpliceMaps and SpliceAI, combined per GTEx tissue.
+# See config.schema.yaml.
+validate(config, "config.schema.yaml")
+
+# Rules use `conda: CONDA_ENV_YAML_DIR.join("<env>.yaml")`, which does not depend on the folder
+# of the rule file. `workflow.current_basedir` is also correct if this is a module.
+CONDA_ENV_YAML_DIR = workflow.current_basedir.join("envs")
+
+OUTPUT_DIR = os.path.abspath(config["output_dir"])
+RESOURCES_DIR = os.path.abspath(config.get("resources_dir", f"{OUTPUT_DIR}/resources"))
+
+HUMAN_GENOME_VERSION = config["human_genome_version"]
+ASSEMBLY = {"hg19": "GRCh37", "hg38": "GRCh38"}[HUMAN_GENOME_VERSION]
+
+FASTA_FILE = os.path.abspath(config["fasta_file"])
+CHROM_ALIAS_TSV = config["chrom_alias_tsv"]
+VALID_VARIANTS_VCF_FILE_PATTERN = config["valid_vcf"]
+VCF_PQ_FILE_PATTERN = config["vcf_parquet"]
+
+# AbSplice settings; `{genome}`, `{tissue}` and `{chromosome}` are filled in by the rules
+_splicemap = config.get("splicemap", {})
+_spliceai_rocksdb_path = config.get("spliceai_rocksdb_path", {})
+ABSPLICE = {
+    "tissue_mapping_csv": (
+        config.get("tissue_mapping_csv") or workflow.source_path("resources/AbSplice_tissue_mapping.csv")
+    ),
+    "splicemap": {
+        psi: _splicemap.get(
+            psi,
+            f"{RESOURCES_DIR}/splicemap_{{genome}}/{{tissue}}_splicemap_{psi}_method=kn_event_filter=median_cutoff.csv.gz",
+        )
+        for psi in ["psi3", "psi5"]
+    },
+    "splicemap_tissues": config["splicemap_tissues"],
+    "splicemap_urls": config["splicemap_urls"],
+    "use_spliceai_rocksdb": config["use_spliceai_rocksdb"],
+    "spliceai_rocksdb_path": {
+        genome: _spliceai_rocksdb_path.get(
+            genome, f"{RESOURCES_DIR}/spliceai_rocksdb/spliceAI_{genome}_chr{{chromosome}}.db"
+        )
+        for genome in ["hg19", "hg38"]
+    },
+    "spliceai_rocksdb_chromosomes": config["spliceai_rocksdb_chromosomes"],
+}
+del _splicemap, _spliceai_rocksdb_path
+
+
+include: "absplice_denovo.py.smk"
+include: "absplice.py.smk"

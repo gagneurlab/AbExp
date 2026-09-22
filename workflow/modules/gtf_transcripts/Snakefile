@@ -1,0 +1,18 @@
+import os
+
+from snakemake.utils import min_version, validate
+
+min_version("9.0")
+
+# Converts the transcripts of a GTF file to parquet. See config.schema.yaml.
+validate(config, "config.schema.yaml")
+
+# Rules use `conda: CONDA_ENV_YAML_DIR.join("<env>.yaml")`, which does not depend on the folder
+# of the rule file. `workflow.current_basedir` is also correct if this is a module.
+CONDA_ENV_YAML_DIR = workflow.current_basedir.join("envs")
+
+OUTPUT_DIR = os.path.abspath(config["output_dir"])
+GTF_FILE = os.path.abspath(config["gtf_file"])
+
+
+include: "gtf_transcripts.py.smk"

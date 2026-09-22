@@ -1,7 +1,6 @@
 import os
 import re
 
-import yaml
 from snakemake.utils import min_version, validate
 
 min_version("9.0")
@@ -37,22 +36,19 @@ def resolve_abexp_dir(data):
     return data
 
 
-with open(workflow.source_path("download_urls.yaml"), "r") as fd:
-    download_urls = yaml.safe_load(fd)
+# Rules use `conda: CONDA_ENV_YAML_DIR.join("<env>.yaml")`, which does not depend on the folder
+# of the rule file. `workflow.current_basedir` is also correct if AbExp is a module.
+CONDA_ENV_YAML_DIR = workflow.current_basedir.join("envs")
 
 VCF_INPUT_DIR = os.path.abspath(config["vcf_input_dir"])
 RESULTS_DIR = os.path.abspath(config["output_dir"])
 RESOURCES_DIR = os.path.abspath(config["system"]["dirs"]["resources_dir"].format(RESULTS_DIR=RESULTS_DIR))
 
 HUMAN_GENOME_VERSION=config["human_genome_version"]
-ASSEMBLY=config["system"]["assembly_mapping"][HUMAN_GENOME_VERSION]
 
 FASTA_FILE=os.path.abspath(config["fasta_file"])
 FASTA_INDEX_FILE=os.path.abspath(config.get("fasta_file_idx", config["fasta_file"] + ".fai"))
 GTF_FILE=os.path.abspath(config["gtf_file"])
-
-# transcript consequence annotator: "vep" or "mehari"; see scripts/veff/{vep,mehari}.smk
-VEFF_ANNOTATOR=config["veff"]["annotator"]
 
 config["system"] = recursive_format(
     config["system"],
@@ -69,22 +65,80 @@ config["system"] = resolve_abexp_dir(config["system"])
 VCF_FILE_ENDINGS=config["system"]["vcf_file_endings"]
 VCF_FILE_REGEX="(" + "|".join([e.replace(".", r"\.") for e in VCF_FILE_ENDINGS]) + ")"
 VCF_FILE_REGEX_PATTERN = re.compile("^.+" + VCF_FILE_REGEX + "$")
+VCF_INPUT_FILE_PATTERN=f"{VCF_INPUT_DIR}/{{vcf_file}}"
 
-VCF_INPUT_FILE_PATTERN=config["system"]["dirs"]["vcf_input_file_pattern"]
-NORMALIZED_VCF_FILE_PATTERN=config["system"]["dirs"]["normalized_vcf_file_pattern"]
-if config["vcf_is_normalized"]:
-    NORMALIZED_VCF_FILE_PATTERN=VCF_INPUT_FILE_PATTERN
+# the veff module writes its annotations to <output_dir>/veff
+VEFF_BASEDIR=f"{RESULTS_DIR}/veff"
 
-STRIPPED_VCF_FILE_PATTERN=config["system"]["dirs"]["stripped_vcf_file_pattern"]
-VALID_VARIANTS_VCF_FILE_PATTERN=config["system"]["dirs"]["valid_variants_vcf_file_pattern"]
-VCF_PQ_FILE_PATTERN=config["system"]["dirs"]["vcf_pq_file_pattern"]
+# mapping of chromosome names for vcf_prep and veff
+if "chrom_alias_tsv" in config:
+    CHROM_ALIAS_TSV = resolve_abexp_dir(config["chrom_alias_tsv"])
+else:
+    CHROM_ALIAS_TSV = workflow.source_path("modules/vcf_prep/resources/chromAlias.tsv")
 
-VEFF_BASEDIR=os.path.abspath(config["system"]["dirs"]["veff_basedir"])
 
-FORMATTED_VCF_HEADER=config["system"]["formatted_vcf_header"]
-CHROM_ALIAS_TSV=resolve_abexp_dir(config["chrom_alias_tsv"])
-CHROM_ALIAS_WSV=RESULTS_DIR + "/chrom_alias.wsv"
-CHROM_TARGETS_FILE=RESULTS_DIR + "/chrom_targets.txt"
+def optional(cfg, *keys):
+    return {k: cfg[k] for k in keys if k in cfg}
+
+
+# input preparation, see modules/{vcf_prep,gtf_transcripts}/config.schema.yaml
+VCF_PREP_CONFIG = {
+    "vcf": VCF_INPUT_FILE_PATTERN,
+    "vcf_is_normalized": config["vcf_is_normalized"],
+    "output_dir": RESULTS_DIR,
+    "fasta_file": FASTA_FILE,
+    "fasta_file_idx": FASTA_INDEX_FILE,
+    "chrom_alias_tsv": CHROM_ALIAS_TSV,
+    "vcf_file_endings": VCF_FILE_ENDINGS,
+}
+
+module vcf_prep:
+    snakefile: "modules/vcf_prep/Snakefile"
+    config: VCF_PREP_CONFIG
+
+use rule * from vcf_prep
+
+GTF_TRANSCRIPTS_CONFIG = {"gtf_file": GTF_FILE, "output_dir": RESULTS_DIR}
+
+module gtf_transcripts:
+    snakefile: "modules/gtf_transcripts/Snakefile"
+    config: GTF_TRANSCRIPTS_CONFIG
+
+use rule * from gtf_transcripts
+
+
+# variant effect annotation, see modules/veff/config.schema.yaml
+VEFF_CONFIG = {
+    "vcf": str(rules.extract_vcf_variants.output.vcf_file),
+    "valid_vcf": str(rules.extract_valid_vcf_variants.output.vcf_file),
+    "vcf_parquet": str(rules.vcf_to_parquet.output.vcf_pq_file),
+    "gtf_transcripts": str(rules.gtf_transcripts.output.gtf_transcripts),
+    "output_dir": VEFF_BASEDIR,
+    "resources_dir": RESOURCES_DIR,
+    "human_genome_version": HUMAN_GENOME_VERSION,
+    "fasta_file": FASTA_FILE,
+    "fasta_file_idx": FASTA_INDEX_FILE,
+    "gtf_file": GTF_FILE,
+    "chrom_alias_tsv": CHROM_ALIAS_TSV,
+    "annotator": config["veff"]["annotator"],
+    "vep": config["system"]["vep"],
+    "mehari": {
+        **config["system"]["mehari"],
+        **{
+            k.removeprefix("mehari_"): os.path.abspath(v)
+            for k, v in config["veff"].items() if k.startswith("mehari_")
+        },
+    },
+    "tissue_specific_vep": optional(config["system"], "isoform_proportions_tsv", "isoform_proportions_pq"),
+    "absplice": config["system"]["absplice"],
+    "enformer": config["system"]["enformer"],
+}
+
+module veff:
+    snakefile: "modules/veff/Snakefile"
+    config: VEFF_CONFIG
+
+use rule * from veff
 
 
 vcf_input_file_names = glob_wildcards(VCF_INPUT_FILE_PATTERN, followlinks=True)._asdict()["vcf_file"]
@@ -98,6 +152,7 @@ rule all:
             model_type=config["predict_abexp_models"],
         ),
     localrule: True
+    default_target: True
 
 
 include: "scripts/__init__.smk"

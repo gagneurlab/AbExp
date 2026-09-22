@@ -34,7 +34,7 @@ rule predict_veff:
         feature_set="[^/]+",
         template="[^/]+",
     conda:
-        "../envs/abexp-veff-py.yaml"
+        CONDA_ENV_YAML_DIR.join("abexp-veff-py.yaml")
     script:
         "predict.py.py"
 

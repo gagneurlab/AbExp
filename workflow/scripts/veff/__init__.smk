@@ -1,6 +1,0 @@
-include: "enformer/__init__.smk"
-include: "vep.smk"
-include: "mehari.smk"
-include: "tissue_specific_vep.py.smk"
-include: "absplice.py.smk"
-include: "absplice_denovo.py.smk"

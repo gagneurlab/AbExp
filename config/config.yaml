@@ -37,11 +37,13 @@ veff:
   # mehari_gencode_gff3: "data/gencode/release_40/gencode.v40.annotation.gff3.gz"
   # mehari_gencode_transcripts_fasta: "data/gencode/release_40/gencode.v40.transcripts.fa.gz"
 
-# mapping of chromosome names. By default, maps them to "chr" prefix.
-chrom_alias_tsv: "{ABEXP_DIR}/resources/chromAlias.tsv"
+# mapping of chromosome names. By default, maps them to "chr" prefix
+# (workflow/modules/vcf_prep/resources/chromAlias.tsv).
+# chrom_alias_tsv: "my_chromAlias.tsv"
 
 # Settings of the local installation. All options and their defaults are in
-# workflow/schemas/config.schema.yaml.
+# workflow/schemas/config.schema.yaml; the options of vep, mehari, absplice and enformer
+# are in workflow/modules/veff/<module>/config.schema.yaml.
 system:
   # canonical_transcript_pq: "/s/project/rep/processed/training_results_v14/general/gtex_canonical_transcript.parquet"
   # subtissue_level_isoform_contribution_scores_pq: "/s/project/rep/processed/training_results_v14/general/gtex_subtissue_level_pext_scores.parquet"

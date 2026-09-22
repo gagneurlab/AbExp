@@ -3,7 +3,7 @@
 tl;dr: run `download_gencode.sh` to fetch the GENCODE GFF3 annotation and transcript
 FASTA of one release, then point `veff.mehari_gencode_gff3` and
 `veff.mehari_gencode_transcripts_fasta` in `config/config.yaml` at the two files. The pipeline
-rule `veff__mehari_transcripts_db` (`workflow/scripts/veff/mehari_transcripts_db.py.py`) builds
+rule `veff__mehari_transcripts_db` (`workflow/modules/veff/mehari/mehari_transcripts_db.py.py`) builds
 the mehari transcript database from them.
 
 ## Command
@@ -25,7 +25,7 @@ Ensembl release N + 66.
 
 mehari 0.45.1 imports GENCODE GFF3 files incorrectly. This is fixed upstream (pull
 requests #1046, #1048, #1050 and #1052) but not yet in a release, so
-`workflow/scripts/veff/mehari_env.post-deploy.sh` installs the mehari Python package from a
+`workflow/modules/veff/mehari/envs/mehari_env.post-deploy.sh` installs the mehari Python package from a
 pinned upstream commit that contains the fixes.
 
 ## GRCh37

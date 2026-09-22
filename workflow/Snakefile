@@ -129,6 +129,7 @@ VEFF_CONFIG = {
             for k, v in config["veff"].items() if k.startswith("mehari_")
         },
     },
+    "loftee": config["system"]["loftee"],
     "tissue_specific_vep": optional(config["system"], "isoform_proportions_tsv", "isoform_proportions_pq"),
     "absplice": config["system"]["absplice"],
     "enformer": config["system"]["enformer"],

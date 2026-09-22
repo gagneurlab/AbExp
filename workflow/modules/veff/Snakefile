@@ -70,6 +70,25 @@ if ANNOTATOR == "mehari" or "gencode_gff3" in config["mehari"]:
         CONSEQUENCES = str(rules.veff__mehari_annotation.output.veff_pq)
 
 
+# reloftee calls its own consequences from the VCF and an Ensembl GTF/GFF3, independently of
+# the annotator above; the config schema requires genome_annotation for it to run at all
+if "genome_annotation" in config["loftee"]:
+    LOFTEE_CONFIG = {
+        **config["loftee"],
+        "vcf": STRIPPED_VCF,
+        "output_dir": VEFF_DIR,
+        "resources_dir": RESOURCES_DIR,
+        **GENOME,
+        **optional(config, "fasta_file_idx"),
+    }
+
+    module loftee:
+        snakefile: "loftee/Snakefile"
+        config: LOFTEE_CONFIG
+
+    use rule * from loftee
+
+
 TISSUE_SPECIFIC_VEP_CONFIG = {
     **config["tissue_specific_vep"],
     "consequences": CONSEQUENCES,

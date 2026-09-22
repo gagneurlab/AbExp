@@ -1,0 +1,39 @@
+import os
+
+from snakemake.utils import min_version, validate
+
+min_version("9.0")
+
+# reloftee (https://github.com/gagneurlab/reloftee), a VEP-free reimplementation of LOFTEE.
+# It calls its own loss-of-function consequences from the VCF and an Ensembl-style GTF/GFF3
+# annotation, then writes its own per-transcript table. See config.schema.yaml.
+validate(config, "config.schema.yaml")
+
+# Rules use `conda: CONDA_ENV_YAML_DIR.join("<env>.yaml")`, which does not depend on the folder
+# of the rule file. `workflow.current_basedir` is also correct if this is a module.
+CONDA_ENV_YAML_DIR = workflow.current_basedir.join("envs")
+
+OUTPUT_DIR = os.path.abspath(config["output_dir"])
+RESOURCES_DIR = os.path.abspath(config.get("resources_dir", f"{OUTPUT_DIR}/resources"))
+
+HUMAN_GENOME_VERSION = config["human_genome_version"]
+ASSEMBLY = {"hg19": "GRCh37", "hg38": "GRCh38"}[HUMAN_GENOME_VERSION]
+
+FASTA_FILE = os.path.abspath(config["fasta_file"])
+FASTA_INDEX_FILE = os.path.abspath(config.get("fasta_file_idx", config["fasta_file"] + ".fai"))
+VCF_FILE_PATTERN = config["vcf"]
+
+LOFTEE_GENOME_ANNOTATION = os.path.abspath(config["genome_annotation"])
+# optional LOFTEE data layers; None skips the corresponding filter/flag, same as reloftee's
+# own CLI and PipelineConfig defaults
+LOFTEE_GERP_BIGWIG = os.path.abspath(config["gerp_bigwig"]) if config.get("gerp_bigwig") else None
+LOFTEE_HUMAN_ANCESTOR_FA = os.path.abspath(config["human_ancestor_fa"]) if config.get("human_ancestor_fa") else None
+LOFTEE_PHYLOCSF_SQLITE = os.path.abspath(config["phylocsf_sqlite"]) if config.get("phylocsf_sqlite") else None
+LOFTEE_MIN_INTRON_SIZE = config.get("min_intron_size", 15)
+# conda environment of the loftee rule: envs/loftee_env.yaml (reloftee's other dependencies
+# only, see there), or the name of an existing environment with the reloftee Python package
+# (`conda_env`)
+LOFTEE_CONDA_ENV = config.get("conda_env") or CONDA_ENV_YAML_DIR.join("loftee_env.yaml")
+
+
+include: "loftee.smk"

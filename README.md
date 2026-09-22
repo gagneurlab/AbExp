@@ -27,7 +27,7 @@ The publication to this method can be found in [Nature Communications](https://w
    VEP_CACHE_PATH="<your cache path here>"
    VEP_VERSION=108
 
-   mamba env create -f scripts/veff/vep_env.v108.yaml --name vep_v108
+   mamba env create -f workflow/scripts/veff/vep_env.v108.yaml --name vep_v108
    conda activate vep_v108
    
    bash misc/install_vep_cache/install_cache_for_version.sh $VEP_VERSION $VEP_CACHE_PATH
@@ -46,18 +46,18 @@ The publication to this method can be found in [Nature Communications](https://w
 
    bash misc/install_vep_cache/download_loftee.sh $LOFTEE_DIR
    ```
-5) Configure the `system` section of `config.yaml`:
+5) Configure the `system` section of `config/config.yaml`:
    - specify paths to the VEP cache, CADD cache, LOFTEE data and LOFTEE source code as defined in steps 2-4
    - (optional) Disable downloading the SpliceAI-RocksDB cache for pre-computed SpliceAI annotations by setting absplice.use\_spliceai\_rocksdb to False
    - (optional) Change file paths of automatically downloaded annotations to shared location
-   - (optional) Any option in `schemas/config.schema.yaml` can be set in this section.
+   - (optional) Any option in `workflow/schemas/config.schema.yaml` can be set in this section.
      The schema also lists the defaults.
-6) Run `mamba env create -f envs/abexp-veff-py.yaml`. The environment contains Snakemake 9.
+6) Run `mamba env create -f workflow/envs/abexp-veff-py.yaml`. The environment contains Snakemake 9.
 7) Activate the created environment: `conda activate abexp-veff-py`
 
 ## Usage
 
-1) Edit the `config.yaml` and specify the following parameters:
+1) Edit the `config/config.yaml` and specify the following parameters:
    - `vcf_input_dir`. All `.vcf|.vcf.gz|.vcf.bgz|.bcf` files in this folder will be annotated. Genotypes are not required.
    - `vcf_is_normalized: True` if all variants are left-normalized and biallelic (`bcftools norm -cs -m`).
      Otherwise, the pipeline will normalize the variants before annotation.
@@ -72,7 +72,7 @@ The publication to this method can be found in [Nature Communications](https://w
 
    An example is pre-configured and can be used to test the pipeline.
 
-2) Run `snakemake --sdm conda -c all`. Snakemake reads `config.yaml` by default;
+2) Run `snakemake --sdm conda -c all`. Snakemake reads `config/config.yaml` by default;
    use `--configfile my_config.yaml` for another config file.
    All rules are annotated with resource requirements s.t. snakemake can submit jobs to HPC clusters or cloud environments.
    It is highly recommended to use snakemake with some batch submission system, e.g. SLURM.
@@ -93,7 +93,7 @@ The publication to this method can be found in [Nature Communications](https://w
 
 [mehari](https://github.com/varfish-org/mehari) can replace VEP for the transcript consequence annotation.
 It needs no VEP cache and no LOFTEE, and it runs much faster.
-The rules in `scripts/veff/mehari.smk` call the mehari Python package and keep its output.
+The rules in `workflow/scripts/veff/mehari.smk` call the mehari Python package and keep its output.
 The per-transcript table has mehari's own consequence terms, and there are no LoF or NMD calls and no
 CADD, SIFT, PolyPhen or Condel scores.
 The shipped AbExp models were trained on VEP features and do not run on this route.
@@ -102,11 +102,11 @@ It is meant for training new models.
 Setup:
 1) Download the GENCODE GFF3 annotation and transcript FASTA of the release of your `gtf_file`, e.g.
    `bash misc/mehari/download_gencode.sh 42 GRCh38 data/gencode/release_42` (GENCODE 42 = Ensembl 108).
-2) In `config.yaml`, set `veff.annotator: "mehari"`, `veff.mehari_gencode_gff3` and
+2) In `config/config.yaml`, set `veff.annotator: "mehari"`, `veff.mehari_gencode_gff3` and
    `veff.mehari_gencode_transcripts_fasta`.
    The pipeline builds the mehari transcript database from the two files (about 6 minutes and 4 GB RAM for
-   a full GRCh38 release) and stores it at `system.mehari.transcripts_db` (see `schemas/config.schema.yaml`).
-3) Run snakemake with `--sdm conda`. The mehari rules use the environment `scripts/veff/mehari_env.yaml`,
+   a full GRCh38 release) and stores it at `system.mehari.transcripts_db` (see `workflow/schemas/config.schema.yaml`).
+3) Run snakemake with `--sdm conda`. The mehari rules use the environment `workflow/scripts/veff/mehari_env.yaml`,
    which builds the mehari Python package from source (no wheels are published yet).
    If you already have a conda environment with the mehari Python package, set `system.mehari.conda_env`
    in the config to its name instead.
@@ -118,13 +118,13 @@ Other workflows can reuse the AbExp rules, e.g. the variant annotation, with the
 
 ```python
 module abexp:
-    snakefile: github("gagneurlab/AbExp", path="Snakefile", tag="<release tag>")
+    snakefile: github("gagneurlab/AbExp", path="workflow/Snakefile", tag="<release tag>")
     config: config["abexp"]
 
 use rule * from abexp as abexp_*
 ```
 
-- `config["abexp"]` takes the same keys as `config.yaml`. The defaults come from `schemas/config.schema.yaml`.
+- `config["abexp"]` takes the same keys as `config/config.yaml`. The defaults come from `workflow/schemas/config.schema.yaml`.
 - The rules of the importing workflow request AbExp outputs as input, e.g.
   `<output_dir>/veff/tissue_specific_vep.py/veff.parquet/<vcf_file>.parquet`.
 - Every AbExp rule that needs more than a shell has a `conda:` environment,
@@ -141,6 +141,6 @@ If you plan to use AbExp in a commercial context, please ensure that you have th
 ## Development setup
 Advanced users who want to edit this pipeline can use the following steps to convert the python scripts back to Jupyter notebooks:
 1) Make sure that the `jupytext` command is available, e.g. via `mamba install jupytext`
-2) run `find scripts/ -iname "*[.py.py|.R.R]" -exec jupytext --sync {} \;` to convert all percent scripts to jupyter notebooks
+2) run `find workflow/scripts/ -iname "*[.py.py|.R.R]" -exec jupytext --sync {} \;` to convert all percent scripts to jupyter notebooks
 Jupyter will then automatically synchronize the percent scripts with the corresponding notebook files.
 

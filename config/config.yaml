@@ -41,7 +41,7 @@ veff:
 chrom_alias_tsv: "{ABEXP_DIR}/resources/chromAlias.tsv"
 
 # Settings of the local installation. All options and their defaults are in
-# schemas/config.schema.yaml.
+# workflow/schemas/config.schema.yaml.
 system:
   # canonical_transcript_pq: "/s/project/rep/processed/training_results_v14/general/gtex_canonical_transcript.parquet"
   # subtissue_level_isoform_contribution_scores_pq: "/s/project/rep/processed/training_results_v14/general/gtex_subtissue_level_pext_scores.parquet"

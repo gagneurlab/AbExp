@@ -193,7 +193,7 @@ properties:
             type: ["string", "null"]
             description: >-
               Name of an existing conda environment with the mehari Python package. By default,
-              `snakemake --sdm conda` creates scripts/veff/mehari_env.yaml, which compiles mehari
+              `snakemake --sdm conda` creates workflow/scripts/veff/mehari_env.yaml, which compiles mehari
               from source.
             default: null
 

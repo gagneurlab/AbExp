@@ -9,7 +9,7 @@ min_version("9.0")
 
 # Example configuration for a standalone run. Snakemake ignores this line if the
 # configuration is passed with `--configfile` or via `module ... config:`.
-configfile: "config.yaml"
+configfile: "config/config.yaml"
 
 
 include: "snakefile_utils.smk"
@@ -27,7 +27,8 @@ def resolve_abexp_dir(data):
     """
     if isinstance(data, str):
         if data.startswith("{ABEXP_DIR}/"):
-            return workflow.source_path(data.removeprefix("{ABEXP_DIR}/"))
+            # this Snakefile is in the folder `workflow` of the repository
+            return workflow.source_path("../" + data.removeprefix("{ABEXP_DIR}/"))
         return data
     elif isinstance(data, dict):
         return {k: resolve_abexp_dir(v) for k, v in data.items()}

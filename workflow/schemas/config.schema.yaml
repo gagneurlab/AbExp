@@ -88,7 +88,10 @@ properties:
             default: "{RESULTS_DIR}/fset/{{feature_set}}"
           resources_dir:
             type: string
-            description: default directory for downloaded resources
+            description: >-
+              Downloaded resources, e.g. the VEP cache, CADD and LOFTEE: more than 100 GB. The
+              default gives each output folder its own copy. Set a shared folder instead, so
+              that all output folders use one copy.
             default: "{RESULTS_DIR}/resources"
 
       expected_expression_tsv:

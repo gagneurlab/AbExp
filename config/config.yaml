@@ -45,6 +45,12 @@ veff:
 # workflow/schemas/config.schema.yaml; the options of vep, mehari, absplice and enformer
 # are in workflow/modules/veff/<module>/config.schema.yaml.
 system:
+  # Downloaded resources, e.g. the VEP cache, CADD and LOFTEE: more than 100 GB. The default
+  # <output_dir>/resources gives each output folder its own copy. Set a shared folder instead,
+  # so that all output folders use one copy.
+  # dirs:
+  #   resources_dir: "/data/abexp-resources"
+
   # canonical_transcript_pq: "/s/project/rep/processed/training_results_v14/general/gtex_canonical_transcript.parquet"
   # subtissue_level_isoform_contribution_scores_pq: "/s/project/rep/processed/training_results_v14/general/gtex_subtissue_level_pext_scores.parquet"
   # expressed_genes_pq: "/s/project/rep/processed/training_results_v14/gtex_v8/gene_is_expressed_per_subtissue.parquet"
@@ -54,16 +60,19 @@ system:
     version: 108
     vep_bin: "vep"
     perl_bin: "perl"
-    vep_cache_dir: "/s/raw/vep/{vep_version}"
-    cadd_dir: "/s/raw/cadd/v1.6/{human_genome_assembly}"
-    loftee_data_dir: "/s/raw/loftee/{human_genome_assembly}"
-    loftee_src_path: "/s/raw/loftee/{human_genome_assembly}_src"
+    # By default, the pipeline downloads the VEP cache, CADD and LOFTEE into resources_dir.
+    # Set these to reuse existing caches instead:
+    # vep_cache_dir: "/s/raw/vep/{vep_version}"
+    # cadd_dir: "/s/raw/cadd/v1.6/{human_genome_assembly}"
+    # loftee_data_dir: "/s/raw/loftee/{human_genome_assembly}"
+    # loftee_src_path: "/s/raw/loftee/{human_genome_assembly}_src"
 
   # mehari:
   #   transcripts_db: "/s/raw/mehari/{human_genome_assembly}.txs.bin.zst"
   #   conda_env: "abexp-mehari"
 
-  # reloftee on `gff3_file`; needs an existing conda environment with reloftee
+  # reloftee on `gff3_file`; needs an existing conda environment with reloftee. It reads the
+  # LOFTEE data files of the vep settings above.
   # loftee:
   #   enabled: True
   #   conda_env: "reloftee"

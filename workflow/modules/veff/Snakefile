@@ -75,8 +75,17 @@ if ANNOTATOR == "mehari" or "gencode_transcripts_fasta" in config["mehari"]:
 # reloftee calls its own consequences from the VCF and its genome_annotation (default
 # gff3_file), independently of the annotator above.
 if config["loftee"].get("enabled"):
+    # The vep module downloads the same LOFTEE data for its LOFTEE plugin. The loftee module
+    # reads these files, and its own download rules are not imported, so that each file has
+    # one rule and one location. Paths set in the section loftee must exist.
+    LOFTEE_DATA = {"human_ancestor_fa": str(rules.veff__vep_download_loftee_human_ancestor.output.fasta)}
+    if config["human_genome_version"] == "hg38":
+        LOFTEE_DATA["gerp_bigwig"] = str(rules.veff__vep_download_loftee_gerp_bigwig.output.bigwig)
+        LOFTEE_DATA["phylocsf_sqlite"] = str(rules.veff__vep_download_loftee_conservation_file.output.sql)
+
     LOFTEE_CONFIG = {
         "genome_annotation": config["gff3_file"],
+        **LOFTEE_DATA,
         **config["loftee"],
         "vcf": STRIPPED_VCF,
         "output_dir": VEFF_DIR,
@@ -89,7 +98,7 @@ if config["loftee"].get("enabled"):
         snakefile: "loftee/Snakefile"
         config: LOFTEE_CONFIG
 
-    use rule * from loftee
+    use rule * from loftee exclude veff__loftee_download_human_ancestor, veff__loftee_download_gerp_bigwig, veff__loftee_download_phylocsf_sqlite
 
 
 TISSUE_SPECIFIC_VEP_CONFIG = {
@@ -159,3 +168,6 @@ if config["nmd_scanner"].get("enabled"):
         config: NMD_SCANNER_CONFIG
 
     use rule * from nmd_scanner
+
+
+include: "setup.smk"

@@ -54,7 +54,8 @@ else:
         threads: 1
         resources:
             ntasks=1,
-            mem_mb=lambda wildcards, attempt, threads: (1000 * threads) * attempt
+            mem_mb=lambda wildcards, attempt, threads: (1000 * threads) * attempt,
+            runtime=lambda wildcards, attempt: 30 * attempt,
         output:
             expand(ENFORMER_REF, chromosome=CHROMOSOMES)
         params:
@@ -63,5 +64,15 @@ else:
             output_dir=f'{RESOURCES_DIR}/enformer_{HUMAN_GENOME_VERSION}/'
         script:
             "scripts/download_ref.py"
+
+
+rule enformer__setup:
+    """
+    Downloads the reference scores with download_reference if they do not exist yet.
+    """
+    input:
+        expand(ENFORMER_REF, chromosome=CHROMOSOMES) if config["download_reference"] else [],
+    localrule: True
+
 
 del OUTPUT_BASEDIR

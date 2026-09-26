@@ -65,7 +65,8 @@ rule enformer_variant_effect:
     params:
         enformer=ENFORMER,
     wildcard_constraints:
-        vcf_file=r'.*\.vcf\.gz'
+        # any VCF file name, e.g. x.vcf or x.bcf; vcf_prep restricts the endings
+        vcf_file="[^/]+",
     conda:
         ENFORMER_CONDA_ENV_YAML
     script:

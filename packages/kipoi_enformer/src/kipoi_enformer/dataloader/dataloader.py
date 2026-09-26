@@ -1,16 +1,33 @@
 from abc import ABC, abstractmethod
+from collections.abc import Mapping
 
-from kipoi.data import SampleGenerator
+import numpy as np
 import pyarrow as pa
 import math
 import pandas as pd
-from kipoiseq.extractors import VariantSeqExtractor, FastaStringExtractor
-from kipoiseq import Interval, Variant
-from kipoiseq.transforms.functional import one_hot_dna
+from kipoiseq2.extractors import VariantSeqExtractor, FastaStringExtractor
+from kipoiseq2 import Interval, Variant
+from kipoiseq2.transforms.functional import one_hot_dna
 from kipoi_enformer.utils import gtf_to_pandas
 
 
-class Dataloader(SampleGenerator, ABC):
+def numpy_collate(samples: list):
+    """
+    Collate a list of samples into one batch.
+    Dictionaries are collated per key, numpy arrays are stacked along a new first axis,
+    and all other values (numbers, strings) are converted to a numpy array.
+    :param samples: List of samples with the same structure
+    :return: The batch, with the same structure as a single sample
+    """
+    first = samples[0]
+    if isinstance(first, Mapping):
+        return {key: numpy_collate([sample[key] for sample in samples]) for key in first}
+    if isinstance(first, np.ndarray):
+        return np.stack(samples)
+    return np.asarray(samples)
+
+
+class Dataloader(ABC):
     def __init__(self, fasta_file, size: int = None, *args, **kwargs):
         """
 
@@ -73,6 +90,23 @@ class Dataloader(SampleGenerator, ABC):
                 "sequences": sequences,
                 "metadata": metadata
             }
+
+    def batch_iter(self, batch_size: int):
+        """
+        Iterate over the dataset in batches.
+
+        :param batch_size: The number of samples per batch. The last batch can be smaller.
+        :return: Iterator over the batches. Each batch has the same keys as a sample,
+            with the values of all samples in the batch collated by `numpy_collate`.
+        """
+        batch = []
+        for sample in self:
+            batch.append(sample)
+            if len(batch) == batch_size:
+                yield numpy_collate(batch)
+                batch = []
+        if len(batch) > 0:
+            yield numpy_collate(batch)
 
 
 def get_tss_from_genome_annotation(gtf: pd.DataFrame | str, chromosome: str | None = None,
@@ -137,7 +171,7 @@ def construct_interval(chrom, strand, anchor, seq_length):
     five_end_len = math.floor(seq_length / 2)
     three_end_len = math.ceil(seq_length / 2)
 
-    # WARNING: kipoiseq.Interval has a 0-based end!
+    # WARNING: kipoiseq2.Interval has a 0-based end!
     interval = Interval(chrom=chrom,
                         start=anchor - five_end_len,
                         end=anchor + three_end_len,
@@ -158,7 +192,7 @@ def extract_sequences_around_anchor(shifts, chromosome, strand, anchor, seq_leng
         "variant_extractor must be provided if variant is not None"
     chrom_len = len(ref_seq_extractor.fasta.records[chromosome])
 
-    # WARNING: kipoiseq.Interval has a 0-based end!
+    # WARNING: kipoiseq2.Interval has a 0-based end!
     interval = construct_interval(chromosome, strand, anchor, seq_length)
     sequences = []
     # shift intervals and extract sequences

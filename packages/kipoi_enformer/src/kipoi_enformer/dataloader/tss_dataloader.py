@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
 
 import pandas as pd
-from kipoiseq.extractors import VariantSeqExtractor, SingleVariantMatcher, FastaStringExtractor
+from kipoiseq2.extractors import VariantSeqExtractor, SingleVariantMatcher, FastaStringExtractor
 import pyranges as pr
-from kipoiseq.extractors import MultiSampleVCF
+from kipoiseq2.extractors import MultiSampleVCF
 import pyarrow as pa
 import numpy as np
 from .dataloader import Dataloader, get_tss_from_genome_annotation, extract_sequences_around_anchor

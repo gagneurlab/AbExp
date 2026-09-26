@@ -260,8 +260,11 @@ def parse_col(name):
     if name in dtypes:
         dtype = dtypes[name]
         if isinstance(dtype, t.List):
-            col = col.str.split(",")
-        col = col.cast(dtypes[name])
+            # non-strict: values that do not fit the dtype become null, e.g. EXON and INTRON
+            # ("1/5"), which a strict cast rejects in polars 1.44
+            col = col.str.split(",").cast(dtype, strict=False)
+        else:
+            col = col.cast(dtype)
     if name in needsMinVal:
         col = col.list.sort().list.get(0)
     

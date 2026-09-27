@@ -62,8 +62,9 @@ properties:
     default: false
     description: >-
       Run Enformer and SpliceAI (modules enformer and absplice) in the CUDA variant of their
-      TensorFlow environment instead of the CPU variant. The CUDA variant also runs on hosts
-      without a GPU. Replaces enformer.use_gpu.
+      TensorFlow environment, and Pangolin (module absplice2) in the CUDA variant of its PyTorch
+      environment, instead of the CPU variants. The CUDA variants also run on hosts without a
+      GPU. Replaces enformer.use_gpu.
   vep:
     type: object
     default: {}

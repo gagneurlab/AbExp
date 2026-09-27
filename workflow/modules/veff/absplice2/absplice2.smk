@@ -22,7 +22,7 @@ if BUILD_PANGOLIN_ANNOTATION_DB:
         params:
             transcript_tags=PANGOLIN_TRANSCRIPT_TAGS,
         conda:
-            CONDA_ENV_YAML_DIR.join("absplice2-pangolin.yaml")
+            PANGOLIN_CONDA_ENV_YAML
         script:
             "pangolin_annotation_db.py.py"
 
@@ -44,7 +44,7 @@ rule veff__absplice2_pyfastx_index:
     input:
         fasta=FASTA_FILE,
     conda:
-        CONDA_ENV_YAML_DIR.join("absplice2-pangolin.yaml")
+        PANGOLIN_CONDA_ENV_YAML
     shell:
         """
         ln -sf '{input.fasta}' '{output.fasta}'
@@ -64,7 +64,7 @@ rule veff__absplice2_pangolin:
     resources:
         ntasks=1,
         mem_mb=lambda wildcards, attempt: 4000 * attempt,
-        gpu=1,
+        gpu=1 if config["use_gpu"] else 0,
     output:
         vcf=temp(PANGOLIN_VCF_PATTERN),
     input:
@@ -75,7 +75,7 @@ rule veff__absplice2_pangolin:
     log:
         f"{OUTPUT_BASEDIR}/logs/pangolin/{{vcf_file}}.log",
     conda:
-        CONDA_ENV_YAML_DIR.join("absplice2-pangolin.yaml")
+        PANGOLIN_CONDA_ENV_YAML
     shell:
         "OMP_NUM_THREADS={threads} pangolin -m True -d 50 '{input.vcf}' '{input.fasta}' '{input.annotation_db}' '{output.vcf}' > '{log}' 2>&1"
 

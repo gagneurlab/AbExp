@@ -52,9 +52,10 @@ properties:
     type: boolean
     default: false
     description: >-
-      Run Enformer and SpliceAI in the CUDA variant of their TensorFlow environment instead of
-      the CPU variant. The CUDA variant also runs on hosts without a GPU. Creating it on a host
-      without a CUDA driver needs CONDA_OVERRIDE_CUDA (see the README).
+      Run Enformer and SpliceAI in the CUDA variant of their TensorFlow environment, and Pangolin
+      in the CUDA variant of its PyTorch environment, instead of the CPU variants. The CUDA
+      variants also run on hosts without a GPU. Creating them on a host without a CUDA driver
+      needs CONDA_OVERRIDE_CUDA (see the README).
   veff:
     type: object
     default: {}

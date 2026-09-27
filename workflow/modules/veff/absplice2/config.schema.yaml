@@ -82,6 +82,13 @@ properties:
     description: >-
       The AbSplice2-DNA model. Default is <resources_dir>/absplice2/AbSplice_2_DNA.pkl,
       downloaded if missing (0.7 MB).
+  use_gpu:
+    type: boolean
+    default: false
+    description: >-
+      Run the Pangolin rules in the CUDA variant of the PyTorch environment
+      (envs/absplice2-pangolin-cuda.yaml of this module) instead of the CPU variant. The CUDA
+      variant also runs on hosts without a GPU. The veff module sets this from its own use_gpu.
   enabled:
     type: boolean
     default: false

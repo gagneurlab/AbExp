@@ -16,7 +16,7 @@ The publication to this method can be found in [Nature Communications](https://w
   - GTEx and SpliceMap tables: 2GB
   - SpliceAI-RocksDB (optional): 349GB for hg19 + hg38
 - RAM: 64GB
-- (optional) a GPU with CUDA for Enformer and SpliceAI, see [GPU](#gpu)
+- (optional) a GPU with CUDA for Enformer, SpliceAI and Pangolin, see [GPU](#gpu)
 
 ## Setup
 
@@ -65,7 +65,7 @@ The publication to this method can be found in [Nature Communications](https://w
    - (optional) `veff.annotator: "mehari"` to annotate transcript consequences with
      [mehari](https://github.com/varfish-org/mehari) instead of VEP, together with
      `veff.mehari_gencode_transcripts_fasta`, see below.
-   - (optional) `use_gpu: True` to run Enformer and SpliceAI on a GPU, see [GPU](#gpu).
+   - (optional) `use_gpu: True` to run Enformer, SpliceAI and Pangolin on a GPU, see [GPU](#gpu).
 
    An example is pre-configured and can be used to test the pipeline.
 
@@ -91,12 +91,14 @@ The publication to this method can be found in [Nature Communications](https://w
 ## GPU
 
 `use_gpu: True` in the config makes Enformer and SpliceAI use the CUDA variant of their TensorFlow
-environment (`workflow/modules/veff/envs/abexp-tensorflow-cuda.yaml`) instead of the CPU variant. The CUDA
-variant also runs on hosts without a GPU, on the CPU. Only with `use_gpu: True`, these rules request one GPU
-(resource `gpu`), e.g. from SLURM.
+environment (`workflow/modules/veff/envs/abexp-tensorflow-cuda.yaml`) instead of the CPU variant. Pangolin
+of the absplice2 module likewise uses the CUDA variant of its PyTorch environment
+(`workflow/modules/veff/absplice2/envs/absplice2-pangolin-cuda.yaml`). The CUDA variants also run on hosts
+without a GPU, on the CPU. Only with `use_gpu: True`, these rules request one GPU (resource `gpu`), e.g.
+from SLURM.
 
-Conda creates the CUDA variant only on a host with a CUDA driver. To create it on a host without one, e.g. a
-login node, set `CONDA_OVERRIDE_CUDA` to a CUDA version that the driver of the GPU nodes supports, e.g. 12.9:
+Conda creates the CUDA variants only on a host with a CUDA driver. To create them on a host without one, e.g.
+a login node, set `CONDA_OVERRIDE_CUDA` to a CUDA version that the driver of the GPU nodes supports, e.g. 12.9:
 ```bash
 CONDA_OVERRIDE_CUDA=12.9 snakemake --conda-create-envs-only
 ```
@@ -166,8 +168,9 @@ module. It is off by default; set `system.absplice2.enabled: true` and request
 `<output_dir>/veff/absplice2/veff.parquet/<vcf_file>.parquet` as target. Its output is not read by
 tissue_specific_vep, fset or predict. The module downloads the AbSplice2 model (0.7 MB).
 
-Pangolin needs a GPU for large VCFs. On a CPU with 4 threads, it takes about 3 s per variant, i.e. about
-9 hours for 10,000 variants. A whole-genome VCF with millions of variants would take months.
+Pangolin needs a GPU for large VCFs (`use_gpu: True`, see [GPU](#gpu)). On a CPU with 4 threads, it takes
+about 3 s per variant, i.e. about 9 hours for 10,000 variants. A whole-genome VCF with millions of variants
+would take months.
 
 The module builds the Pangolin annotation database from `gff3_file`: all genes, and the transcripts and
 exons with the transcript tags of the databases published with Pangolin (Ensembl_canonical for hg38).

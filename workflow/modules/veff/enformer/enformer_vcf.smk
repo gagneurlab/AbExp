@@ -11,8 +11,6 @@ rule enformer__predict_alt:
         gtf_path=GTF_TRANSCRIPTS_PQ,
         fasta_path=FASTA_FILE,
         vcf_path=VCF_FILE_PATTERN,
-        # make sure that reference is available before starting vcf computation
-        ref_tissue_paths=ancient(expand(ENFORMER_REF, chromosome=CHROMOSOMES)),
     params:
         output_version=OUTPUT_VERSION["predict"],
         type='alternative',

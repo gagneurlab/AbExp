@@ -253,11 +253,6 @@ rules downstream of them rerun because their input changed.
 - The download rules have no version; their URL is the version. Rules that only index a file or convert the
   format of a download have none either.
 
-If Enformer computes the reference itself (`download_reference: False`), a bump of `"predict"` or `"tissue"`
-takes two runs. The first run reruns the reference, and the second run reruns the alternative sequences.
-The reason is the `ancient` reference input of `enformer__predict_alt`: while another job of the same run
-updates it, Snakemake 9.24 ignores the changed params of `enformer__predict_alt` and the rules downstream of it.
-
 Snakemake uses this profile when it runs `workflow/Snakefile`, also with `--snakefile` from another directory.
 `--rerun-triggers` on the command line overrides the setting. The setting does not apply:
 - with `--workflow-profile none` or another workflow profile

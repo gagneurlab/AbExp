@@ -37,6 +37,10 @@ veff:
   # README.
   # mehari_gencode_transcripts_fasta: "data/gencode/release_40/gencode.v40.transcripts.fa.gz"
 
+# Run Enformer and SpliceAI in the CUDA variant of their TensorFlow environment. It also runs
+# on hosts without a GPU. See "GPU" in the README.
+use_gpu: False
+
 # mapping of chromosome names. By default, maps them to "chr" prefix
 # (workflow/modules/vcf_prep/resources/chromAlias.tsv).
 # chrom_alias_tsv: "my_chromAlias.tsv"
@@ -80,7 +84,6 @@ system:
 
   #enformer:
   #  download_reference: True
-  #  use_gpu: True
   #  batch_size: 2
   # variant_upstream_tss: 50
   # variant_downstream_tss: 200

@@ -56,6 +56,13 @@ properties:
     enum: ["vep", "mehari"]
     default: "vep"
     description: Transcript consequence annotation that tissue_specific_vep aggregates.
+  use_gpu:
+    type: boolean
+    default: false
+    description: >-
+      Run Enformer and SpliceAI (modules enformer and absplice) in the CUDA variant of their
+      TensorFlow environment instead of the CPU variant. The CUDA variant also runs on hosts
+      without a GPU. Replaces enformer.use_gpu.
   vep:
     type: object
     default: {}

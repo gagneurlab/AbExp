@@ -8,9 +8,10 @@ min_version("9.0")
 # tissues. See config.schema.yaml.
 validate(config, "config.schema.yaml")
 
-# Rules use `conda: CONDA_ENV_YAML_DIR.join("<env>.yaml")`, which does not depend on the folder
-# of the rule file. `workflow.current_basedir` is also correct if this is a module.
-CONDA_ENV_YAML_DIR = workflow.current_basedir.join("envs")
+# Rules use `conda: TENSORFLOW_CONDA_ENV_YAML`, which does not depend on the folder of the rule
+# file. `workflow.current_basedir` is also correct if this is a module. The conda environments
+# that several veff modules use are in workflow/modules/veff/envs.
+SHARED_CONDA_ENV_YAML_DIR = workflow.current_basedir.join("../envs")
 
 OUTPUT_DIR = os.path.abspath(config["output_dir"])
 RESOURCES_DIR = os.path.abspath(config.get("resources_dir", f"{OUTPUT_DIR}/resources"))
@@ -21,10 +22,10 @@ FASTA_FILE = os.path.abspath(config["fasta_file"])
 GTF_TRANSCRIPTS_PQ = config["gtf_transcripts"]
 VCF_FILE_PATTERN = config["vcf"]
 
-if config["use_gpu"]:
-    ENFORMER_CONDA_ENV_YAML = CONDA_ENV_YAML_DIR.join("abexp-enformer-gpu.yaml")
-else:
-    ENFORMER_CONDA_ENV_YAML = CONDA_ENV_YAML_DIR.join("abexp-enformer.yaml")
+# CPU or CUDA variant of the TensorFlow environment
+TENSORFLOW_CONDA_ENV_YAML = SHARED_CONDA_ENV_YAML_DIR.join(
+    "abexp-tensorflow-cuda.yaml" if config["use_gpu"] else "abexp-tensorflow-cpu.yaml"
+)
 
 CHROMOSOMES = config["chromosomes"]
 ENFORMER_DIR = f"{OUTPUT_DIR}/enformer/{HUMAN_GENOME_VERSION}"

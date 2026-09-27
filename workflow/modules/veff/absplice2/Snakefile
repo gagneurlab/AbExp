@@ -1,0 +1,49 @@
+import os
+
+from snakemake.utils import min_version, validate
+
+min_version("9.0")
+
+# AbSplice2-DNA (https://github.com/gagneurlab/absplice2): aberrant splicing per GTEx tissue from
+# MMSplice with SpliceMaps and from Pangolin. The module runs Pangolin; the MMSplice table and the
+# SpliceMaps come from the absplice module. See config.schema.yaml.
+validate(config, "config.schema.yaml")
+
+# Rules use `conda: CONDA_ENV_YAML_DIR.join("<env>.yaml")`, which does not depend on the folder
+# of the rule file. `workflow.current_basedir` is also correct if this is a module.
+CONDA_ENV_YAML_DIR = workflow.current_basedir.join("envs")
+
+OUTPUT_DIR = os.path.abspath(config["output_dir"])
+RESOURCES_DIR = os.path.abspath(config.get("resources_dir", f"{OUTPUT_DIR}/resources"))
+
+HUMAN_GENOME_VERSION = config["human_genome_version"]
+
+FASTA_FILE = os.path.abspath(config["fasta_file"])
+VALID_VCF_FILE_PATTERN = config["valid_vcf"]
+MMSPLICE_SPLICEMAP_CSV_PATTERN = config["mmsplice_splicemap"]
+SPLICEMAP5 = config["splicemap_5"]
+SPLICEMAP3 = config["splicemap_3"]
+TISSUE_MAPPING_CSV = config["tissue_mapping_csv"]
+
+MODEL_PKL = os.path.abspath(config.get("model_pkl", f"{RESOURCES_DIR}/absplice2/AbSplice_2_DNA.pkl"))
+
+# The gffutils database of Pangolin: an existing file (`pangolin_annotation_db`), or built from
+# `gff3_file` into the output folder. The default transcript tags are those of the databases
+# that Pangolin publishes for GENCODE v38.
+BUILD_PANGOLIN_ANNOTATION_DB = "pangolin_annotation_db" not in config
+PANGOLIN_ANNOTATION_DB = os.path.abspath(
+    config.get("pangolin_annotation_db", f"{OUTPUT_DIR}/absplice2/pangolin_annotation.db")
+)
+PANGOLIN_TRANSCRIPT_TAGS = config.get(
+    "pangolin_transcript_tags",
+    {
+        "hg19": ["Ensembl_canonical", "appris_principal", "appris_candidate", "appris_candidate_longest"],
+        "hg38": ["Ensembl_canonical"],
+    }[HUMAN_GENOME_VERSION],
+)
+if BUILD_PANGOLIN_ANNOTATION_DB:
+    GFF3_FILE = os.path.abspath(config["gff3_file"])
+
+
+include: "download.smk"
+include: "absplice2.smk"

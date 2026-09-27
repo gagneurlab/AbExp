@@ -138,6 +138,7 @@ workflow/modules/veff/mehari/               # mehari
 workflow/modules/veff/loftee/               # reloftee: LOFTEE loss-of-function calls
 workflow/modules/veff/tissue_specific_vep/  # consequences per GTEx tissue
 workflow/modules/veff/absplice/             # AbSplice-DNA
+workflow/modules/veff/absplice2/            # AbSplice2-DNA
 workflow/modules/veff/enformer/             # Enformer
 workflow/modules/veff/nmd_scanner/          # NMD-Scanner
 workflow/modules/veff/envs/                 # conda environments that several veff modules use
@@ -157,6 +158,25 @@ also set `system.nmd_scanner.gtf_file` to the GENCODE GTF of the same release as
 
 Both modules keep the output of their tool as it is, and neither is read by tissue_specific_vep,
 fset or predict.
+
+`workflow/modules/veff/absplice2` adds [AbSplice2-DNA](https://github.com/gagneurlab/absplice2).
+It runs [Pangolin](https://github.com/tkzeng/Pangolin) and scores each variant, gene and GTEx tissue
+with the AbSplice2 model, from Pangolin and from the MMSplice and SpliceMap results of the absplice
+module. It is off by default; set `system.absplice2.enabled: true` and request
+`<output_dir>/veff/absplice2/veff.parquet/<vcf_file>.parquet` as target. Its output is not read by
+tissue_specific_vep, fset or predict. The module downloads the AbSplice2 model (0.7 MB).
+
+Pangolin needs a GPU for large VCFs. On a CPU with 4 threads, it takes about 3 s per variant, i.e. about
+9 hours for 10,000 variants. A whole-genome VCF with millions of variants would take months.
+
+The module builds the Pangolin annotation database from `gff3_file`: all genes, and the transcripts and
+exons with the transcript tags of the databases published with Pangolin (Ensembl_canonical for hg38).
+AbSplice2 was trained with Pangolin's GENCODE v38 database. Built from the GENCODE v38 GFF3, the database
+has the same genes, transcripts and exons. Other GENCODE releases differ in their genes and canonical
+transcripts. For every 4th variant of the chr22 ClinVar example VCFs, GENCODE v40 instead of v38 added 14
+variant/gene pairs, all with AbSplice_DNA below 0.001, and did not change the other 2,603 pairs. Set
+`system.absplice2.pangolin_annotation_db` to use an existing database instead, e.g. the GENCODE v38
+database of Pangolin.
 
 Each module has its own `config.schema.yaml` with its options and defaults, its own scripts and
 conda environments (`envs/`), and the files it ships. The conda environments that several veff modules
@@ -279,6 +299,9 @@ The Python packages in `packages/` carry their own MIT license files.
 
 **Please note:** AbExp relies on [CADD](https://cadd.gs.washington.edu/) and [SpliceAI](https://github.com/Illumina/SpliceAI/), both of which are free to use only in non-commercial settings.
 If you plan to use AbExp in a commercial context, please ensure that you have the appropriate permissions or licenses to use both tools.
+
+The optional module absplice2 installs [Pangolin](https://github.com/tkzeng/Pangolin) and downloads the model of
+[AbSplice2](https://github.com/gagneurlab/absplice2) when it runs. Both are licensed under the GPL-3.0 and are not part of this repository.
 
 ## Development setup
 Advanced users who want to edit this pipeline can use the following steps to convert the python scripts back to Jupyter notebooks:

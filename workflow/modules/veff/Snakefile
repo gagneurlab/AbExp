@@ -141,6 +141,30 @@ module absplice:
 use rule * from absplice
 
 
+# off by default: Pangolin is slow without a GPU, and the output is not read by
+# tissue_specific_vep, fset or predict. AbSplice2 reads the MMSplice table, the SpliceMaps and the
+# tissue mapping of the absplice module.
+if config["absplice2"].get("enabled"):
+    ABSPLICE2_CONFIG = {
+        "gff3_file": config["gff3_file"],
+        **config["absplice2"],
+        "valid_vcf": VALID_VCF,
+        "mmsplice_splicemap": str(rules.veff__mmsplice_splicemap.output.result),
+        "splicemap_5": [str(f) for f in rules.veff__mmsplice_splicemap.input.splicemap_5],
+        "splicemap_3": [str(f) for f in rules.veff__mmsplice_splicemap.input.splicemap_3],
+        "tissue_mapping_csv": rules.veff__absplice.input.tissue_mapping,
+        "output_dir": VEFF_DIR,
+        "resources_dir": RESOURCES_DIR,
+        **GENOME,
+    }
+
+    module absplice2:
+        snakefile: "absplice2/Snakefile"
+        config: ABSPLICE2_CONFIG
+
+    use rule * from absplice2
+
+
 ENFORMER_CONFIG = {
     **config["enformer"],
     "use_gpu": config["use_gpu"],

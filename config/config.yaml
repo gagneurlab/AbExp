@@ -101,3 +101,8 @@ system:
   #   spliceai_rocksdb_path:
   #     hg19: '/s/project/abexp_veff/resources/spliceai_rocksdb/spliceAI_hg19_chr{chromosome}.db'
   #     hg38: '/s/project/abexp_veff/resources/spliceai_rocksdb/spliceAI_hg38_chr{chromosome}.db'
+
+  # AbSplice2-DNA: Pangolin with the MMSplice and SpliceMap results of absplice. Its output
+  # <output_dir>/veff/absplice2/veff.parquet/<vcf_file>.parquet is built only as a target.
+  # absplice2:
+  #   enabled: True

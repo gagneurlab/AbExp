@@ -2,10 +2,10 @@ $schema: "https://json-schema.org/draft/2020-12/schema"
 title: veff module
 description: >-
   Variant effect annotation: prepared VCFs in, per-variant features out. Combines the modules
-  vep, mehari, loftee, tissue_specific_vep, absplice, enformer and nmd_scanner; the inputs come
-  from the modules vcf_prep and gtf_transcripts. The sections vep, mehari, loftee,
-  tissue_specific_vep, absplice, enformer and nmd_scanner are passed to these modules; their
-  config.schema.yaml lists the options.
+  vep, mehari, loftee, tissue_specific_vep, absplice, absplice2, enformer and nmd_scanner; the
+  inputs come from the modules vcf_prep and gtf_transcripts. The sections vep, mehari, loftee,
+  tissue_specific_vep, absplice, absplice2, enformer and nmd_scanner are passed to these modules;
+  their config.schema.yaml lists the options.
 type: object
 additionalProperties: false
 
@@ -47,7 +47,8 @@ properties:
     type: string
     description: >-
       The GENCODE genome annotation (GFF3) that `gtf_transcripts` comes from. mehari builds its
-      transcript database from it, and loftee reads it by default.
+      transcript database from it, loftee reads it by default, and absplice2 builds the Pangolin
+      annotation database from it by default.
   chrom_alias_tsv:
     type: string
     description: Mapping of chromosome names, the same as for the vcf_prep module, e.g. its resources/chromAlias.tsv.
@@ -88,6 +89,13 @@ properties:
     type: object
     default: {}
     description: Options of the absplice module.
+  absplice2:
+    type: object
+    default: {}
+    description: >-
+      Options of the absplice2 module. The module is only loaded for `absplice2.enabled: true`.
+      It reads the MMSplice table, the SpliceMaps and the tissue mapping of the absplice module.
+      Its `gff3_file` defaults to `gff3_file`.
   enformer:
     type: object
     default: {}

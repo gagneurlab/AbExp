@@ -1,0 +1,21 @@
+# Pangolin in the version of AbSplice2 (a fork of tkzeng/Pangolin), and gffutils for its
+# annotation database
+name: abexp-absplice2-pangolin
+
+channels:
+- conda-forge
+- bioconda
+
+dependencies:
+- python=3.11
+- pytorch=2.5.1
+- numpy
+- pandas
+- pysam
+- pyfastx
+- gffutils
+# Pangolin imports pkg_resources
+- setuptools<81
+- pip
+- pip:
+  - "pangolin @ git+https://github.com/neverov-am/Pangolin.git@232cba082c03ffefec40374ffadd4088a42290b6"

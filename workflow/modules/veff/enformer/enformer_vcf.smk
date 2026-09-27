@@ -4,7 +4,7 @@ VEFF_VCF_PQ_PATTERN = f"{OUTPUT_DIR}/enformer/veff.parquet/{{vcf_file}}.parquet"
 rule enformer__predict_alt:
     resources:
         mem_mb=lambda wildcards, attempt, threads: 12000 + (1000 * attempt),
-        gpu=1,
+        gpu=1 if config["use_gpu"] else 0,
     output:
         temp(f"{OUTPUT_BASEDIR}/raw.parquet/{{vcf_file}}.parquet")
     input:
@@ -17,7 +17,7 @@ rule enformer__predict_alt:
         type='alternative',
         enformer=ENFORMER,
     conda:
-        ENFORMER_CONDA_ENV_YAML
+        TENSORFLOW_CONDA_ENV_YAML
     script:
         "scripts/predict_expression.py"
 
@@ -32,7 +32,7 @@ rule enformer__aggregate_alt:
     params:
         enformer=ENFORMER,
     conda:
-        ENFORMER_CONDA_ENV_YAML
+        TENSORFLOW_CONDA_ENV_YAML
     script:
         "scripts/aggregate_tracks.py"
 
@@ -49,7 +49,7 @@ rule enformer__tissue_alt:
     params:
         enformer=ENFORMER,
     conda:
-        ENFORMER_CONDA_ENV_YAML
+        TENSORFLOW_CONDA_ENV_YAML
     script:
         "scripts/tissue_expression.py"
 
@@ -68,7 +68,7 @@ rule enformer_variant_effect:
         # any VCF file name, e.g. x.vcf or x.bcf; vcf_prep restricts the endings
         vcf_file="[^/]+",
     conda:
-        ENFORMER_CONDA_ENV_YAML
+        TENSORFLOW_CONDA_ENV_YAML
     script:
         "scripts/veff.py"
 

@@ -13,6 +13,10 @@ validate(config, "config.schema.yaml")
 CONDA_ENV_YAML_DIR = workflow.current_basedir.join("envs")
 # conda environments that several veff modules use, in workflow/modules/veff/envs
 SHARED_CONDA_ENV_YAML_DIR = workflow.current_basedir.join("../envs")
+# CPU or CUDA variant of the TensorFlow environment of SpliceAI
+TENSORFLOW_CONDA_ENV_YAML = SHARED_CONDA_ENV_YAML_DIR.join(
+    "abexp-tensorflow-cuda.yaml" if config["use_gpu"] else "abexp-tensorflow-cpu.yaml"
+)
 
 OUTPUT_DIR = os.path.abspath(config["output_dir"])
 RESOURCES_DIR = os.path.abspath(config.get("resources_dir", f"{OUTPUT_DIR}/resources"))

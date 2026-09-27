@@ -4,7 +4,7 @@ if not config['download_reference']:
     rule enformer__predict_ref:
         resources:
             mem_mb=lambda wildcards, attempt, threads: 12000 + (1000 * attempt),
-            gpu=1,
+            gpu=1 if config["use_gpu"] else 0,
         output:
             temp(f"{OUTPUT_BASEDIR}/raw.parquet/chrom={{chromosome}}/data.parquet")
         input:
@@ -14,7 +14,7 @@ if not config['download_reference']:
             type='reference',
             enformer=ENFORMER,
         conda:
-            ENFORMER_CONDA_ENV_YAML
+            TENSORFLOW_CONDA_ENV_YAML
         script:
             "scripts/predict_expression.py"
 
@@ -29,7 +29,7 @@ if not config['download_reference']:
         params:
             enformer=ENFORMER,
         conda:
-            ENFORMER_CONDA_ENV_YAML
+            TENSORFLOW_CONDA_ENV_YAML
         script:
             "scripts/aggregate_tracks.py"
 
@@ -46,7 +46,7 @@ if not config['download_reference']:
         params:
             enformer=ENFORMER,
         conda:
-            ENFORMER_CONDA_ENV_YAML
+            TENSORFLOW_CONDA_ENV_YAML
         script:
             "scripts/tissue_expression.py"
 else:

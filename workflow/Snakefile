@@ -123,6 +123,7 @@ VEFF_CONFIG = {
     "gff3_file": GFF3_FILE,
     "chrom_alias_tsv": CHROM_ALIAS_TSV,
     "annotator": config["veff"]["annotator"],
+    "use_gpu": config["use_gpu"],
     "vep": config["system"]["vep"],
     "mehari": {
         **config["system"]["mehari"],

@@ -120,7 +120,7 @@ def join_featuresets(
     joint_partial_column_sets = defaultdict(list)
     for (join_columns, fsets) in partial_column_sets.items():
         joint_fset = reduce(
-            lambda left, right: left.join(right, on=list(join_columns), how="outer", coalesce=True), fsets
+            lambda left, right: left.join(right, on=list(join_columns), how="full", coalesce=True), fsets
         )
         joint_partial_column_sets[join_columns] = joint_fset
 
@@ -159,7 +159,7 @@ def join_featuresets(
         full_df = reduce(
             lambda left, right: left.join(right, on=[
                 c for c in index_cols if c in left.columns and c in right.columns
-            ], how="outer", coalesce=True),
+            ], how="full", coalesce=True),
             joint_full_column_sets,
         )
     else:

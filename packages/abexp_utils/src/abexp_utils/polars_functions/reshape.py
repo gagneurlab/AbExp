@@ -27,7 +27,7 @@ def zip_explode_cols(
     if rename_fields is None:
         rename_fields = {}
 
-    df = df.explode(cols)
+    df = df.explode(cols, empty_as_null=True)
     df = df.with_columns(pl.struct([
         pl.col(c).alias(rename_fields[c]) if c in rename_fields else pl.col(c)
         for c in cols

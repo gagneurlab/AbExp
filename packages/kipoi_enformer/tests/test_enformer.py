@@ -158,7 +158,13 @@ def test_predict_tissue_mapper(allele_type: str, chr22_example_files, output_dir
 ])
 def test_calculate_veff(chr22_example_files, output_dir: Path,
                         enformer_tracks_path: Path, gtex_tissue_mapper_path: Path, aggregation_mode, downstream_tss,
-                        upstream_tss, size=10):
+                        upstream_tss):
+    calculate_veff(chr22_example_files, output_dir, enformer_tracks_path, gtex_tissue_mapper_path, aggregation_mode,
+                   downstream_tss, upstream_tss)
+
+
+def calculate_veff(chr22_example_files, output_dir: Path, enformer_tracks_path: Path, gtex_tissue_mapper_path: Path,
+                   aggregation_mode, downstream_tss, upstream_tss, size=10) -> Path:
     ref_filepath = get_tissue_path(output_dir, size, AlleleType.REF)
     if ref_filepath.exists():
         logger.debug(f'Using existing file: {ref_filepath}')

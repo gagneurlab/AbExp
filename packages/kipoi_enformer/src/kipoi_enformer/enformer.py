@@ -207,7 +207,7 @@ class EnformerAggregator:
         assert agg_pred.shape == (len(frame), Enformer.NUM_HUMAN_TRACKS)
 
         return frame.with_columns(pl.Series(values=agg_pred.tolist(), name='tracks',
-                                            dtype=pl.Array(pl.Float32, width=Enformer.NUM_HUMAN_TRACKS)))
+                                            dtype=pl.Array(pl.Float32, shape=Enformer.NUM_HUMAN_TRACKS)))
 
 
 class EnformerTissueMapper:
@@ -470,7 +470,7 @@ class EnformerVeff:
             veff_df = veff_ldf.collect()
         elif aggregation_mode == 'canonical':
             # Keep only the canonical transcripts
-            veff_ldf = veff_ldf.filter(pl.col('transcript_id').is_in(self.canonical_transcripts))
+            veff_ldf = veff_ldf.filter(pl.col('transcript_id').is_in(self.canonical_transcripts.to_list()))
             veff_ldf = veff_ldf.with_columns(
                 ((pl.col("alt_score") - pl.col("ref_score")) / np.log10(2)).alias('log2fc'))
             veff_ldf = veff_ldf.group_by(['chrom', 'strand', 'gene_id', 'variant_start',

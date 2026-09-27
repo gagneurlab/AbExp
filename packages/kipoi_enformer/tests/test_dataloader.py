@@ -21,7 +21,7 @@ def reverse_complement(seq):
     return seq.translate(str.maketrans('ACGTN', 'TGCAN'))[::-1]
 
 
-@pytest.mark.parametrize('strand', ['+'])
+@pytest.mark.parametrize('strand', ['+', '-'])
 @pytest.mark.parametrize('anchor, expected', [
     # the interval [-3, 7) starts 3 bases before the chromosome
     (2, 'NNN' + CHROM_SEQ[:7]),
@@ -39,7 +39,7 @@ def test_extract_sequences_at_the_chromosome_ends(fasta_file, strand, anchor, ex
     np.testing.assert_array_equal(sequences[0], one_hot_dna(expected))
 
 
-@pytest.mark.parametrize('strand', ['+'])
+@pytest.mark.parametrize('strand', ['+', '-'])
 @pytest.mark.parametrize('anchor, variant, expected', [
     (2, Variant('chrT', 2, 'C', 'T'), 'NNN' + 'AT' + CHROM_SEQ[2:7]),
     (25, Variant('chrT', 29, 'A', 'C'), CHROM_SEQ[20:28] + 'C' + CHROM_SEQ[29]),

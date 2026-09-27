@@ -201,6 +201,11 @@ def extract_sequences_around_anchor(shifts, chromosome, strand, anchor, seq_leng
         else:
             seq = ref_seq_extractor.extract(shifted_interval)
 
+        # the extractors reverse complement minus-strand sequences,
+        # so the padding of the interval start belongs to the end of the sequence
+        if strand == '-':
+            five_end_pad, three_end_pad = three_end_pad, five_end_pad
+
         if five_end_pad > 0:
             seq = 'N' * five_end_pad + seq
 

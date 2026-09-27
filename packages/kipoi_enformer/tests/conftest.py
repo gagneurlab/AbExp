@@ -37,7 +37,7 @@ def chr22_example_files():
     base = Path("example_files")
     return {
         'fasta': base / "seq.fa",
-        'gtf': base / "annot.gtf.gz",
+        'genome_annotation': Path('example/chr22.gencode.v40lift37.annotation.gff3.gz'),
         'vcf': base / "vcf" / "chr22_var.vcf.gz",
         'isoform_proportions': base / "isoform_proportions.tsv",
         'gtex_expression': base / 'gtex_samples/transcripts_tpms.zarr',

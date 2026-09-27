@@ -16,7 +16,7 @@ rule veff__absplice:
         chrom_alias=ancient(CHROM_ALIAS_TSV),
         tissue_mapping=ancient(ABSPLICE["tissue_mapping_csv"]),
     conda:
-        CONDA_ENV_YAML_DIR.join("veff-py.yaml")
+        SHARED_CONDA_ENV_YAML_DIR.join("veff-py.yaml")
     script:
         "absplice.py.py"
 

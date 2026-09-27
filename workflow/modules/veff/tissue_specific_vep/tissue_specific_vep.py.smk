@@ -17,7 +17,7 @@ rule veff__tissue_specific_vep:
     wildcard_constraints:
         ds_dir="[^/]+",
     conda:
-        CONDA_ENV_YAML_DIR.join("veff-py.yaml")
+        SHARED_CONDA_ENV_YAML_DIR.join("veff-py.yaml")
     script:
         "tissue_specific_vep.py.py"
 
@@ -33,7 +33,7 @@ rule download_isoform_proportions_tsv:
     params:
         url=ISOFORM_PROPORTIONS_URL,
     conda:
-        CONDA_ENV_YAML_DIR.join("veff-py.yaml")
+        SHARED_CONDA_ENV_YAML_DIR.join("veff-py.yaml")
     shell:
         """
         set -x
@@ -61,7 +61,7 @@ rule isoform_proportions_tsv_to_parquet:
             'sd_transcript_proportions': "Float32",
         },
     conda:
-        CONDA_ENV_YAML_DIR.join("veff-py.yaml")
+        SHARED_CONDA_ENV_YAML_DIR.join("veff-py.yaml")
     script:
         "tsv_to_parquet.py"
 

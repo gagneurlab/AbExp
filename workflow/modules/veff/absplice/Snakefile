@@ -11,6 +11,8 @@ validate(config, "config.schema.yaml")
 # Rules use `conda: CONDA_ENV_YAML_DIR.join("<env>.yaml")`, which does not depend on the folder
 # of the rule file. `workflow.current_basedir` is also correct if this is a module.
 CONDA_ENV_YAML_DIR = workflow.current_basedir.join("envs")
+# conda environments that several veff modules use, in workflow/modules/veff/envs
+SHARED_CONDA_ENV_YAML_DIR = workflow.current_basedir.join("../envs")
 
 OUTPUT_DIR = os.path.abspath(config["output_dir"])
 RESOURCES_DIR = os.path.abspath(config.get("resources_dir", f"{OUTPUT_DIR}/resources"))

@@ -36,7 +36,7 @@ rule veff__absplice_download_splicemaps:
         splicemap_psi5_url = lambda wildcards: ABSPLICE["splicemap_urls"][wildcards.genome]['psi5'].format(tissue=wildcards.tissue),
         splicemap_psi3_url = lambda wildcards: ABSPLICE["splicemap_urls"][wildcards.genome]['psi3'].format(tissue=wildcards.tissue),
     conda:
-        CONDA_ENV_YAML_DIR.join("veff-py.yaml")
+        SHARED_CONDA_ENV_YAML_DIR.join("veff-py.yaml")
     shell:
         """
         set -x

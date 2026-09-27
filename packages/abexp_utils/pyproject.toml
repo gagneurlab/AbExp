@@ -39,9 +39,9 @@ spark = [
     "pyspark>=3.4",
 ]
 polars = [
-    "polars~=1.0",
+    "polars~=1.36",
 ]
 all = [
     "pyspark>=3.4",
-    "polars~=1.0",
+    "polars~=1.36",
 ]

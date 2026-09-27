@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow_hub as hub
 import tensorflow as tf
 from kipoi_enformer.dataloader import TSSDataloader
-from kipoi_enformer.utils import RandomModel, genome_annotation_to_polars
+from kipoi_enformer.utils import RandomModel, genome_annotation_to_polars, renamed_parameter
 from kipoi_enformer.logger import logger
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -323,12 +323,13 @@ class EnformerTissueMapper:
 
 class EnformerVeff:
 
-    def __init__(self, isoforms_path: str | pathlib.Path | None = None, gtf=None):
+    @renamed_parameter('gtf', 'genome_annotation')
+    def __init__(self, isoforms_path: str | pathlib.Path | None = None, genome_annotation=None):
         """
 
         :param isoforms_path: The path to the file containing the isoform proportions.
-        :param gtf: The path to the GTF file or a polars or pandas DataFrame containing the genome annotation,
-            see `kipoi_enformer.utils.genome_annotation_to_polars`.
+        :param genome_annotation: The path to a GFF3 file or a polars or pandas DataFrame containing the genome
+            annotation, see `kipoi_enformer.utils.genome_annotation_to_polars`. The deprecated alias `gtf` still works.
         """
 
         self.isoform_proportion_ldf = None
@@ -339,15 +340,16 @@ class EnformerVeff:
                                                    'gene': 'gene_id', 'transcript': 'transcript_id'}).
                                            filter(~pl.col('isoform_proportion').is_null()))
 
-        # if GTF file is given, then extract the canonical transcripts for the canonical aggregation mode
+        # if a genome annotation is given, then extract the canonical transcripts for the canonical aggregation mode
         self.canonical_transcripts = None
-        if gtf is not None:
-            gtf = genome_annotation_to_polars(gtf)
+        if genome_annotation is not None:
+            annotation = genome_annotation_to_polars(genome_annotation)
             # only keep protein_coding transcripts
-            gtf = gtf.filter(pl.col('gene_type') == 'protein_coding')
+            annotation = annotation.filter(pl.col('gene_type') == 'protein_coding')
             # check if Ensembl_canonical is in the set of tags
-            gtf = gtf.filter(pl.col('tag').str.split(',').list.contains('Ensembl_canonical').fill_null(False))
-            self.canonical_transcripts = gtf['transcript_id'].str.extract(r'([^\.]+)\..+$', 1).unique()
+            annotation = annotation.filter(
+                pl.col('tag').str.split(',').list.contains('Ensembl_canonical').fill_null(False))
+            self.canonical_transcripts = annotation['transcript_id'].str.extract(r'([^\.]+)\..+$', 1).unique()
 
     def run(self, ref_paths: list[str] | list[pathlib.Path], alt_path: str | pathlib.Path,
             output_path: str | pathlib.Path, aggregation_mode: str, upstream_tss: int | None = None,

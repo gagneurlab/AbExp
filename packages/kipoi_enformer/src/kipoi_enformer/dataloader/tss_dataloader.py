@@ -6,6 +6,7 @@ import numpy as np
 from .dataloader import Dataloader, get_tss_from_genome_annotation, extract_sequences_around_anchor
 from kipoi_enformer.constants import AlleleType
 from kipoi_enformer.logger import logger
+from kipoi_enformer.utils import renamed_parameter
 
 __all__ = ['TSSDataloader', 'RefTSSDataloader', 'VCFTSSDataloader']
 
@@ -15,7 +16,8 @@ ENFORMER_SEQUENCE_LENGTH = 393_216
 
 
 class TSSDataloader(Dataloader):
-    def __init__(self, allele_type: AlleleType, fasta_file, gtf, chromosome: str | None = None,
+    @renamed_parameter('gtf', 'genome_annotation')
+    def __init__(self, allele_type: AlleleType, fasta_file, genome_annotation, chromosome: str | None = None,
                  seq_length: int = ENFORMER_SEQUENCE_LENGTH, shifts: list[int] = (-43, 0, 43), size: int = None,
                  canonical_only: bool = False,
                  protein_coding_only: bool = False, gene_ids: list | None = None,
@@ -23,8 +25,8 @@ class TSSDataloader(Dataloader):
         """
 
         :param fasta_file: Fasta file with the reference genome
-        :param gtf: GTF file with genome annotation or DataFrame with genome annotation,
-            see `kipoi_enformer.utils.genome_annotation_to_polars`
+        :param genome_annotation: GFF3 file or DataFrame with the genome annotation,
+            see `kipoi_enformer.utils.genome_annotation_to_polars`. The deprecated alias `gtf` still works.
         :param chromosome: The chromosome to filter for. If None, all chromosomes are used.
         :param seq_length: The length of the sequence to return.
         :param shifts: The shifts in relation to the TSS.
@@ -43,7 +45,7 @@ class TSSDataloader(Dataloader):
         self._seq_length = seq_length
         self.chromosome = chromosome
         logger.debug(f"Loading genome annotation")
-        self._genome_annotation = get_tss_from_genome_annotation(gtf, chromosome=self.chromosome,
+        self._genome_annotation = get_tss_from_genome_annotation(genome_annotation, chromosome=self.chromosome,
                                                                  canonical_only=canonical_only,
                                                                  protein_coding_only=protein_coding_only,
                                                                  gene_ids=gene_ids)
@@ -62,13 +64,15 @@ class TSSDataloader(Dataloader):
 
 
 class RefTSSDataloader(TSSDataloader):
-    def __init__(self, fasta_file, gtf, chromosome: str,
+    @renamed_parameter('gtf', 'genome_annotation')
+    def __init__(self, fasta_file, genome_annotation, chromosome: str,
                  seq_length: int = ENFORMER_SEQUENCE_LENGTH, shifts: list[int] = (-43, 0, 43), size: int = None,
                  canonical_only: bool = False,
                  protein_coding_only: bool = False, gene_ids: list | None = None, *args, **kwargs):
         """
         :param fasta_file: Fasta file with the reference genome
-        :param gtf: GTF file with genome annotation or DataFrame with genome annotation
+        :param genome_annotation: GFF3 file or DataFrame with the genome annotation.
+            The deprecated alias `gtf` still works.
         :param chromosome: The chromosome to filter for
         :param seq_length: The length of the sequence to return.
         :param shifts: The shifts in relation to the TSS.
@@ -78,7 +82,8 @@ class RefTSSDataloader(TSSDataloader):
         :param gene_id: If provided, only the gene with this ID is extracted from the genome annotation
         """
         assert chromosome is not None, 'A chromosome should be provided'
-        super().__init__(AlleleType.REF, chromosome=chromosome, fasta_file=fasta_file, gtf=gtf,
+        super().__init__(AlleleType.REF, chromosome=chromosome, fasta_file=fasta_file,
+                         genome_annotation=genome_annotation,
                          seq_length=seq_length, shifts=shifts, size=size, canonical_only=canonical_only,
                          protein_coding_only=protein_coding_only, gene_ids=gene_ids, *args, **kwargs)
         logger.debug(f"Dataloader is ready for chromosome {chromosome}")
@@ -135,7 +140,8 @@ class RefTSSDataloader(TSSDataloader):
 
 
 class VCFTSSDataloader(TSSDataloader):
-    def __init__(self, fasta_file, gtf, vcf_file, vcf_lazy=True,
+    @renamed_parameter('gtf', 'genome_annotation')
+    def __init__(self, fasta_file, genome_annotation, vcf_file, vcf_lazy=True,
                  variant_upstream_tss: int = 10, variant_downstream_tss: int = 10,
                  seq_length: int = ENFORMER_SEQUENCE_LENGTH, shifts: list[int] = (-43, 0, 43),
                  size: int = None, canonical_only: bool = False, protein_coding_only: bool = False,
@@ -143,7 +149,8 @@ class VCFTSSDataloader(TSSDataloader):
         """
 
         :param fasta_file: Fasta file with the reference genome
-        :param gtf: GTF file with genome annotation or DataFrame with genome annotation
+        :param genome_annotation: GFF3 file or DataFrame with the genome annotation.
+            The deprecated alias `gtf` still works.
         :param vcf_file: VCF file with variants
         :param vcf_lazy: If True, the VCF file is read lazily
         :param variant_upstream_tss: The number of bases upstream the TSS to look for variants
@@ -156,7 +163,7 @@ class VCFTSSDataloader(TSSDataloader):
         :param gene_id: If provided, only the gene with this ID is extracted from the genome annotation
         """
 
-        super().__init__(AlleleType.ALT, fasta_file=fasta_file, gtf=gtf, chromosome=None,
+        super().__init__(AlleleType.ALT, fasta_file=fasta_file, genome_annotation=genome_annotation, chromosome=None,
                          seq_length=seq_length, shifts=shifts, size=size, canonical_only=canonical_only,
                          protein_coding_only=protein_coding_only, gene_ids=gene_ids, *args, **kwargs)
         for shift in shifts:

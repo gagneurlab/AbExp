@@ -269,8 +269,8 @@ rules downstream of them rerun because their input changed.
   change of such an environment, bump each step whose outputs change.
 - Do not bump a key for changes that keep the outputs, e.g. a comment.
 - Snakemake deletes temporary outputs once no job needs them. So a bump of a step that reads a temporary output
-  also reruns the step that wrote it. Therefore the MMSplice and SpliceAI scores and the aggregated and tissue
-  Enformer predictions are not temporary: storing them costs less than recomputing them. The raw
+  also reruns the step that wrote it. Therefore the MMSplice, SpliceAI and Pangolin scores and the aggregated
+  and tissue Enformer predictions are not temporary: storing them costs less than recomputing them. The raw
   Enformer predictions and the VEP output stay temporary. So the Enformer aggregation shares the key
   `"predict"`, and the VEP annotation and its parsing share one key.
 - The download rules have no version; their URL is the version. Rules that only index a file or convert the

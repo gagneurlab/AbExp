@@ -20,6 +20,7 @@ if BUILD_PANGOLIN_ANNOTATION_DB:
         input:
             gff3=GFF3_FILE,
         params:
+            output_version=OUTPUT_VERSION["annotation_db"],
             transcript_tags=PANGOLIN_TRANSCRIPT_TAGS,
         conda:
             PANGOLIN_CONDA_ENV_YAML
@@ -43,6 +44,8 @@ rule veff__absplice2_pyfastx_index:
         fxi=f"{PANGOLIN_REFERENCE}.fxi",
     input:
         fasta=FASTA_FILE,
+    params:
+        output_version=OUTPUT_VERSION["pyfastx_index"],
     conda:
         PANGOLIN_CONDA_ENV_YAML
     shell:
@@ -66,7 +69,8 @@ rule veff__absplice2_pangolin:
         mem_mb=lambda wildcards, attempt: 4000 * attempt,
         gpu=1 if config["use_gpu"] else 0,
     output:
-        vcf=temp(PANGOLIN_VCF_PATTERN),
+        # not temp: a new absplice2 version would rerun Pangolin otherwise
+        vcf=PANGOLIN_VCF_PATTERN,
     input:
         vcf=VALID_VCF_FILE_PATTERN,
         fasta=PANGOLIN_REFERENCE,
@@ -74,6 +78,8 @@ rule veff__absplice2_pangolin:
         annotation_db=PANGOLIN_ANNOTATION_DB,
     log:
         f"{OUTPUT_BASEDIR}/logs/pangolin/{{vcf_file}}.log",
+    params:
+        output_version=OUTPUT_VERSION["pangolin"],
     conda:
         PANGOLIN_CONDA_ENV_YAML
     shell:
@@ -98,6 +104,8 @@ rule veff__absplice2:
         splicemap_3=SPLICEMAP3,
         tissue_mapping=ancient(TISSUE_MAPPING_CSV),
         model=ancient(MODEL_PKL),
+    params:
+        output_version=OUTPUT_VERSION["absplice2"],
     conda:
         CONDA_ENV_YAML_DIR.join("absplice2.yaml")
     script:

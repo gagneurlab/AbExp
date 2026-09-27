@@ -7,6 +7,8 @@ rule vcf_to_parquet:
         vcf_pq_file=VCF_PQ_FILE_PATTERN,
     input:
         vcf_file=STRIPPED_VCF_FILE_PATTERN,
+    params:
+        output_version=OUTPUT_VERSION["to_parquet"],
     wildcard_constraints:
         vcf_file=f".+(?:{'|'.join(VCF_FILE_ENDINGS)})",
     conda:

@@ -14,6 +14,12 @@ validate(config, "config.schema.yaml")
 # of the rule file. `workflow.current_basedir` is also correct if this is a module.
 CONDA_ENV_YAML_DIR = workflow.current_basedir.join("envs")
 
+# One version per step. Bump the key of the earliest step whose outputs change, see
+# "When jobs rerun" in README.md.
+OUTPUT_VERSION = {
+    "annotation": 1,
+}
+
 OUTPUT_DIR = os.path.abspath(config["output_dir"])
 RESOURCES_DIR = os.path.abspath(config.get("resources_dir", f"{OUTPUT_DIR}/resources"))
 

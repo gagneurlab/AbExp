@@ -20,6 +20,7 @@ rule veff__nmd_scanner_annotation:
         fasta=FASTA_FILE,
         fasta_index=FASTA_INDEX_FILE,
     params:
+        output_version=OUTPUT_VERSION["annotation"],
         reassign_exons=REASSIGN_EXONS,
     wildcard_constraints:
         ds_dir="[^/]+",

@@ -25,6 +25,7 @@ rule predict_veff:
         model_joblib=lambda wildcards: config["system"]["models"][wildcards.model_type]["model"],
         features_yaml=lambda wildcards: config["system"]["models"][wildcards.model_type]["features"],
     params:
+        output_version=OUTPUT_VERSION["predict"],
         index_cols=['chrom', 'start', 'end', 'ref', 'alt', "gene", "transcript", "tissue", "tissue_type"],
         keep_features=True,
         output_basedir=f"{OUTPUT_BASEDIR}",

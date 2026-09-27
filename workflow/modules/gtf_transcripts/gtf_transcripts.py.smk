@@ -7,6 +7,8 @@ rule gtf_transcripts:
         gtf_transcripts=f"{OUTPUT_DIR}/gtf_transcripts.parquet",
     input:
         gff3_file=GFF3_FILE,
+    params:
+        output_version=OUTPUT_VERSION["gtf_transcripts"],
     conda:
         CONDA_ENV_YAML_DIR.join("gtf_transcripts.yaml")
     script:

@@ -42,6 +42,14 @@ def resolve_abexp_dir(data):
 # of the rule file. `workflow.current_basedir` is also correct if AbExp is a module.
 CONDA_ENV_YAML_DIR = workflow.current_basedir.join("envs")
 
+# One version per step, for the feature sets and predictions; the modules have their own
+# OUTPUT_VERSION. Bump the key of the earliest step whose outputs change, see
+# "When jobs rerun" in README.md.
+OUTPUT_VERSION = {
+    "fset": 1,
+    "predict": 1,
+}
+
 VCF_INPUT_DIR = os.path.abspath(config["vcf_input_dir"])
 RESULTS_DIR = os.path.abspath(config["output_dir"])
 RESOURCES_DIR = os.path.abspath(config["system"]["dirs"]["resources_dir"].format(RESULTS_DIR=RESULTS_DIR))

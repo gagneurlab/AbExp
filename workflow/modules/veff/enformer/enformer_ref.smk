@@ -11,6 +11,7 @@ if not config['download_reference']:
             gtf_path=GTF_TRANSCRIPTS_PQ,
             fasta_path=FASTA_FILE
         params:
+            output_version=OUTPUT_VERSION["predict"],
             type='reference',
             enformer=ENFORMER,
         conda:
@@ -23,10 +24,12 @@ if not config['download_reference']:
         resources:
             mem_mb=lambda wildcards, attempt, threads: 6000 + (1000 * attempt)
         output:
-            temp(f"{OUTPUT_BASEDIR}/agg.parquet/chrom={{chromosome}}/data.parquet"),
+            # not temp: a new tissue version would rerun the predictions otherwise
+            f"{OUTPUT_BASEDIR}/agg.parquet/chrom={{chromosome}}/data.parquet",
         input:
             rules.enformer__predict_ref.output[0]
         params:
+            output_version=OUTPUT_VERSION["predict"],
             enformer=ENFORMER,
         conda:
             TENSORFLOW_CONDA_ENV_YAML
@@ -44,6 +47,7 @@ if not config['download_reference']:
             tracks_yml=ENFORMER_TRACKS_YML,
             tissue_mapper_pkl=ENFORMER_TISSUE_MAPPER_PKL,
         params:
+            output_version=OUTPUT_VERSION["tissue"],
             enformer=ENFORMER,
         conda:
             TENSORFLOW_CONDA_ENV_YAML

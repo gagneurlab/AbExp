@@ -1,3 +1,9 @@
-# Default options for runs from the repository root. Options on the command line override them,
-# and they override the same options of a --profile. `--workflow-profile none` skips this file.
+# Default options for runs of workflow/Snakefile, from the repository root or with --snakefile.
+# Options on the command line override them, and they override the same options of a --profile.
+# `--workflow-profile none` skips this file.
 software-deployment-method: conda
+# Rerun a job only if its input files or params changed. The triggers software-env and code
+# would also rerun it after any change of its conda env or shell command, and rerun a rule with
+# `script:` whenever the script is newer than its outputs, e.g. after a git pull or clone.
+# See "When jobs rerun" in README.md.
+rerun-triggers: [mtime, params, input]

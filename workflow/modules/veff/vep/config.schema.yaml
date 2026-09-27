@@ -2,7 +2,8 @@ $schema: "https://json-schema.org/draft/2020-12/schema"
 title: vep module
 description: >-
   Annotates the variants with VEP, including LOFTEE and CADD, and parses the result into a
-  per-transcript table.
+  per-transcript table. Downloads the VEP cache, CADD scores and LOFTEE data that it reads,
+  unless the paths below point at existing files.
 type: object
 additionalProperties: false
 
@@ -18,7 +19,8 @@ properties:
     description: The output is <output_dir>/vep/veff.parquet/<vcf_file>.parquet.
   resources_dir:
     type: string
-    description: Base of the default VEP, CADD and LOFTEE paths. Default is <output_dir>/resources.
+    description: >-
+      Base of the default VEP, CADD and LOFTEE paths below. Default is <output_dir>/resources.
   human_genome_version:
     type: string
     enum: ["hg19", "hg38"]
@@ -39,22 +41,32 @@ properties:
     default: "perl"
   vep_cache_dir:
     type: string
-    description: VEP cache; `{vep_version}` is filled in. Default is <resources_dir>/{vep_version}.
+    description: >-
+      VEP cache, the folder passed to `vep --dir`; `{vep_version}` is filled in. VEP reads
+      homo_sapiens_merged/<version>_<assembly> in it. If that folder is missing, the module
+      downloads the indexed cache from Ensembl (26.0 GB for GRCh38, 16.2 GB for GRCh37). Default
+      is <resources_dir>/vep/{vep_version}.
   cadd_dir:
     type: string
     description: >-
-      CADD v1.6 files; `{human_genome_assembly}` is filled in. Default is
-      <resources_dir>/{human_genome_assembly}.
+      CADD v1.6 scores; `{human_genome_assembly}` is filled in. The module reads
+      whole_genome_SNVs.tsv.gz and the indel file (gnomad.genomes.r3.0.indel.tsv.gz for GRCh38,
+      InDels.tsv.gz for GRCh37), each with its .tbi index. Missing files are downloaded (87.8 GB
+      for GRCh38, 84.4 GB for GRCh37). Default is <resources_dir>/cadd/v1.6/{human_genome_assembly}.
   loftee_data_dir:
     type: string
     description: >-
-      LOFTEE data; `{human_genome_assembly}` is filled in. Default is
-      <resources_dir>/{human_genome_assembly}.
+      LOFTEE data; `{human_genome_assembly}` is filled in. The module reads human_ancestor.fa.gz
+      with its .fai and .gzi index, for GRCh38 also loftee.sql and
+      gerp_conservation_scores.homo_sapiens.GRCh38.bw, for GRCh37 also phylocsf_gerp.sql.
+      Missing files are downloaded (13.7 GB for GRCh38, 1.3 GB for GRCh37). Default is
+      <resources_dir>/loftee/{human_genome_assembly}.
   loftee_src_path:
     type: string
     description: >-
-      LOFTEE source code; `{human_genome_assembly}` is filled in. Default is
-      <resources_dir>/{human_genome_assembly}_src.
+      LOFTEE source code, which also contains the MaxEntScan data; `{human_genome_assembly}` is
+      filled in. If it is missing, the module clones LOFTEE at a pinned commit (branch grch38
+      for GRCh38, master for GRCh37). Default is <resources_dir>/loftee/{human_genome_assembly}_src.
 
 required:
   - vcf

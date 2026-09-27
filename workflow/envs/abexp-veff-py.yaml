@@ -23,6 +23,8 @@ dependencies:
 - bioconda::pyranges
 - bioconda::vcf2parquet>=0.4
 - wget
+# aria2c for the download rules, which have no conda environment (see README)
+- aria2
 # Snakemake and snakemk_util allow to run the scripts as notebooks (see README)
 - bioconda::snakemake>=9
 - bioconda::snakemk_util>=3

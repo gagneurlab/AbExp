@@ -2,7 +2,8 @@ rule download_expected_expression_tsv:
     threads: 1
     resources:
         ntasks=1,
-        mem_mb=lambda wildcards, attempt, threads: (1000 * threads) * attempt
+        mem_mb=lambda wildcards, attempt, threads: (1000 * threads) * attempt,
+        runtime=lambda wildcards, attempt: 30 * attempt,
     output:
         file=config["system"]["expected_expression_tsv"],
     params:

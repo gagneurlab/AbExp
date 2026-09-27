@@ -28,6 +28,7 @@ rule veff__absplice_download_splicemaps:
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt, threads: (1000 * threads) * attempt,
+        runtime=lambda wildcards, attempt: 30 * attempt,
     output:
         splicemap_psi5 = ABSPLICE["splicemap"]["psi5"],
         splicemap_psi3 = ABSPLICE["splicemap"]["psi3"],
@@ -63,20 +64,6 @@ rule veff__mmsplice_splicemap:
 
 
 if ABSPLICE['use_spliceai_rocksdb'] == True:
-    rule veff__spliceai_download_rocksdb:
-        threads: 1
-        resources:
-            mem_mb=lambda wildcards, attempt, threads: (1000 * threads) * attempt,
-        params:
-            version = ASSEMBLY.lower()
-        conda:
-            CONDA_ENV_YAML_DIR.join("abexp-spliceai-rocksdb.yaml")
-        output:
-            spliceai_rocksdb = directory(ABSPLICE["spliceai_rocksdb_path"][HUMAN_GENOME_VERSION])
-        shell:
-            "spliceai_rocksdb_download --version {params.version} --db_path {output.spliceai_rocksdb} --chromosome {wildcards.chromosome}"
-
-
     rule veff__spliceai:
         resources:
             mem_mb = lambda wildcards, attempt: attempt * 16000,
@@ -145,6 +132,18 @@ rule absplice_dna:
         CONDA_ENV_YAML_DIR.join("abexp-absplice.yaml")
     script:
         "absplice_dna.py.py"
+
+
+rule veff__absplice_setup:
+    """
+    Downloads the SpliceMaps and, with use_spliceai_rocksdb, SpliceAI-RocksDB, if they do not
+    exist yet.
+    """
+    input:
+        SPLICEMAP5,
+        SPLICEMAP3,
+        list(SPLICEAI_ROCKSDB_PATHS.values()) if ABSPLICE["use_spliceai_rocksdb"] else [],
+    localrule: True
 
 
 del (

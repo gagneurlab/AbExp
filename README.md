@@ -8,53 +8,51 @@ The publication to this method can be found in [Nature Communications](https://w
 
 ## Minimum resource requirements
 
-- Linux
-- Disk space: 1.0-1.4TB for cache files (hg19 + hg38)
-  - LOFTEE: 25GB
-  - VEP v108: 113GB
-  - CADD v1.6: 854GB
-  - SpliceAI-RocksDB (optional): 349GB
+- Linux with tar and gzip
+- Disk space for the downloaded resources of one genome assembly (hg38): about 300GB with the default config, or
+  about 130GB with `absplice.use_spliceai_rocksdb: False` in the `system` section
+  - VEP v108 cache: 26GB (hg38), 16GB (hg19); twice as much while the download is extracted
+  - CADD v1.6: 88GB (hg38), 84GB (hg19)
+  - LOFTEE: 14GB (hg38), 1.3GB (hg19)
+  - GTEx and SpliceMap tables: 2GB
+  - SpliceAI-RocksDB: about 175GB per genome assembly, 349GB for hg19 + hg38
 - RAM: 64GB
 - GPU supporting CUDA for SpliceAI annotation
 
 ## Setup
 
-1) Install conda and mamba on your system.
-
+1) Install conda and mamba on your system, and create the environment with Snakemake 9 and aria2c:
+   ```bash
+   mamba env create -f workflow/envs/abexp-veff-py.yaml
+   conda activate abexp-veff-py
+   ```
    Tip: Use the [conda-libmamba-solver](https://conda.github.io/conda-libmamba-solver/user-guide/) for an improved experience when installing environments with `conda`
-2) Download the VEP cache (if not existing yet):
-   ```bash
-   VEP_CACHE_PATH="<your cache path here>"
-   VEP_VERSION=108
-
-   mamba env create -f workflow/modules/veff/vep/envs/vep_env.v108.yaml --name vep_v108
-   conda activate vep_v108
-   
-   bash misc/install_vep_cache/install_cache_for_version.sh $VEP_VERSION $VEP_CACHE_PATH
-   
-   conda deactivate
-   ```
-3) Download the CADD cache (if not existing yet):
-   ```bash
-   CADD_CACHE_PATH="<your cache path here>"
-
-   bash misc/download_CADD_v1.6.sh $CADD_CACHE_PATH
-   ```
-4) Download LOFTEE data and scripts:
-   ```bash
-   LOFTEE_DIR="<your path here>"
-
-   bash misc/install_vep_cache/download_loftee.sh $LOFTEE_DIR
-   ```
-5) Configure the `system` section of `config/config.yaml`:
-   - specify paths to the VEP cache, CADD cache, LOFTEE data and LOFTEE source code as defined in steps 2-4
-   - (optional) Disable downloading the SpliceAI-RocksDB cache for pre-computed SpliceAI annotations by setting absplice.use\_spliceai\_rocksdb to False
-   - (optional) Change file paths of automatically downloaded annotations to shared location
-   - (optional) Any option in `workflow/schemas/config.schema.yaml` can be set in this section.
-     The schema also lists the defaults. The options of `vep`, `mehari`, `absplice` and `enformer` are in
+2) Configure `config/config.yaml`, see [Usage](#usage).
+   The pipeline downloads the resources it needs, e.g. the VEP cache, CADD and LOFTEE, for the configured
+   `human_genome_version` only: more than 100 GB. By default, they go to `<output_dir>/resources`, so each output folder gets its own copy.
+   Set `dirs.resources_dir` in the `system` section to a shared folder, so that all output folders use one copy. Other options in the `system` section:
+   - `vep.vep_cache_dir`, `vep.cadd_dir`, `vep.loftee_data_dir` and `vep.loftee_src_path`: existing caches to reuse instead of downloading
+   - `absplice.use_spliceai_rocksdb: False` to skip the SpliceAI-RocksDB download
+   - Any option in `workflow/schemas/config.schema.yaml` can be set in this section.
+     The schema also lists the defaults. The options of each veff module, e.g. `vep` or `absplice`, are in
      `workflow/modules/veff/<module>/config.schema.yaml`.
-6) Run `mamba env create -f workflow/envs/abexp-veff-py.yaml`. The environment contains Snakemake 9.
-7) Activate the created environment: `conda activate abexp-veff-py`
+3) (optional) Download the resources before the first run: `snakemake setup -c 4`.
+   Otherwise, the first run downloads them.
+   With a cluster executor, the downloads run as cluster jobs. If the compute nodes have no internet access,
+   run `snakemake setup -c 4` without the executor on a host with internet access.
+   If several runs share `resources_dir`, run `setup` once before them. Snakemake locks files only within one
+   working directory, so two runs from different directories could download the same file at the same time.
+   An interrupted download of the VEP cache, CADD, LOFTEE or SpliceAI-RocksDB resumes on the next run, and
+   Snakemake write-protects these files.
+   If a later version of AbExp changes a download rule, Snakemake stops with `ProtectedOutputException`.
+   Run `snakemake --cleanup-metadata <files>` to keep the downloaded files.
+   Earlier versions downloaded SpliceAI-RocksDB in a conda environment. Its download rule has changed, and the
+   databases are not write-protected, so Snakemake would delete them and download them again. To keep them, run
+   `snakemake --cleanup-metadata <resources_dir>/spliceai_rocksdb/spliceAI_hg38_chr*.db` once (for hg19:
+   `spliceAI_hg19_chr*.db`; or the paths of `absplice.spliceai_rocksdb_path`). The `*.db_backup.tar.gz` files
+   and `*.db_backup` folders next to the databases are not needed; deleting them frees about 300GB per genome
+   assembly.
+4) (optional) Create the conda environments before the first run: `snakemake --conda-create-envs-only`.
 
 ## Usage
 
@@ -75,8 +73,9 @@ The publication to this method can be found in [Nature Communications](https://w
    A config passed with `--configfile` replaces `config/config.yaml`, see step 2. A key that it leaves out
    takes the default of `workflow/schemas/config.schema.yaml`, not the value of `config/config.yaml`.
 
-2) Run `snakemake --sdm conda -c all`. Snakemake reads `config/config.yaml` by default;
+2) Run `snakemake -c all`. Snakemake reads `config/config.yaml` by default;
    use `--configfile my_config.yaml` for another config file.
+   The workflow profile `workflow/profiles/default` sets `--sdm conda`; `--sdm` on the command line overrides it.
    All rules are annotated with resource requirements s.t. snakemake can submit jobs to HPC clusters or cloud environments.
    It is highly recommended to use snakemake with some batch submission system, e.g. SLURM.
    For further information, please visit the [Snakemake documentation](https://snakemake.readthedocs.io/).
@@ -95,7 +94,7 @@ The publication to this method can be found in [Nature Communications](https://w
 ## Using mehari instead of VEP
 
 [mehari](https://github.com/varfish-org/mehari) can replace VEP for the transcript consequence annotation.
-It needs no VEP cache and no LOFTEE, and it runs much faster.
+It needs no VEP cache, CADD or LOFTEE, so the pipeline does not download them, and it runs much faster.
 The module `workflow/modules/veff/mehari` calls the mehari Python package and keeps its output.
 The per-transcript table has mehari's own consequence terms, and there are no LoF or NMD calls and no
 CADD, SIFT, PolyPhen or Condel scores.
@@ -109,7 +108,7 @@ Setup:
 2) In `config/config.yaml`, set `veff.annotator: "mehari"` and `veff.mehari_gencode_transcripts_fasta`.
    The pipeline builds the mehari transcript database from `gff3_file` and the FASTA (about 6 minutes and 4 GB RAM for
    a full GRCh38 release) and stores it at `system.mehari.transcripts_db` (see `workflow/modules/veff/mehari/config.schema.yaml`).
-3) Run snakemake with `--sdm conda`. The mehari rules use the environment `workflow/modules/veff/mehari/envs/mehari_env.yaml`,
+3) Run snakemake. The mehari rules use the environment `workflow/modules/veff/mehari/envs/mehari_env.yaml`,
    which installs the mehari Python package from bioconda.
    If you already have a conda environment with the mehari Python package, set `system.mehari.conda_env`
    in the config to its name instead.
@@ -151,7 +150,9 @@ fset or predict.
 
 Each module has its own `config.schema.yaml` with its options and defaults, its own scripts and
 conda environments (`envs/`), and the files it ships. Every rule that needs more than a shell has a
-`conda:` environment, so the importing workflow needs only Snakemake 9 and `--sdm conda`.
+`conda:` environment. The download rules have no conda environment and use aria2c, tar and gzip from the
+PATH. So the importing workflow needs Snakemake 9 and aria2c (conda-forge package `aria2`) in one
+environment, and `--sdm conda`.
 
 Example: VEP only. The VEP module reads the variant IDs that `vcf_prep` sets, so it takes the
 stripped VCFs of `vcf_prep` as input:
@@ -181,10 +182,13 @@ VEP_CONFIG = {
     "human_genome_version": "hg38",
     "fasta_file": "genome.fa",
     "chrom_alias_tsv": CHROM_ALIAS,
-    "vep_cache_dir": "<VEP cache>/{vep_version}",
-    "cadd_dir": "<CADD v1.6>/{human_genome_assembly}",
-    "loftee_data_dir": "<LOFTEE data>/{human_genome_assembly}",
-    "loftee_src_path": "<LOFTEE source>/{human_genome_assembly}_src",
+    # downloads of the VEP cache, CADD and LOFTEE; default is <output_dir>/resources
+    "resources_dir": "resources",
+    # optional: existing caches to reuse instead of downloading
+    # "vep_cache_dir": "<VEP cache>/{vep_version}",
+    # "cadd_dir": "<CADD v1.6>/{human_genome_assembly}",
+    # "loftee_data_dir": "<LOFTEE data>/{human_genome_assembly}",
+    # "loftee_src_path": "<LOFTEE source>/{human_genome_assembly}_src",
 }
 
 module vep:
@@ -203,6 +207,10 @@ The VEP table is then at `results/abexp/veff/vep/veff.parquet/<vcf_file>.parquet
 - For several configurations, e.g. hg19 and hg38, import a module once per configuration, each with
   its own output directory. The instances must not share `resources_dir`, or their download rules
   produce the same files.
+- Modules with downloads have a target rule that lists them, e.g. `veff__vep_setup` (`vep_veff__vep_setup`
+  in the example). Run it to download the resources before the first run.
+- The modules vep and loftee download the same LOFTEE data. To use both, point the loftee module at the
+  files of the vep module and import it without its download rules, as `workflow/modules/veff/Snakefile` does.
 
 ## License
 All source code and model weights in this repository are licensed under the [MIT license](./LICENSE).

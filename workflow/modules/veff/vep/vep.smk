@@ -211,7 +211,7 @@ rule veff__vep_parse:
         ds_dir="[^/]+",
         feature_set="[^/]+",
     conda:
-        CONDA_ENV_YAML_DIR.join("veff-py.yaml")
+        SHARED_CONDA_ENV_YAML_DIR.join("veff-py.yaml")
     script:
         "vep_parse.py.py"
         

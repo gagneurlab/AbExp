@@ -130,6 +130,7 @@ workflow/modules/veff/tissue_specific_vep/  # consequences per GTEx tissue
 workflow/modules/veff/absplice/             # AbSplice-DNA
 workflow/modules/veff/enformer/             # Enformer
 workflow/modules/veff/nmd_scanner/          # NMD-Scanner
+workflow/modules/veff/envs/                 # conda environments that several veff modules use
 ```
 
 `workflow/modules/veff/loftee` runs reloftee, a VEP-free reimplementation of LOFTEE that is not
@@ -149,7 +150,8 @@ Both modules keep the output of their tool as it is, and neither is read by tiss
 fset or predict.
 
 Each module has its own `config.schema.yaml` with its options and defaults, its own scripts and
-conda environments (`envs/`), and the files it ships. Every rule that needs more than a shell has a
+conda environments (`envs/`), and the files it ships. The conda environments that several veff modules
+use are in `workflow/modules/veff/envs/`. Every rule that needs more than a shell has a
 `conda:` environment. The download rules have no conda environment and use aria2c, tar and gzip from the
 PATH. So the importing workflow needs Snakemake 9 and aria2c (conda-forge package `aria2`) in one
 environment, and `--sdm conda`.

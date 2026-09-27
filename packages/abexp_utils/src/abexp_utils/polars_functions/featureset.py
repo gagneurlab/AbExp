@@ -4,7 +4,6 @@ from collections import defaultdict
 from functools import reduce
 
 import polars as pl
-import polars.datatypes as t
 
 from .reshape import select_nested_fields
 
@@ -176,7 +175,7 @@ def join_featuresets(
         fill_exprs = []
         for col, fval in fill_values.items():
             expr = pl.col(col).fill_null(fval)
-            if full_df.schema[col] in t.FLOAT_DTYPES:
+            if full_df.schema[col].is_float():
                 expr = expr.fill_nan(fval)
             expr = expr.alias(col)
 

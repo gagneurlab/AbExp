@@ -25,7 +25,7 @@ def test_zip_explode_cols():
     result_df = pl_funcs.zip_explode_cols(df, cols=["B", "C"], result_name="new_name")
 
     # Assert Equality
-    assert result_df.frame_equal(expected_df), f"Expected:\n{expected_df}\nGot:\n{result_df}"
+    assert result_df.equals(expected_df), f"Expected:\n{expected_df}\nGot:\n{result_df}"
 
 
 def test_select_nested_fields():
@@ -94,7 +94,7 @@ def test_transform_featureset():
     result_df = pl_funcs.transform_featureset(df, fset_name="example", variables=variables, index_cols=index_cols)
 
     # Assert Equality
-    assert result_df.frame_equal(expected_df), f"Expected:\n{expected_df}\nGot:\n{result_df}"
+    assert result_df.equals(expected_df), f"Expected:\n{expected_df}\nGot:\n{result_df}"
 
 
 def test_join_featuresets():
@@ -149,4 +149,4 @@ def test_join_featuresets():
                                           fill_values=fill_values, ignore_missing_columns=False)
 
     # Assert Equality
-    assert result_df.frame_equal(expected_df), f"Expected:\n{expected_df}\nGot:\n{result_df}"
+    assert result_df.equals(expected_df), f"Expected:\n{expected_df}\nGot:\n{result_df}"

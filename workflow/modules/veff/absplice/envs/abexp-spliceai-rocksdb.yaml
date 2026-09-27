@@ -2,14 +2,14 @@ name: spliceai-rocksdb
 channels:
   - conda-forge
 dependencies:
-  - python>=3.6
+  - python=3.12 # the newest Python with tensorflow 2.16.1 builds on conda-forge
   - python-rocksdb>=0.7
   - rocksdb
   - tensorflow-gpu==2.16.1 # todo report bug in tensorflow-feedstock; CUDA_HOME is not set correctly
   - pyarrow
   - tqdm
   - pip
-  - setuptools
+  - setuptools<82 # spliceai imports pkg_resources, which setuptools 82 removed
   - click
   - pooch
   - bioconda::kipoiseq

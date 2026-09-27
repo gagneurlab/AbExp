@@ -4,24 +4,22 @@ channels:
   - bioconda
 dependencies:
   - python=3.12 # the newest Python with tensorflow 2.21 builds on conda-forge
-  # kipoi_enformer uses kipoiseq, which imports kipoi, which requires attrs<=21.4.0
-  - attrs<=21.4.0
   - cyvcf2
   - numpy
-  # kipoi_enformer calls PyRanges.extend of pyranges 0.1.4, which fails with pandas 3
-  - pandas<3
+  - pandas
   - pyarrow
-  - pyranges
   - polars~=1.44
   # resources/tissue_mapper.pkl was written with 1.5.1; from 1.8 on, its predictions differ by up to 2.4e-7
   - scikit-learn<1.8
   - xarray
-  # not imported by the rules, but dependencies of kipoi-enformer: conda installs them instead of pip
+  # not imported by the rules, but dependencies of kipoi-enformer and kipoiseq2: conda installs them instead of pip
   - lightgbm
   - zarr
+  - polars-bio
+  - pyfaidx
   - tensorflow-cpu=2.21 # the CPU build of tensorflow 2.21, also on hosts with a CUDA driver
   - tensorflow-hub
   - setuptools<82 # tensorflow-hub 0.16.1 imports pkg_resources, which setuptools 82 removed
   - pip
   - pip:
-    - "kipoi-enformer @ git+https://github.com/gagneurlab/AbExp-utils.git#subdirectory=packages/kipoi_enformer"
+    - "kipoi-enformer @ git+https://github.com/gagneurlab/AbExp-utils.git@d6cc89de5934ca1f768fac1750a5c595633c75ea#subdirectory=packages/kipoi_enformer"

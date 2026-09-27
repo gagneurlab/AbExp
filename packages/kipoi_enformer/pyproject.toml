@@ -20,7 +20,7 @@ dependencies = [
     "numpy>=1.26.4",
     "pandas>=2.2.1",
     "pyarrow",
-    "kipoiseq2[vcf,ranges]",
+    "kipoiseq2[vcf,ranges] @ git+https://github.com/kipoi/kipoiseq2.git@9f69c90a6d059fabcb6192ccb62acc6d0c79fddc",
     "tensorflow-hub>=0.16.1",
     # tensorflow-hub imports pkg_resources, which setuptools 82 removed
     "setuptools<82",

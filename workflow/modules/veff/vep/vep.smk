@@ -1,6 +1,3 @@
-import os
-
-
 OUTPUT_BASEDIR=f"{OUTPUT_DIR}/vep"
 
 VEFF_VCF_PQ_PATTERN=f"{OUTPUT_BASEDIR}/veff.parquet/{{vcf_file}}.parquet"
@@ -9,92 +6,41 @@ VEFF_VCF_TSV_PATTERN_DONE=f"{OUTPUT_BASEDIR}/veff.tsv/{{vcf_file}}.tsv.done"
 VEFF_VCF_TSV_HEADER_PATTERN=f"{OUTPUT_BASEDIR}/veff.tsv/{{vcf_file}}.tsv.header"
 
 
-def get_loftee_src_path(
-    human_genome_assembly,
-    # system-dependent params that need to be adjusted for each cluster
-    loftee_src_path,
-):
-    return loftee_src_path.format(human_genome_assembly=human_genome_assembly)
-
-
 def get_vep_cli_options(
     human_genome_version,
     human_genome_assembly,
     fasta_file,
-    # system-dependent params that need to be adjusted for each cluster
+    vep_version,
     vep_cache_dir,
-    cadd_dir,
+    cadd_snv_tsv,
+    cadd_indel_tsv,
     loftee_data_dir,
     loftee_src_path,
-    # constant params that should be static for the project
-    vep_version,
+    human_ancestor_fa,
+    conservation_file,
+    gerp_bigwig,
 ):
-    # format wildcards in paths
-    vep_cache_dir=vep_cache_dir.format(vep_version=vep_version)
-    cadd_dir=cadd_dir.format(human_genome_assembly=human_genome_assembly)
-    loftee_data_dir=loftee_data_dir.format(human_genome_assembly=human_genome_assembly)
-    loftee_src_path=get_loftee_src_path(
-        loftee_src_path=loftee_src_path,
-        human_genome_assembly=human_genome_assembly,
-    )
-
-    FASTA = fasta_file
-
-    assert os.path.exists(FASTA), f"'{FASTA}' does not exist!"
-
     ## configure LOFTEE
-    assert os.path.exists(loftee_data_dir), f"'{loftee_data_dir}' does not exist!"
-    assert os.path.exists(loftee_src_path), f"'{loftee_src_path}' does not exist!"
-
     if human_genome_version == "hg19":
-        HUMAN_ANCESTERS_FA = f"{loftee_data_dir}/human_ancestor.fa.gz"
-        CONSERVATION_FILE = f"{loftee_data_dir}/phylocsf_gerp.sql"
-
-        assert os.path.exists(HUMAN_ANCESTERS_FA), f"'{HUMAN_ANCESTERS_FA}' does not exist!"
-        assert os.path.exists(CONSERVATION_FILE), f"'{CONSERVATION_FILE}' does not exist!"
-
         loftee_args = ",".join([
             "LoF",
             f"loftee_path:{loftee_src_path}",
-            f"human_ancestor_fa:{HUMAN_ANCESTERS_FA}",
-            f"conservation_file:{CONSERVATION_FILE}",
+            f"human_ancestor_fa:{human_ancestor_fa}",
+            f"conservation_file:{conservation_file}",
         ])
-
     elif human_genome_version == "hg38":
-        GERP_BIGWIG = f"{loftee_data_dir}/gerp_conservation_scores.homo_sapiens.GRCh38.bw"
-        HUMAN_ANCESTERS_FA = f"{loftee_data_dir}/human_ancestor.fa.gz"
-        CONSERVATION_FILE = f"{loftee_data_dir}/loftee.sql"
-
-        assert os.path.exists(GERP_BIGWIG), f"'{GERP_BIGWIG}' does not exist!"
-        assert os.path.exists(HUMAN_ANCESTERS_FA), f"'{HUMAN_ANCESTERS_FA}' does not exist!"
-        assert os.path.exists(CONSERVATION_FILE), f"'{CONSERVATION_FILE}' does not exist!"
-
         loftee_args = ",".join([
             "LoF",
             f"data_path:{loftee_data_dir}",
             f"loftee_path:{loftee_src_path}",
-            f"gerp_bigwig:{GERP_BIGWIG}",
-            f"human_ancestor_fa:{loftee_data_dir}/human_ancestor.fa.gz",
-            f"conservation_file:{CONSERVATION_FILE}",
+            f"gerp_bigwig:{gerp_bigwig}",
+            f"human_ancestor_fa:{human_ancestor_fa}",
+            f"conservation_file:{conservation_file}",
         ])
-        assert os.path.exists(loftee_src_path), f"'{loftee_src_path}' does not exist!"
     else:
         raise ValueError(f"Unknown genome annotation: '{human_genome_version}'")
 
     MAXENTSCAN_DATA_DIR=f"{loftee_src_path}/maxEntScan"
-
-    assert os.path.exists(MAXENTSCAN_DATA_DIR), f"'{MAXENTSCAN_DATA_DIR}' does not exist!"
-
-    # configure CADD
-    CADD_WGS_SNV=f"{cadd_dir}/whole_genome_SNVs.tsv.gz"
-    CADD_INDEL={
-        "GRCh37": f"{cadd_dir}/InDels.tsv.gz",
-        "GRCh38": f"{cadd_dir}/gnomad.genomes.r3.0.indel.tsv.gz",
-    }[human_genome_assembly]
-
-    assert os.path.exists(cadd_dir), f"'{cadd_dir}' does not exist!"
-    assert os.path.exists(CADD_WGS_SNV), f"'{CADD_WGS_SNV}' does not exist!"
-    assert os.path.exists(CADD_INDEL), f"'{CADD_INDEL}' does not exist!"
 
     vep_cli_options = [
         "--output_file STDOUT",
@@ -105,7 +51,7 @@ def get_vep_cli_options(
         "--tab",
         "--merged",
         f"--assembly {human_genome_assembly}",
-        f"--fasta {FASTA}",
+        f"--fasta {fasta_file}",
         "--species homo_sapiens",
 #         "--everything",
 #         "--allele_number",
@@ -139,7 +85,7 @@ def get_vep_cli_options(
         f"--plugin MaxEntScan,{MAXENTSCAN_DATA_DIR}",
         "--plugin Blosum62",
         "--plugin miRNA",
-        f"--plugin CADD,{CADD_WGS_SNV},{CADD_INDEL}",
+        f"--plugin CADD,{cadd_snv_tsv},{cadd_indel_tsv}",
     ]
     
     if vep_version >= 105:
@@ -148,27 +94,22 @@ def get_vep_cli_options(
     return " ".join(vep_cli_options)
 
 
-def _loftee_src_path(wildcards):
-    return get_loftee_src_path(
-        human_genome_assembly=ASSEMBLY,
-        loftee_src_path=VEP["loftee_src_path"],
-    )
+VEP_CLI_OPTIONS = get_vep_cli_options(
+    human_genome_version=HUMAN_GENOME_VERSION,
+    human_genome_assembly=ASSEMBLY,
+    fasta_file=FASTA_FILE,
+    vep_version=VEP["version"],
+    vep_cache_dir=VEP_CACHE_DIR,
+    cadd_snv_tsv=CADD_SNV_TSV,
+    cadd_indel_tsv=CADD_INDEL_TSV,
+    loftee_data_dir=LOFTEE_DATA_DIR,
+    loftee_src_path=LOFTEE_SRC_PATH,
+    human_ancestor_fa=LOFTEE_HUMAN_ANCESTOR_FA,
+    conservation_file=LOFTEE_CONSERVATION_FILE,
+    gerp_bigwig=LOFTEE_GERP_BIGWIG,
+)
 
-    
-def _vep_cli_options(wildcards):
-    return get_vep_cli_options(
-        human_genome_version=HUMAN_GENOME_VERSION,
-        human_genome_assembly=ASSEMBLY,
-        fasta_file=FASTA_FILE,
-        vep_version=int(VEP["version"]),
-        # system-dependent params that need to be adjusted
-        vep_cache_dir=VEP["vep_cache_dir"],
-        cadd_dir=VEP["cadd_dir"],
-        loftee_data_dir=VEP["loftee_data_dir"],
-        loftee_src_path=VEP["loftee_src_path"],
-    )
 
-    
 rule veff__vep_annotation:
     threads: 1
     resources:
@@ -181,13 +122,15 @@ rule veff__vep_annotation:
         veff_done=temp(touch(VEFF_VCF_TSV_PATTERN_DONE)),
     input:
         vcf=VCF_FILE_PATTERN,
+        fasta=FASTA_FILE,
+        # `ancient`: existing caches, e.g. copied from elsewhere, do not cause reruns
+        **{name: ancient(path) for name, path in VEP_DATA.items()},
 #     log:
 #         "run_vep_annotation.log"
     params:
         vep_bin=VEP["vep_bin"],
         perl_bin=VEP["perl_bin"],
-        loftee_src_path=_loftee_src_path,
-        vep_cli_options=_vep_cli_options,
+        vep_cli_options=VEP_CLI_OPTIONS,
     conda:
         CONDA_ENV_YAML_DIR.join(f"""vep_env.v{VEP["version"]}.yaml""")
     shell: r"""#!/bin/bash
@@ -195,7 +138,7 @@ rule veff__vep_annotation:
 set -x
 set -e
 
-LOFTEE_SRC_PATH="$(realpath '{params.loftee_src_path}')"
+LOFTEE_SRC_PATH="$(realpath '{input.loftee_src}')"
 PERL="$(realpath $(which '{params.perl_bin}'))"
 SCRIPT="$(realpath $(which '{params.vep_bin}'))"
 
@@ -278,7 +221,5 @@ del VEFF_VCF_PQ_PATTERN
 del VEFF_VCF_TSV_HEADER_PATTERN
 del VEFF_VCF_TSV_PATTERN
 del VEFF_VCF_TSV_PATTERN_DONE
-
-del _loftee_src_path
-del _vep_cli_options
+del VEP_CLI_OPTIONS
 

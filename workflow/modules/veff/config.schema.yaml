@@ -71,7 +71,8 @@ properties:
     default: {}
     description: >-
       Options of the loftee module (reloftee). The module is only loaded for
-      `loftee.enabled: true`. Its `genome_annotation` defaults to `gff3_file`.
+      `loftee.enabled: true`. Its `genome_annotation` defaults to `gff3_file`. Its LOFTEE data
+      default to the files of the vep module, which downloads them; paths set here must exist.
   tissue_specific_vep:
     type: object
     default: {}

@@ -26,7 +26,8 @@ rule download_isoform_proportions_tsv:
     threads: 1
     resources:
         ntasks=1,
-        mem_mb=lambda wildcards, attempt, threads: (1000 * threads) * attempt
+        mem_mb=lambda wildcards, attempt, threads: (1000 * threads) * attempt,
+        runtime=lambda wildcards, attempt: 30 * attempt,
     output:
         file=ISOFORM_PROPORTIONS_TSV,
     params:
@@ -63,6 +64,15 @@ rule isoform_proportions_tsv_to_parquet:
         CONDA_ENV_YAML_DIR.join("veff-py.yaml")
     script:
         "tsv_to_parquet.py"
+
+
+rule veff__tissue_specific_vep_setup:
+    """
+    Downloads the GTEx isoform proportions if they do not exist yet.
+    """
+    input:
+        ISOFORM_PROPORTIONS_PQ,
+    localrule: True
 
 
 del OUTPUT_BASEDIR

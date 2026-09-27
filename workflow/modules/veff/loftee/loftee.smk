@@ -18,10 +18,9 @@ rule veff__loftee_annotation:
         genome_annotation=LOFTEE_GENOME_ANNOTATION,
         fasta=FASTA_FILE,
         fasta_index=FASTA_INDEX_FILE,
+        # `ancient`: existing copies, e.g. copied from elsewhere, do not cause reruns
+        **{name: ancient(path) for name, path in LOFTEE_DATA.items()},
     params:
-        gerp_bigwig=LOFTEE_GERP_BIGWIG,
-        human_ancestor_fa=LOFTEE_HUMAN_ANCESTOR_FA,
-        phylocsf_sqlite=LOFTEE_PHYLOCSF_SQLITE,
         min_intron_size=LOFTEE_MIN_INTRON_SIZE,
     wildcard_constraints:
         ds_dir="[^/]+",

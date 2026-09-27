@@ -73,17 +73,17 @@ from reloftee.pipeline import PipelineConfig, annotate
 # # Run reloftee
 #
 # `vcf_path` is the stripped VCF, already left-normalized and single-allelic; reloftee reads
-# it directly with its own VCF reader. The optional data layers are `None` when not
-# configured, which is exactly reloftee's own "skip this filter/flag" default.
+# it directly with its own VCF reader. A data layer that is set to null in the config is not
+# an input; it is then `None`, reloftee's own "skip this filter/flag" default.
 
 # %%
 config = PipelineConfig(
     vcf_path=snakemake.input["vcf"],
     genome_annotation_path=snakemake.input["genome_annotation"],
     fasta_path=snakemake.input["fasta"],
-    gerp_bigwig=snakemake.params["gerp_bigwig"],
-    human_ancestor_fa=snakemake.params["human_ancestor_fa"],
-    phylocsf_sqlite=snakemake.params["phylocsf_sqlite"],
+    gerp_bigwig=snakemake.input.get("gerp_bigwig"),
+    human_ancestor_fa=snakemake.input.get("human_ancestor_fa"),
+    phylocsf_sqlite=snakemake.input.get("phylocsf_sqlite"),
     min_intron_size=snakemake.params["min_intron_size"],
     n_workers=snakemake.threads,
 )

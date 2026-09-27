@@ -1,0 +1,3 @@
+# Default options for runs from the repository root. Options on the command line override them,
+# and they override the same options of a --profile. `--workflow-profile none` skips this file.
+software-deployment-method: conda

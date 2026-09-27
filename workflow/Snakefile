@@ -1,6 +1,8 @@
 import os
 import re
 
+import yaml
+
 from snakemake.utils import min_version, validate
 
 min_version("9.0")
@@ -155,6 +157,27 @@ rule all:
         ),
     localrule: True
     default_target: True
+
+
+def fset_features(feature_set):
+    """
+    The feature tables of the feature set template scripts/fset@<feature_set>.yaml, by name
+    """
+    with open(workflow.source_path(f"scripts/fset@{feature_set}.yaml")) as fd:
+        return yaml.safe_load(fd)["features"]
+
+
+# only some models use the Enformer features
+USES_ENFORMER = any("enformer" in fset_features(m) for m in config["predict_abexp_models"])
+
+# Downloads the resources that the configured models need and that do not exist yet, e.g.
+# before a run on compute nodes without internet access
+rule setup:
+    input:
+        config["system"]["expected_expression_pq"],
+        rules.veff__setup.input,
+        rules.enformer__setup.input if USES_ENFORMER else [],
+    localrule: True
 
 
 include: "scripts/__init__.smk"

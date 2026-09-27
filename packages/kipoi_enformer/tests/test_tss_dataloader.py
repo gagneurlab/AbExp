@@ -315,6 +315,8 @@ def test_vcf_dataloader(chr22_example_files, variants):
     for i in dl:
         total += 1
         metadata = i['metadata']
+        # seq_end is the 1-based stop, so the window has 21 bases
+        assert metadata['seq_end'] - metadata['seq_start'] == 21
         # example: chr22:16364873:G>A_
         var_id = (f'{metadata["chrom"]}:{metadata["variant_start"] + 1}:'
                   f'{metadata["ref"]}>{metadata["alt"]}:'
@@ -348,6 +350,7 @@ def test_ref_dataloader(chr22_example_files, references):
         ref = references.get(ref_id)
         if ref is not None:
             assert one_hot2string(i['sequences'])[0] == ref['seq']
+            assert (metadata['seq_start'], metadata['seq_end']) == (ref['start'], ref['end'])
             checked_refs[ref_id] = 2
 
     # check that all variants in my list were found and checked

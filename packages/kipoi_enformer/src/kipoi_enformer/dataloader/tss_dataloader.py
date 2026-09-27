@@ -96,7 +96,7 @@ class RefTSSDataloader(TSSDataloader):
 
                 metadata = {
                     "seq_start": interval.start,  # 0-based start of the input sequence
-                    "seq_end": interval.end + 1,  # 1-based stop of the input sequence
+                    "seq_end": interval.end,  # 1-based stop of the input sequence
                     "tss": tss,  # 0-based position of the TSS
                     "strand": strand,
                     "gene_id": row['gene_id'],
@@ -186,7 +186,7 @@ class VCFTSSDataloader(TSSDataloader):
                                                                       variant=variant)
                 metadata = {
                     "seq_start": interval.start,  # 0-based start of the input sequence
-                    "seq_end": interval.end + 1,  # 1-based stop of the input sequence
+                    "seq_end": interval.end,  # 1-based stop of the input sequence
                     "tss": tss,  # 0-based position of the TSS
                     "chrom": interval.chrom,
                     "strand": interval.strand,

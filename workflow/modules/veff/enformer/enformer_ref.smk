@@ -4,7 +4,7 @@ if not config['download_reference']:
     rule enformer__predict_ref:
         resources:
             mem_mb=lambda wildcards, attempt, threads: 12000 + (1000 * attempt),
-            gpu=1,
+            gpu=1 if config["use_gpu"] else 0,
         output:
             temp(f"{OUTPUT_BASEDIR}/raw.parquet/chrom={{chromosome}}/data.parquet")
         input:

@@ -91,7 +91,8 @@ The publication to this method can be found in [Nature Communications](https://w
 
 `use_gpu: True` in the config makes Enformer and SpliceAI use the CUDA variant of their TensorFlow
 environment (`workflow/modules/veff/envs/abexp-tensorflow-cuda.yaml`) instead of the CPU variant. The CUDA
-variant also runs on hosts without a GPU, on the CPU.
+variant also runs on hosts without a GPU, on the CPU. Only with `use_gpu: True`, these rules request one GPU
+(resource `gpu`), e.g. from SLURM.
 
 Conda creates the CUDA variant only on a host with a CUDA driver. To create it on a host without one, e.g. a
 login node, set `CONDA_OVERRIDE_CUDA` to a CUDA version that the driver of the GPU nodes supports, e.g. 12.9:

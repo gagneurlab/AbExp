@@ -4,7 +4,7 @@ VEFF_VCF_PQ_PATTERN = f"{OUTPUT_DIR}/enformer/veff.parquet/{{vcf_file}}.parquet"
 rule enformer__predict_alt:
     resources:
         mem_mb=lambda wildcards, attempt, threads: 12000 + (1000 * attempt),
-        gpu=1,
+        gpu=1 if config["use_gpu"] else 0,
     output:
         temp(f"{OUTPUT_BASEDIR}/raw.parquet/{{vcf_file}}.parquet")
     input:

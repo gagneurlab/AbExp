@@ -68,7 +68,7 @@ if ABSPLICE['use_spliceai_rocksdb'] == True:
         resources:
             mem_mb = lambda wildcards, attempt: attempt * 16000,
             threads = 1,
-            gpu = 1,
+            gpu = 1 if config["use_gpu"] else 0,
         output:
             result = temp(SPLICEAI_VEFF_CSV_PATTERN),
         input:
@@ -88,7 +88,7 @@ else:
         resources:
             mem_mb=lambda wildcards, attempt, threads: (8000 * threads) * attempt,
             threads = 4,
-            gpu = 1,
+            gpu = 1 if config["use_gpu"] else 0,
         output:
             result = temp(SPLICEAI_VEFF_VCF_PATTERN),
         input:

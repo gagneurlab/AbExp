@@ -1,0 +1,2 @@
+# the sdist carries no test data; the tests skip without it
+prune tests/data

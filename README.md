@@ -266,8 +266,16 @@ to date and records the new params. Do this only if the last run finished and no
 because `--touch` also marks outputs as up to date that need a rerun. Alternatively,
 `--cleanup-metadata <files>` deletes the recorded params of the given outputs.
 
+## Python packages
+
+`packages/` contains the Python packages `abexp-utils` and `kipoi-enformer`, which the workflow uses. The conda
+environments install them from this repository, pinned to their release tags. So a change of a package takes
+effect in the workflow only with its next release. [packages/README.md](packages/README.md) describes how to test,
+release and publish them.
+
 ## License
 All source code and model weights in this repository are licensed under the [MIT license](./LICENSE).
+The Python packages in `packages/` carry their own MIT license files.
 
 **Please note:** AbExp relies on [CADD](https://cadd.gs.washington.edu/) and [SpliceAI](https://github.com/Illumina/SpliceAI/), both of which are free to use only in non-commercial settings.
 If you plan to use AbExp in a commercial context, please ensure that you have the appropriate permissions or licenses to use both tools.

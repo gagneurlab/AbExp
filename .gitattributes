@@ -1,0 +1,2 @@
+# the kipoi-enformer test data; .lfsconfig excludes it from the default fetch
+packages/kipoi_enformer/tests/data/** filter=lfs diff=lfs merge=lfs -text

@@ -24,6 +24,12 @@ GENOME = {
 }
 ANNOTATOR = config["annotator"]
 
+if "use_gpu" in config["enformer"]:
+    raise ValueError(
+        "enformer.use_gpu is no longer supported: set the top-level config key use_gpu instead. "
+        "In the AbExp config, replace system.enformer.use_gpu with use_gpu."
+    )
+
 
 def optional(cfg, *keys):
     return {k: cfg[k] for k in keys if k in cfg}
@@ -136,6 +142,7 @@ use rule * from absplice
 
 ENFORMER_CONFIG = {
     **config["enformer"],
+    "use_gpu": config["use_gpu"],
     "vcf": STRIPPED_VCF,
     "gtf_transcripts": GTF_TRANSCRIPTS,
     "output_dir": VEFF_DIR,

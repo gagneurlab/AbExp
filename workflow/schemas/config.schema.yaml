@@ -48,6 +48,13 @@ properties:
     description: >-
       Mapping of chromosome names. Default is resources/chromAlias.tsv of the vcf_prep module,
       which maps them to the "chr" prefix.
+  use_gpu:
+    type: boolean
+    default: false
+    description: >-
+      Run the Enformer rules in the CUDA variant of their conda environment instead of the CPU
+      variant. The CUDA variant also runs on hosts without a GPU. Creating it on a host without
+      a CUDA driver needs CONDA_OVERRIDE_CUDA (see the README).
   veff:
     type: object
     default: {}

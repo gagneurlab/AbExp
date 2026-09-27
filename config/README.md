@@ -7,3 +7,6 @@ tl;dr: copy `config.yaml`, set the VCF folder, the output folder, the genome fil
 The options of `system.vep`, `system.mehari`, `system.loftee`, `system.absplice`, `system.enformer` and
 `system.nmd_scanner` are in `workflow/modules/veff/<module>/config.schema.yaml`.
 The workflow checks the config against this schema at the start.
+
+`use_gpu: True` runs Enformer in the CUDA variant of its conda environment; see "GPU" in the README.
+It replaces `system.enformer.use_gpu`, and the workflow stops if the config still sets that option.

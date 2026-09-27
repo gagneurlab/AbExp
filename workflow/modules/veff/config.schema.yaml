@@ -60,8 +60,9 @@ properties:
     type: boolean
     default: false
     description: >-
-      Run the enformer rules in the CUDA variant of their conda environment instead of the CPU
-      variant. The CUDA variant also runs on hosts without a GPU. Replaces enformer.use_gpu.
+      Run Enformer and SpliceAI (modules enformer and absplice) in the CUDA variant of their
+      TensorFlow environment instead of the CPU variant. The CUDA variant also runs on hosts
+      without a GPU. Replaces enformer.use_gpu.
   vep:
     type: object
     default: {}

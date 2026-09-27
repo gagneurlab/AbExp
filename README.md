@@ -16,7 +16,7 @@ The publication to this method can be found in [Nature Communications](https://w
   - GTEx and SpliceMap tables: 2GB
   - SpliceAI-RocksDB (optional): 349GB for hg19 + hg38
 - RAM: 64GB
-- GPU supporting CUDA for SpliceAI annotation
+- (optional) a GPU with CUDA for Enformer and SpliceAI, see [GPU](#gpu)
 
 ## Setup
 
@@ -65,7 +65,7 @@ The publication to this method can be found in [Nature Communications](https://w
    - (optional) `veff.annotator: "mehari"` to annotate transcript consequences with
      [mehari](https://github.com/varfish-org/mehari) instead of VEP, together with
      `veff.mehari_gencode_transcripts_fasta`, see below.
-   - (optional) `use_gpu: True` to run Enformer on a GPU, see [GPU](#gpu).
+   - (optional) `use_gpu: True` to run Enformer and SpliceAI on a GPU, see [GPU](#gpu).
 
    An example is pre-configured and can be used to test the pipeline.
 
@@ -89,8 +89,9 @@ The publication to this method can be found in [Nature Communications](https://w
 
 ## GPU
 
-`use_gpu: True` in the config makes the Enformer rules use the CUDA variant of their conda environment
-instead of the CPU variant. The CUDA variant also runs on hosts without a GPU, on the CPU.
+`use_gpu: True` in the config makes Enformer and SpliceAI use the CUDA variant of their TensorFlow
+environment (`workflow/modules/veff/envs/abexp-tensorflow-cuda.yaml`) instead of the CPU variant. The CUDA
+variant also runs on hosts without a GPU, on the CPU.
 
 Conda creates the CUDA variant only on a host with a CUDA driver. To create it on a host without one, e.g. a
 login node, set `CONDA_OVERRIDE_CUDA` to a CUDA version that the driver of the GPU nodes supports, e.g. 12.9:

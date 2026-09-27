@@ -14,7 +14,7 @@ if not config['download_reference']:
             type='reference',
             enformer=ENFORMER,
         conda:
-            ENFORMER_CONDA_ENV_YAML
+            TENSORFLOW_CONDA_ENV_YAML
         script:
             "scripts/predict_expression.py"
 
@@ -29,7 +29,7 @@ if not config['download_reference']:
         params:
             enformer=ENFORMER,
         conda:
-            ENFORMER_CONDA_ENV_YAML
+            TENSORFLOW_CONDA_ENV_YAML
         script:
             "scripts/aggregate_tracks.py"
 
@@ -46,7 +46,7 @@ if not config['download_reference']:
         params:
             enformer=ENFORMER,
         conda:
-            ENFORMER_CONDA_ENV_YAML
+            TENSORFLOW_CONDA_ENV_YAML
         script:
             "scripts/tissue_expression.py"
 else:

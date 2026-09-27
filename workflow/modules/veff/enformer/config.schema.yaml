@@ -56,9 +56,9 @@ properties:
     type: boolean
     default: false
     description: >-
-      Run the rules in the CUDA variant of the conda environment (envs/abexp-enformer-gpu.yaml)
-      instead of the CPU variant. The CUDA variant also runs on hosts without a GPU. The veff
-      module sets this from its own use_gpu.
+      Run the rules in the CUDA variant of the TensorFlow environment
+      (workflow/modules/veff/envs/abexp-tensorflow-cuda.yaml) instead of the CPU variant. The
+      CUDA variant also runs on hosts without a GPU. The veff module sets this from its own use_gpu.
   batch_size:
     type: integer
     default: 2

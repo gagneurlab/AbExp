@@ -80,7 +80,7 @@ if ABSPLICE['use_spliceai_rocksdb'] == True:
             lookup_only = False,
             genome = ASSEMBLY.lower()
         conda:
-            CONDA_ENV_YAML_DIR.join("abexp-spliceai-rocksdb.yaml")
+            TENSORFLOW_CONDA_ENV_YAML
         script:
             "absplice_spliceai.py"
 else:
@@ -97,7 +97,7 @@ else:
         params:
             genome = ASSEMBLY.lower()
         conda:
-            CONDA_ENV_YAML_DIR.join("abexp-spliceai.yaml")
+            TENSORFLOW_CONDA_ENV_YAML
         shell:
             'spliceai -I {input.vcf} -O {output.result} -R {input.fasta} -A {params.genome}'
     

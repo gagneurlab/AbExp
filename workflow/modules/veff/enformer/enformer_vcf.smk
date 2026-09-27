@@ -17,7 +17,7 @@ rule enformer__predict_alt:
         type='alternative',
         enformer=ENFORMER,
     conda:
-        ENFORMER_CONDA_ENV_YAML
+        TENSORFLOW_CONDA_ENV_YAML
     script:
         "scripts/predict_expression.py"
 
@@ -32,7 +32,7 @@ rule enformer__aggregate_alt:
     params:
         enformer=ENFORMER,
     conda:
-        ENFORMER_CONDA_ENV_YAML
+        TENSORFLOW_CONDA_ENV_YAML
     script:
         "scripts/aggregate_tracks.py"
 
@@ -49,7 +49,7 @@ rule enformer__tissue_alt:
     params:
         enformer=ENFORMER,
     conda:
-        ENFORMER_CONDA_ENV_YAML
+        TENSORFLOW_CONDA_ENV_YAML
     script:
         "scripts/tissue_expression.py"
 
@@ -68,7 +68,7 @@ rule enformer_variant_effect:
         # any VCF file name, e.g. x.vcf or x.bcf; vcf_prep restricts the endings
         vcf_file="[^/]+",
     conda:
-        ENFORMER_CONDA_ENV_YAML
+        TENSORFLOW_CONDA_ENV_YAML
     script:
         "scripts/veff.py"
 

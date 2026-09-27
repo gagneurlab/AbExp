@@ -125,6 +125,7 @@ use rule * from tissue_specific_vep
 
 ABSPLICE_CONFIG = {
     **config["absplice"],
+    "use_gpu": config["use_gpu"],
     "valid_vcf": VALID_VCF,
     "vcf_parquet": VCF_PQ,
     "output_dir": VEFF_DIR,

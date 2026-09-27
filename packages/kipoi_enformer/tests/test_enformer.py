@@ -79,7 +79,7 @@ def get_veff_path(output_dir: Path, size: int, rm=False):
 def test_enformer_ref(chr22_example_files, output_dir: Path, size, batch_size, num_output_bins):
     args = {
         'fasta_file': chr22_example_files['fasta'],
-        'gtf': chr22_example_files['gtf'],
+        'genome_annotation': chr22_example_files['genome_annotation'],
         'shifts': [-43, 0, 43],
         'seq_length': 393_216,
         'size': size,
@@ -100,7 +100,7 @@ def test_enformer_ref(chr22_example_files, output_dir: Path, size, batch_size, n
 def test_enformer_alt(chr22_example_files, output_dir: Path, size, batch_size, num_output_bins):
     args = {
         'fasta_file': chr22_example_files['fasta'],
-        'gtf': chr22_example_files['gtf'],
+        'genome_annotation': chr22_example_files['genome_annotation'],
         'shifts': [-43, 0, 43],
         'seq_length': 393_216,
         'size': size,
@@ -180,7 +180,7 @@ def test_calculate_veff(chr22_example_files, output_dir: Path,
         output_path.unlink()
 
     enformer_veff = EnformerVeff(isoforms_path=chr22_example_files['isoform_proportions'],
-                                 gtf=chr22_example_files['gtf'])
+                                 genome_annotation=chr22_example_files['genome_annotation'])
     enformer_veff.run([ref_filepath], alt_filepath, output_path, aggregation_mode=aggregation_mode,
                       downstream_tss=downstream_tss, upstream_tss=upstream_tss)
     return output_path

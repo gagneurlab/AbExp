@@ -32,7 +32,6 @@ class Dataloader(ABC):
         """
 
         :param fasta_file: Fasta file with the reference genome
-        :param gtf: GTF file with genome annotation or DataFrame with genome annotation
         :param chromosome: The chromosome to filter for. If None, all chromosomes are used.
         :param seq_length: The length of the sequence to return. This should be the length of the Enformer input sequence.
         :param shift: For each sequence, we have 3 shifts, -shift, 0, shift, in relation to a reference point.
@@ -109,31 +108,31 @@ class Dataloader(ABC):
             yield numpy_collate(batch)
 
 
-def get_tss_from_genome_annotation(gtf, chromosome: str | None = None,
+def get_tss_from_genome_annotation(genome_annotation, chromosome: str | None = None,
                                    protein_coding_only: bool = False, canonical_only: bool = False,
                                    gene_ids: list | None = None) -> pl.DataFrame:
     """
     Get TSS from genome annotation
-    :param gtf: GTF file or DataFrame with the genome annotation, see `genome_annotation_to_polars`
+    :param genome_annotation: GFF3 file or DataFrame with the genome annotation, see `genome_annotation_to_polars`
     :return: genome_annotation with Start and End set to the TSS
         and the additional columns tss (0-based), transcript_start (0-based), transcript_end (1-based)
     """
-    roi = get_roi_from_genome_annotation(gtf, chromosome, protein_coding_only, canonical_only, gene_ids)
+    roi = get_roi_from_genome_annotation(genome_annotation, chromosome, protein_coding_only, canonical_only, gene_ids)
     # the TSS of a transcript on the minus strand is its last base
     tss = pl.when(pl.col('Strand') == '-').then(pl.col('End') - 1).otherwise(pl.col('Start'))
     return roi.with_columns(Start=tss, End=tss + 1, tss=tss)
 
 
-def get_roi_from_genome_annotation(gtf, chromosome: str | None = None,
+def get_roi_from_genome_annotation(genome_annotation, chromosome: str | None = None,
                                    protein_coding_only: bool = False, canonical_only: bool = False,
                                    gene_ids: list | None = None) -> pl.DataFrame:
     """
     Get ROI from genome annotation
-    :param gtf: GTF file or DataFrame with the genome annotation, see `genome_annotation_to_polars`
+    :param genome_annotation: GFF3 file or DataFrame with the genome annotation, see `genome_annotation_to_polars`
     :return: the transcripts of the genome annotation, filtered,
         with the additional columns transcript_start (0-based), transcript_end (1-based)
     """
-    roi = genome_annotation_to_polars(gtf)
+    roi = genome_annotation_to_polars(genome_annotation)
     if gene_ids is not None:
         roi = roi.filter(pl.col('gene_id').str.contains('|'.join(gene_ids)))
     if chromosome is not None:

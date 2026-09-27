@@ -1,9 +1,11 @@
 import polars as pl
 import pytest
 
-from kipoi_enformer.dataloader import VCFTSSDataloader, RefTSSDataloader
+from kipoi_enformer.constants import AlleleType
+from kipoi_enformer.dataloader import TSSDataloader, VCFTSSDataloader, RefTSSDataloader
 from kipoi_enformer.dataloader.dataloader import get_tss_from_genome_annotation
-from kipoi_enformer.utils import read_gtf
+from kipoi_enformer.enformer import EnformerVeff
+from kipoi_enformer.utils import read_gff3
 from kipoiseq2.transforms.functional import one_hot2string
 
 UPSTREAM_TSS = 10
@@ -199,11 +201,11 @@ def references():
 
 
 def test_get_tss_from_genome_annotation(chr22_example_files):
-    roi = get_tss_from_genome_annotation(chr22_example_files['gtf'], chromosome='chr22', protein_coding_only=False,
-                                         canonical_only=False)
+    roi = get_tss_from_genome_annotation(chr22_example_files['genome_annotation'], chromosome='chr22',
+                                         protein_coding_only=False, canonical_only=False)
 
     # check the number of transcripts
-    # grep -v '^#' annot.chr22.gtf | cut -f 3 | grep transcript | wc -l
+    # zcat chr22.gencode.v40lift37.annotation.gff3.gz | cut -f 3 | grep -cx transcript
     assert len(roi) == 5279
 
     # are the extracted ROIs correct
@@ -234,46 +236,151 @@ def test_get_tss_from_genome_annotation(chr22_example_files):
 
 
 def test_genome_annotation_from_pandas(chr22_example_files):
-    # a pandas DataFrame with pyranges-style columns gives the same TSS as the GTF file
-    gtf = read_gtf(chr22_example_files['gtf'])
-    gtf_pandas = gtf.to_pandas()
+    # a pandas DataFrame with pyranges-style columns gives the same TSS as the GFF3 file
+    annotation = read_gff3(chr22_example_files['genome_annotation'])
+    annotation_pandas = annotation.to_pandas()
     # pyranges stores the chromosome as a category
-    gtf_pandas['Chromosome'] = gtf_pandas['Chromosome'].astype('category')
+    annotation_pandas['Chromosome'] = annotation_pandas['Chromosome'].astype('category')
 
     columns = ['Chromosome', 'Start', 'End', 'Strand', 'gene_id', 'transcript_id', 'tag', 'tss',
                'transcript_start', 'transcript_end']
     args = dict(chromosome='chr22', protein_coding_only=True, canonical_only=True)
-    roi = get_tss_from_genome_annotation(gtf, **args).select(columns)
-    roi_from_pandas = get_tss_from_genome_annotation(gtf_pandas, **args).select(columns)
+    roi = get_tss_from_genome_annotation(annotation, **args).select(columns)
+    roi_from_pandas = get_tss_from_genome_annotation(annotation_pandas, **args).select(columns)
     assert len(roi) == 441
     assert roi_from_pandas.equals(roi)
 
 
 def test_genome_annotation_protein_canonical(chr22_example_files):
     # Ground truth bash:
-    # grep -E '^\S+\s+\S+\s+transcript' annot.chr22.gtf | grep -E 'tag\s+"Ensembl_canonical"' |
-    # grep -E 'transcript_type\s+"protein_coding"' | wc -l
+    # zcat chr22.gencode.v40lift37.annotation.gff3.gz | awk -F'\t' '$3 == "transcript"' |
+    # grep 'tag=[^;]*Ensembl_canonical' | grep -c 'gene_type=protein_coding;'
     chromosome = 'chr22'
+    genome_annotation = chr22_example_files['genome_annotation']
     # not all genes have a canonical transcript if the genome annotation is not current (e.g. GRCh37 is not current)
-    roi = get_tss_from_genome_annotation(chr22_example_files['gtf'], chromosome=chromosome, protein_coding_only=True,
+    roi = get_tss_from_genome_annotation(genome_annotation, chromosome=chromosome, protein_coding_only=True,
                                          canonical_only=True)
     assert len(roi) == 441
-    roi = get_tss_from_genome_annotation(chr22_example_files['gtf'], chromosome=chromosome, protein_coding_only=True,
+    roi = get_tss_from_genome_annotation(genome_annotation, chromosome=chromosome, protein_coding_only=True,
                                          canonical_only=True, gene_ids=['ENSG00000172967'])
     assert roi['gene_id'][0] == 'ENSG00000172967.8_5'
-    roi = get_tss_from_genome_annotation(chr22_example_files['gtf'], chromosome=chromosome, protein_coding_only=False,
+    roi = get_tss_from_genome_annotation(genome_annotation, chromosome=chromosome, protein_coding_only=False,
                                          canonical_only=False)
     assert len(roi) == 5279
-    roi = get_tss_from_genome_annotation(chr22_example_files['gtf'], chromosome=chromosome, protein_coding_only=True,
+    roi = get_tss_from_genome_annotation(genome_annotation, chromosome=chromosome, protein_coding_only=True,
                                          canonical_only=False)
     assert len(roi) == 3623
-    roi = get_tss_from_genome_annotation(chr22_example_files['gtf'], chromosome=chromosome, protein_coding_only=False,
+    roi = get_tss_from_genome_annotation(genome_annotation, chromosome=chromosome, protein_coding_only=False,
                                          canonical_only=True)
     assert len(roi) == 1212
 
 
+
+def write_gff3(path, *records):
+    path.write_text('\n'.join(['##gff-version 3', *records]) + '\n')
+    return path
+
+
+def gff3_row(chromosome, start, end, strand, gene_id, transcript_id, gene_type, tag):
+    """A row of `read_gff3` for a HAVANA transcript."""
+    return {
+        'Chromosome': chromosome, 'Start': start, 'End': end, 'Feature': 'transcript', 'Source': 'HAVANA',
+        'Score': None, 'Strand': strand, 'Frame': None, 'gene_id': gene_id, 'transcript_id': transcript_id,
+        'gene_type': gene_type, 'tag': tag,
+    }
+
+
+def test_read_gff3(tmp_path):
+    gff3 = write_gff3(
+        tmp_path / 'annotation.gff3',
+        'chr22\tHAVANA\ttranscript\t11\t20\t.\t-\t.\tID=ENST01.1;Parent=ENSG01.1;gene_id=ENSG01.1;'
+        'transcript_id=ENST01.1;gene_type=protein_coding;tag=basic,Ensembl_canonical',
+    )
+    # Start becomes 0-based
+    assert read_gff3(gff3).rows(named=True) == [
+        gff3_row('chr22', 10, 20, '-', 'ENSG01.1', 'ENST01.1', 'protein_coding', 'basic,Ensembl_canonical'),
+    ]
+
+
+def test_read_gff3_par_y_suffix_from_id(tmp_path):
+    gff3 = write_gff3(
+        tmp_path / 'annotation.gff3',
+        'chrY\tHAVANA\ttranscript\t101\t200\t.\t+\t.\tID=ENST02.1_PAR_Y;Parent=ENSG02.1_PAR_Y;gene_id=ENSG02.1;'
+        'transcript_id=ENST02.1;gene_type=lncRNA',
+    )
+    # the chrY PAR copies get the suffix "_PAR_Y", as in the GENCODE GTF
+    assert read_gff3(gff3).rows(named=True) == [
+        gff3_row('chrY', 100, 200, '+', 'ENSG02.1_PAR_Y', 'ENST02.1_PAR_Y', 'lncRNA', None),
+    ]
+
+
+def test_read_gff3_par_y_suffix_from_enstr_id(tmp_path):
+    gff3 = write_gff3(
+        tmp_path / 'annotation.gff3',
+        'chrY\tHAVANA\ttranscript\t301\t400\t.\t+\t.\tID=ENSTR03.1;Parent=ENSGR03.1;gene_id=ENSG03.1;'
+        'transcript_id=ENST03.1;gene_type=lncRNA',
+    )
+    # some lift37 entries of GENCODE mark the chrY PAR copies with the prefix "ENSTR" in ID
+    assert read_gff3(gff3).rows(named=True) == [
+        gff3_row('chrY', 300, 400, '+', 'ENSG03.1_PAR_Y', 'ENST03.1_PAR_Y', 'lncRNA', None),
+    ]
+
+
+def test_read_gff3_decodes_escapes(tmp_path):
+    gff3 = write_gff3(
+        tmp_path / 'annotation.gff3',
+        'chr22\tHAVANA\ttranscript\t11\t20\t.\t+\t.\tID=ENST04.1;Parent=ENSG04.1;gene_id=ENSG04.1;'
+        'transcript_id=ENST04.1;gene_type=lncRNA;tag=a%3Bb,c%2541',
+    )
+    # "%2541" is an escaped "%41", which must not become "A"
+    assert read_gff3(gff3).rows(named=True) == [
+        gff3_row('chr22', 10, 20, '+', 'ENSG04.1', 'ENST04.1', 'lncRNA', 'a;b,c%41'),
+    ]
+
+
+def test_read_gff3_rejects_gtf(tmp_path):
+    with pytest.raises(ValueError, match='GTF'):
+        read_gff3(tmp_path / 'annotation.gtf.gz')
+
+
+@pytest.mark.parametrize('strand, tss', [('+', 10), ('-', 19)])
+def test_get_tss_from_gff3_path(tmp_path, strand, tss):
+    gff3 = write_gff3(
+        tmp_path / 'annotation.gff3',
+        f'chr22\tHAVANA\ttranscript\t11\t20\t.\t{strand}\t.\tID=ENST01.1;Parent=ENSG01.1;gene_id=ENSG01.1;'
+        'transcript_id=ENST01.1;gene_type=protein_coding;tag=basic,Ensembl_canonical',
+    )
+    roi = get_tss_from_genome_annotation(gff3, protein_coding_only=True, canonical_only=True)
+    assert roi.rows(named=True) == [{
+        **gff3_row('chr22', tss, tss + 1, strand, 'ENSG01.1', 'ENST01.1', 'protein_coding', 'basic,Ensembl_canonical'),
+        'transcript_start': 10, 'transcript_end': 20, 'tss': tss,
+    }]
+
+
+def test_genome_annotation_as_a_dataframe(chr22_example_files):
+    # the workflow scripts pass the genome annotation as a DataFrame, predict_expression.py in a dict of arguments
+    genome_annotation = pl.DataFrame({
+        'Chromosome': ['chr22', 'chr22'],
+        'Feature': ['transcript', 'transcript'],
+        'Start': [20_000_000, 30_000_000],
+        'End': [20_001_000, 30_001_000],
+        'Strand': ['+', '-'],
+        'gene_id': ['ENSG01.1', 'ENSG02.1'],
+        'transcript_id': ['ENST01.1', 'ENST02.1'],
+        'gene_type': ['protein_coding', 'protein_coding'],
+        'tag': ['basic,Ensembl_canonical', 'basic'],
+    })
+    dl_args = {'fasta_file': chr22_example_files['fasta'], 'chromosome': 'chr22',
+               'genome_annotation': genome_annotation}
+    dl = TSSDataloader.from_allele_type(AlleleType.REF, **dl_args)
+    assert len(dl) == 2
+
+    veff = EnformerVeff(genome_annotation=genome_annotation)
+    assert veff.canonical_transcripts.to_list() == ['ENST01']
+
+
 def test_variant_regions_are_extended_strand_aware(chr22_example_files):
-    gtf = pl.DataFrame({
+    genome_annotation = pl.DataFrame({
         'Chromosome': ['chr22', 'chr22'],
         'Feature': ['transcript', 'transcript'],
         'Start': [1000, 2000],
@@ -284,7 +391,7 @@ def test_variant_regions_are_extended_strand_aware(chr22_example_files):
     })
     dl = VCFTSSDataloader(
         fasta_file=chr22_example_files['fasta'],
-        gtf=gtf,
+        genome_annotation=genome_annotation,
         vcf_file=chr22_example_files['vcf'],
         variant_upstream_tss=5,
         variant_downstream_tss=20,
@@ -303,7 +410,7 @@ def test_variant_regions_are_extended_strand_aware(chr22_example_files):
 def test_vcf_dataloader(chr22_example_files, variants):
     dl = VCFTSSDataloader(
         fasta_file=chr22_example_files['fasta'],
-        gtf=chr22_example_files['gtf'],
+        genome_annotation=chr22_example_files['genome_annotation'],
         vcf_file=chr22_example_files['vcf'],
         variant_downstream_tss=10,
         variant_upstream_tss=10,
@@ -335,7 +442,7 @@ def test_vcf_dataloader(chr22_example_files, variants):
 def test_ref_dataloader(chr22_example_files, references):
     dl = RefTSSDataloader(
         fasta_file=chr22_example_files['fasta'],
-        gtf=chr22_example_files['gtf'],
+        genome_annotation=chr22_example_files['genome_annotation'],
         seq_length=21,
         shifts=[0],
         chromosome='chr22',

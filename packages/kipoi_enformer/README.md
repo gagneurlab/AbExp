@@ -11,6 +11,13 @@ pip install packages/kipoi_enformer
 pip install packages/kipoi_enformer[gpu]
 ```
 
+## Genome annotation
+
+The dataloaders and `EnformerVeff` take the genome annotation as `genome_annotation`: the path to a GFF3 file, such
+as a GENCODE annotation, or a polars or pandas DataFrame with pyranges-style columns, see
+`kipoi_enformer.utils.genome_annotation_to_polars`. Version 0.0.1 read a GTF file instead, and the parameter was
+`gtf`.
+
 ## Usage
 ```python
 from kipoi_enformer.dataloader import RefTSSDataloader, VCFTSSDataloader
@@ -31,11 +38,12 @@ output_dir = Path('output')
 enformer = Enformer()
 enformer_aggregator = EnformerAggregator()
 enformer_tissue_mapper = EnformerTissueMapper(tracks_path='assets/enformer_tracks/human_cage_enformer_tracks.yaml')
-enformer_veff = EnformerVeff(gtf='example_files/annotation.gtf.gz')
+enformer_veff = EnformerVeff(genome_annotation='example/chr22.gencode.v40lift37.annotation.gff3.gz')
 
 # Reference sequences
 # define reference dataloader
-ref_dl = RefTSSDataloader(fasta_file='example_files/seq.fa', gtf='example_files/annotation.gtf.gz', chromosome='chr22',
+ref_dl = RefTSSDataloader(fasta_file='example_files/seq.fa',
+                          genome_annotation='example/chr22.gencode.v40lift37.annotation.gff3.gz', chromosome='chr22',
                           canonical_only=False, protein_coding_only=True)
 # run enformer on reference genome
 enformer.predict(ref_dl, batch_size=2, filepath=output_dir / 'raw/ref.parquet/chrom=chr22/data.parquet',
@@ -54,7 +62,8 @@ enformer_tissue_mapper.predict(output_dir / 'aggregated/ref.parquet/chrom=chr22/
 
 # Alternative sequences
 # define alternative dataloader
-alt_dl = VCFTSSDataloader(fasta_file='example_files/seq.fa', gtf='example_files/annotation.gtf.gz',
+alt_dl = VCFTSSDataloader(fasta_file='example_files/seq.fa',
+                          genome_annotation='example/chr22.gencode.v40lift37.annotation.gff3.gz',
                           vcf_file='example_files/vcf/chr22_var.vcf.gz', variant_upstream_tss=50,
                           variant_downstream_tss=200, canonical_only=False, protein_coding_only=True)
 # run enformer on alternative genome

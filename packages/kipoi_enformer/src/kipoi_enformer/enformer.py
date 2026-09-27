@@ -12,7 +12,6 @@ import math
 import yaml
 import pickle
 import polars as pl
-from scipy.special import logsumexp
 import xarray as xr
 from sklearn import linear_model, pipeline, preprocessing
 import sklearn as sk
@@ -447,8 +446,13 @@ class EnformerVeff:
         :return: A polars DataFrame containing the aggregated scores.
         """
 
-        def logsumexp_udf(score, weight):
-            return logsumexp(score / math.log10(math.e), b=weight) / math.log(10)
+        def weighted_logsumexp(score: str, weight: str = 'isoform_proportion') -> pl.Expr:
+            # log10(sum(weight * 10 ** score)) per group, shifted by the maximum score to avoid overflow
+            s = pl.col(score).cast(pl.Float64)
+            w = pl.col(weight).cast(pl.Float64)
+            result = (w * pl.lit(10.0).pow(s - s.max())).sum().log10() + s.max()
+            # a missing score gives NaN, as with scipy.special.logsumexp
+            return pl.when(s.is_null().any()).then(float('nan')).otherwise(result).alias(score)
 
         if aggregation_mode in ['logsumexp', 'weighted_sum']:
             veff_ldf = veff_ldf.join(self.isoform_proportion_ldf, on=['gene_id', 'tissue', 'transcript_id'],
@@ -457,18 +461,7 @@ class EnformerVeff:
             if aggregation_mode == 'logsumexp':
                 veff_ldf = veff_ldf. \
                     group_by(['chrom', 'strand', 'gene_id', 'variant_start', 'variant_end', 'ref', 'alt', 'tissue']). \
-                    agg(
-                    pl.struct(['ref_score', 'isoform_proportion']).
-                    map_elements(
-                        lambda x: logsumexp_udf(x.struct.field('ref_score'), x.struct.field('isoform_proportion')),
-                        return_dtype=pl.Float64()).
-                    alias('ref_score'),
-                    pl.struct(['alt_score', 'isoform_proportion']).
-                    map_elements(
-                        lambda x: logsumexp_udf(x.struct.field('alt_score'), x.struct.field('isoform_proportion')),
-                        return_dtype=pl.Float64()).
-                    alias('alt_score'),
-                )
+                    agg(weighted_logsumexp('ref_score'), weighted_logsumexp('alt_score'))
                 veff_ldf = veff_ldf.with_columns(
                     ((pl.col("alt_score") - pl.col("ref_score")) / np.log10(2)).alias('log2fc').fill_nan(0))
 

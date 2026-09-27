@@ -208,3 +208,35 @@ def test_train_tissue_mapper(chr22_example_files, gtex_tissue_mapper_path, enfor
     tissue_mapper.train([agg_path], output_path=output_dir / 'tissue_mapper',
                         expression_path=chr22_example_files['gtex_expression'],
                         model=model)
+
+
+def test_aggregate_logsumexp():
+    veff = EnformerVeff()
+    veff.isoform_proportion_ldf = pl.LazyFrame({
+        'gene_id': ['g1', 'g1', 'g2'],
+        'transcript_id': ['t1', 't2', 't3'],
+        'tissue': ['Lung', 'Lung', 'Lung'],
+        'isoform_proportion': [0.25, 0.75, 1.0],
+    })
+    veff_ldf = pl.LazyFrame({
+        'chrom': ['chr1', 'chr1', 'chr1'],
+        'strand': ['+', '+', '-'],
+        'gene_id': ['g1', 'g1', 'g2'],
+        'transcript_id': ['t1', 't2', 't3'],
+        'variant_start': [10, 10, 20],
+        'variant_end': [11, 11, 21],
+        'ref': ['A', 'A', 'C'],
+        'alt': ['G', 'G', 'T'],
+        'tissue': ['Lung', 'Lung', 'Lung'],
+        'ref_score': [1.0, 2.0, 400.0],
+        'alt_score': [1.5, 1.0, 401.0],
+    }, schema_overrides={'ref_score': pl.Float32, 'alt_score': pl.Float32})
+
+    veff_df = veff._aggregate(veff_ldf, 'logsumexp').sort('gene_id')
+
+    # log10 of the isoform-weighted sum of the expression 10 ** score
+    ref = np.log10(0.25 * 10 ** 1.0 + 0.75 * 10 ** 2.0)
+    alt = np.log10(0.25 * 10 ** 1.5 + 0.75 * 10 ** 1.0)
+    np.testing.assert_allclose(veff_df['ref_score'].to_list(), [ref, 400.0])
+    np.testing.assert_allclose(veff_df['alt_score'].to_list(), [alt, 401.0])
+    np.testing.assert_allclose(veff_df['log2fc'].to_list(), [(alt - ref) / np.log10(2), 1 / np.log10(2)])

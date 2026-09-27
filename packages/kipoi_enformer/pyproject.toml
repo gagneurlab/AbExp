@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools", "setuptools-scm"]
+requires = ["setuptools>=77", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -12,7 +12,8 @@ authors = [
 ]
 readme = "README.md"
 requires-python = ">=3.12"
-license = { text = "MIT licence" }
+license = "MIT"
+license-files = ["LICENSE"]
 keywords = ["model zoo", "deep learning", "enformer", "aparent2",
     "computational biology", "bioinformatics", "genomics"]
 dependencies = [
@@ -34,6 +35,11 @@ dependencies = [
     "pyyaml",
     "tqdm",
 ]
+[project.urls]
+Homepage = "https://github.com/gagneurlab/AbExp"
+Source = "https://github.com/gagneurlab/AbExp/tree/main/packages/kipoi_enformer"
+Issues = "https://github.com/gagneurlab/AbExp/issues"
+
 [project.optional-dependencies]
 dev = [
     "pytest",

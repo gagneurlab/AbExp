@@ -1,0 +1,27 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "release-type": "python",
+  "include-component-in-tag": true,
+  "bump-minor-pre-major": true,
+  "separate-pull-requests": true,
+  "bootstrap-sha": "e7cfe6b1f5d93698b52d316a1fd6558facabda48",
+  "packages": {
+    "packages/abexp_utils": {
+      "package-name": "abexp-utils",
+      "component": "abexp-utils",
+      "extra-files": [
+        { "type": "generic", "path": "README.md" },
+        { "type": "generic", "path": "/workflow/envs/abexp-veff-py.yaml" }
+      ]
+    },
+    "packages/kipoi_enformer": {
+      "package-name": "kipoi-enformer",
+      "component": "kipoi-enformer",
+      "extra-files": [
+        { "type": "generic", "path": "README.md" },
+        { "type": "generic", "path": "/workflow/modules/veff/envs/abexp-tensorflow-cpu.yaml" },
+        { "type": "generic", "path": "/workflow/modules/veff/envs/abexp-tensorflow-cuda.yaml" }
+      ]
+    }
+  }
+}

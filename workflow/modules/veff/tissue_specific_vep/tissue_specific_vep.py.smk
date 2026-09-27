@@ -14,6 +14,8 @@ rule veff__tissue_specific_vep:
         isoform_proportions_pq=ISOFORM_PROPORTIONS_PQ,
         gtf_transcripts=GTF_TRANSCRIPTS_PQ,
         chrom_alias=ancient(CHROM_ALIAS_TSV),
+    params:
+        output_version=OUTPUT_VERSION["tissue_specific_vep"],
     wildcard_constraints:
         ds_dir="[^/]+",
     conda:

@@ -13,6 +13,17 @@ validate(config, "config.schema.yaml")
 # that several veff modules use are in workflow/modules/veff/envs.
 SHARED_CONDA_ENV_YAML_DIR = workflow.current_basedir.join("../envs")
 
+# One version per step. Bump the key of the earliest step whose outputs change, see
+# "When jobs rerun" in README.md.
+OUTPUT_VERSION = {
+    # The predictions of the reference and the alternative sequences share a version, because
+    # the variant effects compare them. The step includes the aggregation of the predictions:
+    # the raw predictions are temporary, so the aggregation cannot rerun alone.
+    "predict": 1,
+    "tissue": 1,
+    "variant_effect": 1,
+}
+
 OUTPUT_DIR = os.path.abspath(config["output_dir"])
 RESOURCES_DIR = os.path.abspath(config.get("resources_dir", f"{OUTPUT_DIR}/resources"))
 

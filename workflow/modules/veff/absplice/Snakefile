@@ -13,6 +13,18 @@ validate(config, "config.schema.yaml")
 CONDA_ENV_YAML_DIR = workflow.current_basedir.join("envs")
 # conda environments that several veff modules use, in workflow/modules/veff/envs
 SHARED_CONDA_ENV_YAML_DIR = workflow.current_basedir.join("../envs")
+
+# One version per step. Bump the key of the earliest step whose outputs change, see
+# "When jobs rerun" in README.md.
+OUTPUT_VERSION = {
+    "mmsplice_splicemap": 1,
+    # both variants of veff__spliceai, with and without SpliceAI-RocksDB
+    "spliceai": 1,
+    "spliceai_vcf_to_csv": 1,
+    "absplice_dna": 1,
+    "absplice": 1,
+}
+
 # CPU or CUDA variant of the TensorFlow environment of SpliceAI
 TENSORFLOW_CONDA_ENV_YAML = SHARED_CONDA_ENV_YAML_DIR.join(
     "abexp-tensorflow-cuda.yaml" if config["use_gpu"] else "abexp-tensorflow-cpu.yaml"

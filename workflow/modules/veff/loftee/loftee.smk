@@ -21,6 +21,7 @@ rule veff__loftee_annotation:
         # `ancient`: existing copies, e.g. copied from elsewhere, do not cause reruns
         **{name: ancient(path) for name, path in LOFTEE_DATA.items()},
     params:
+        output_version=OUTPUT_VERSION["annotation"],
         min_intron_size=LOFTEE_MIN_INTRON_SIZE,
     wildcard_constraints:
         ds_dir="[^/]+",

@@ -22,6 +22,7 @@ rule veff__mehari_transcripts_db:
         gff3=MEHARI_GENCODE_GFF3,
         transcripts_fasta=MEHARI_GENCODE_TRANSCRIPTS_FASTA,
     params:
+        output_version=OUTPUT_VERSION["transcripts_db"],
         assembly=ASSEMBLY.lower(),
     conda:
         MEHARI_CONDA_ENV
@@ -45,6 +46,8 @@ rule veff__mehari_annotation:
         transcripts_db=MEHARI_TRANSCRIPTS_DB,
         fasta=FASTA_FILE,
         fasta_index=FASTA_INDEX_FILE,
+    params:
+        output_version=OUTPUT_VERSION["annotation"],
     wildcard_constraints:
         ds_dir="[^/]+",
         feature_set="[^/]+",

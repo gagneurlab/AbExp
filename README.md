@@ -71,7 +71,8 @@ The publication to this method can be found in [Nature Communications](https://w
 
 2) Run `snakemake -c all`. Snakemake reads `config/config.yaml` by default;
    use `--configfile my_config.yaml` for another config file.
-   The workflow profile `workflow/profiles/default` sets `--sdm conda`; `--sdm` on the command line overrides it.
+   The workflow profile `workflow/profiles/default` sets `--sdm conda` and the rerun triggers, see
+   [When jobs rerun](#when-jobs-rerun). Options on the command line override it.
    All rules are annotated with resource requirements s.t. snakemake can submit jobs to HPC clusters or cloud environments.
    It is highly recommended to use snakemake with some batch submission system, e.g. SLURM.
    For further information, please visit the [Snakemake documentation](https://snakemake.readthedocs.io/).
@@ -221,6 +222,54 @@ The VEP table is then at `results/abexp/veff/vep/veff.parquet/<vcf_file>.parquet
   in the example). Run it to download the resources before the first run.
 - The modules vep and loftee download the same LOFTEE data. To use both, point the loftee module at the
   files of the vep module and import it without its download rules, as `workflow/modules/veff/Snakefile` does.
+- The rerun triggers of AbExp's workflow profile do not apply in the importing workflow, see
+  [When jobs rerun](#when-jobs-rerun).
+
+## When jobs rerun
+
+The workflow profile `workflow/profiles/default` sets `rerun-triggers: [mtime, params, input]`.
+With it, Snakemake reruns a job only if an input file is newer than its outputs, if its set of input files
+changed, or if its params changed. A changed conda environment or changed code does not rerun jobs.
+Snakemake's default triggers would rerun them after any change of a conda environment file, even of a comment,
+and whenever a script is newer than the outputs, e.g. after a `git pull` or a fresh clone.
+
+Instead, each rule that computes its outputs has the param `output_version`. Its value is one entry of the dict
+`OUTPUT_VERSION` in the Snakefile of the module, or in `workflow/Snakefile` for the feature sets and predictions.
+The dict has one key per step. A step is one rule or several rules that must change together, e.g. the Enformer
+predictions of the reference and the alternative sequences. A new value reruns the rules of the step, and the
+rules downstream of them rerun because their input changed.
+- In a commit that changes outputs, bump the key of the earliest step whose outputs change, e.g. after a new tool
+  version in a conda environment or a changed script. For example, a scikit-learn update changes the results of
+  the Enformer tissue mapper: bump `"tissue"` in `workflow/modules/veff/enformer/Snakefile`. The tissue rules and
+  all rules downstream of them rerun, but not the Enformer predictions.
+- A conda environment can serve several steps, e.g. the TensorFlow environment of Enformer and SpliceAI. After a
+  change of such an environment, bump each step whose outputs change.
+- Do not bump a key for changes that keep the outputs, e.g. a comment.
+- Snakemake deletes temporary outputs once no job needs them. So a bump of a step that reads a temporary output
+  also reruns the step that wrote it. Therefore the MMSplice and SpliceAI scores and the aggregated and tissue
+  Enformer predictions are not temporary: storing them costs less than recomputing them. The raw
+  Enformer predictions and the VEP output stay temporary. So the Enformer aggregation shares the key
+  `"predict"`, and the VEP annotation and its parsing share one key.
+- The download rules have no version; their URL is the version. Rules that only index a file or convert the
+  format of a download have none either.
+
+If Enformer computes the reference itself (`download_reference: False`), a bump of `"predict"` or `"tissue"`
+takes two runs. The first run reruns the reference, and the second run reruns the alternative sequences.
+The reason is the `ancient` reference input of `enformer__predict_alt`: while another job of the same run
+updates it, Snakemake 9.24 ignores the changed params of `enformer__predict_alt` and the rules downstream of it.
+
+Snakemake uses this profile when it runs `workflow/Snakefile`, also with `--snakefile` from another directory.
+`--rerun-triggers` on the command line overrides the setting. The setting does not apply:
+- with `--workflow-profile none` or another workflow profile
+- in a workflow that imports AbExp as a module, which uses its own profile. Pass
+  `--rerun-triggers mtime params input` there to get the same behavior.
+
+The recorded params of outputs from earlier AbExp versions lack `output_version`. So the first run after the
+update reruns all rules with an `output_version` and the rules downstream of them, once. To keep the existing
+outputs instead, run Snakemake once with `--touch` and the same config and targets. It marks the outputs as up
+to date and records the new params. Do this only if the last run finished and nothing else changed since,
+because `--touch` also marks outputs as up to date that need a rerun. Alternatively,
+`--cleanup-metadata <files>` deletes the recorded params of the given outputs.
 
 ## License
 All source code and model weights in this repository are licensed under the [MIT license](./LICENSE).

@@ -14,6 +14,7 @@ rule enformer__predict_alt:
         # make sure that reference is available before starting vcf computation
         ref_tissue_paths=ancient(expand(ENFORMER_REF, chromosome=CHROMOSOMES)),
     params:
+        output_version=OUTPUT_VERSION["predict"],
         type='alternative',
         enformer=ENFORMER,
     conda:
@@ -26,10 +27,12 @@ rule enformer__aggregate_alt:
     resources:
         mem_mb=lambda wildcards, attempt, threads: 6000 + (1000 * attempt)
     output:
-        temp(f"{OUTPUT_BASEDIR}/agg.parquet/{{vcf_file}}.parquet"),
+        # not temp: a new tissue version would rerun the predictions otherwise
+        f"{OUTPUT_BASEDIR}/agg.parquet/{{vcf_file}}.parquet",
     input:
         rules.enformer__predict_alt.output[0],
     params:
+        output_version=OUTPUT_VERSION["predict"],
         enformer=ENFORMER,
     conda:
         TENSORFLOW_CONDA_ENV_YAML
@@ -41,12 +44,14 @@ rule enformer__tissue_alt:
     resources:
         mem_mb=lambda wildcards, attempt, threads: 6000 + (1000 * attempt)
     output:
-        temp(f"{OUTPUT_BASEDIR}/tissue.parquet/{{vcf_file}}.parquet")
+        # not temp: a new variant_effect version would rerun the predictions otherwise
+        f"{OUTPUT_BASEDIR}/tissue.parquet/{{vcf_file}}.parquet"
     input:
         rules.enformer__aggregate_alt.output[0],
         tracks_yml=ENFORMER_TRACKS_YML,
         tissue_mapper_pkl=ENFORMER_TISSUE_MAPPER_PKL,
     params:
+        output_version=OUTPUT_VERSION["tissue"],
         enformer=ENFORMER,
     conda:
         TENSORFLOW_CONDA_ENV_YAML
@@ -63,6 +68,7 @@ rule enformer_variant_effect:
         vcf_tissue_path=rules.enformer__tissue_alt.output[0],
         ref_tissue_paths=ancient(expand(ENFORMER_REF, chromosome=CHROMOSOMES)),
     params:
+        output_version=OUTPUT_VERSION["variant_effect"],
         enformer=ENFORMER,
     wildcard_constraints:
         # any VCF file name, e.g. x.vcf or x.bcf; vcf_prep restricts the endings

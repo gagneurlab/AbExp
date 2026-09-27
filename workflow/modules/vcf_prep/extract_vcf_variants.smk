@@ -7,6 +7,9 @@ rule convert_chromalias_bcftools_format:
         chromalias = CHROM_ALIAS_TSV,
     output:
         chromalias = CHROM_ALIAS_WSV,
+    # part of the step normalize: only normalize_vcf reads it
+    params:
+        output_version=OUTPUT_VERSION["normalize"],
     localrule: True
     shell:
         '''cat {input.chromalias} | cut -f1,2 | sed -e 's/\t/ /g' | grep -v "^#" > {output.chromalias}'''
@@ -20,6 +23,9 @@ rule extract_chromalias_targets:
         fasta_file_index=FASTA_INDEX_FILE,
     output:
         chrom_targets_txt = CHROM_TARGETS_FILE,
+    # part of the step normalize: only normalize_vcf reads it
+    params:
+        output_version=OUTPUT_VERSION["normalize"],
     localrule: True
     shell:
         """
@@ -60,6 +66,8 @@ if not config["vcf_is_normalized"]:
             fasta_file_index=FASTA_INDEX_FILE,
             chromalias = CHROM_ALIAS_WSV,
             targets=CHROM_TARGETS_FILE,
+        params:
+            output_version=OUTPUT_VERSION["normalize"],
         wildcard_constraints:
             vcf_file=f".+(?:{'|'.join(VCF_FILE_ENDINGS)})",
         conda:
@@ -92,6 +100,8 @@ rule format_vcf_header:
         vcf_header_file=VCF_HEADER,
         # fasta_file=FASTA_FILE,
         fasta_file_index=FASTA_INDEX_FILE,
+    params:
+        output_version=OUTPUT_VERSION["format_header"],
     conda:
         CONDA_ENV_YAML_DIR.join("vcf_prep.yaml")
     shell:
@@ -116,6 +126,7 @@ rule extract_vcf_variants:
         vcf_file=NORMALIZED_VCF_FILE_PATTERN,
         vcf_header_file=FORMATTED_VCF_HEADER,
     params:
+        output_version=OUTPUT_VERSION["extract_variants"],
     wildcard_constraints:
         vcf_file=f".+(?:{'|'.join(VCF_FILE_ENDINGS)})",
     conda:
@@ -144,6 +155,8 @@ rule extract_valid_vcf_variants:
         vcf_file=VALID_VARIANTS_VCF_FILE_PATTERN,
     input:
         vcf_file=STRIPPED_VCF_FILE_PATTERN,
+    params:
+        output_version=OUTPUT_VERSION["extract_valid_variants"],
     conda:
         CONDA_ENV_YAML_DIR.join("vcf_prep.yaml")
     shell:

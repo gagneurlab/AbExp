@@ -128,6 +128,7 @@ rule veff__vep_annotation:
 #     log:
 #         "run_vep_annotation.log"
     params:
+        output_version=OUTPUT_VERSION["annotation"],
         vep_bin=VEP["vep_bin"],
         perl_bin=VEP["perl_bin"],
         vep_cli_options=VEP_CLI_OPTIONS,
@@ -207,6 +208,8 @@ rule veff__vep_parse:
         veff_tsv=VEFF_VCF_TSV_PATTERN,
         veff_header=VEFF_VCF_TSV_HEADER_PATTERN,
         veff_done=VEFF_VCF_TSV_PATTERN_DONE,
+    params:
+        output_version=OUTPUT_VERSION["annotation"],
     wildcard_constraints:
         ds_dir="[^/]+",
         feature_set="[^/]+",

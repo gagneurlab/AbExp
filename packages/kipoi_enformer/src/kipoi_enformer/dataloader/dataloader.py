@@ -154,7 +154,7 @@ def construct_interval(chrom, strand, anchor, seq_length):
     five_end_len = math.floor(seq_length / 2)
     three_end_len = math.ceil(seq_length / 2)
 
-    # WARNING: kipoiseq2.Interval has a 0-based end!
+    # kipoiseq2.Interval is 0-based and half-open
     interval = Interval(chrom=chrom,
                         start=anchor - five_end_len,
                         end=anchor + three_end_len,
@@ -175,7 +175,6 @@ def extract_sequences_around_anchor(shifts, chromosome, strand, anchor, seq_leng
         "variant_extractor must be provided if variant is not None"
     chrom_len = len(ref_seq_extractor.fasta.records[chromosome])
 
-    # WARNING: kipoiseq2.Interval has a 0-based end!
     interval = construct_interval(chromosome, strand, anchor, seq_length)
     sequences = []
     # shift intervals and extract sequences
@@ -185,8 +184,9 @@ def extract_sequences_around_anchor(shifts, chromosome, strand, anchor, seq_leng
         three_end_pad = 0
         if shifted_interval.start < 0:
             five_end_pad = abs(shifted_interval.start)
-        if shifted_interval.end >= chrom_len:
-            three_end_pad = shifted_interval.end - chrom_len + 1
+        # the interval is half-open, so it may end at chrom_len
+        if shifted_interval.end > chrom_len:
+            three_end_pad = shifted_interval.end - chrom_len
         if five_end_pad > 0 or three_end_pad > 0:
             shifted_interval = shifted_interval.truncate(chrom_len)
 

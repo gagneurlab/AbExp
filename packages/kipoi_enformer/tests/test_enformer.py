@@ -186,6 +186,41 @@ def test_calculate_veff(chr22_example_files, output_dir: Path,
     return output_path
 
 
+# the published hg38 reference scores name the window seq_start and seq_end, the hg19 ones enformer_start and
+# enformer_end
+@pytest.mark.parametrize("start_col, end_col", [('seq_start', 'seq_end'), ('enformer_start', 'enformer_end')])
+def test_veff_with_the_published_seq_end(tmp_path: Path, start_col, end_col, seq_length=393_216):
+    transcripts = pl.DataFrame({
+        'tss': [1_000_000, 2_000_000],
+        'strand': ['+', '-'],
+        'gene_id': ['ENSG01.1', 'ENSG02.1'],
+        'transcript_id': ['ENST01.1', 'ENST02.1'],
+        'transcript_start': [1_000_000, 1_900_000],
+        'transcript_end': [1_100_000, 2_000_001],
+        'tissue': ['Lung', 'Lung'],
+    })
+    seq_start = pl.col('tss') - seq_length // 2
+    # the published reference scores hold a seq_end that is one too large
+    ref = transcripts.with_columns(seq_start.alias(start_col), (seq_start + seq_length + 1).alias(end_col),
+                                   score=pl.Series([1.0, 2.0], dtype=pl.Float32))
+    alt = transcripts.with_columns(seq_start.alias('seq_start'), (seq_start + seq_length).alias('seq_end'),
+                                   chrom=pl.lit('chr22'), variant_start=pl.col('tss') + 5,
+                                   variant_end=pl.col('tss') + 6, ref=pl.lit('A'), alt=pl.lit('G'),
+                                   score=pl.Series([2.0, 1.5], dtype=pl.Float32))
+    ref_path = tmp_path / 'ref.parquet/chrom=chr22/data.parquet'
+    ref_path.parent.mkdir(parents=True)
+    ref.write_parquet(ref_path)
+    alt.write_parquet(tmp_path / 'alt.parquet')
+
+    EnformerVeff().run([ref_path], tmp_path / 'alt.parquet', tmp_path / 'veff.parquet', aggregation_mode='median')
+
+    veff_df = pl.read_parquet(tmp_path / 'veff.parquet').sort('gene_id')
+    assert veff_df.columns == ['chrom', 'strand', 'gene_id', 'variant_start', 'variant_end', 'ref', 'alt',
+                               'tissue', 'veff_score']
+    assert veff_df['gene_id'].to_list() == ['ENSG01', 'ENSG02']
+    np.testing.assert_allclose(veff_df['veff_score'].to_list(), [1.0 / np.log10(2), -0.5 / np.log10(2)])
+
+
 @pytest.mark.parametrize("model", [
     linear_model.ElasticNetCV(cv=2),
     lgb.LGBMRegressor()

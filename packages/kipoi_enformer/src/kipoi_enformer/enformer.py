@@ -394,18 +394,13 @@ class EnformerVeff:
             }).write_parquet(output_path)
             return
 
-        # refactored dataloader
-        seq_start_col = 'seq_start'
-        seq_end_col = 'seq_end'
-        if seq_start_col not in set(alt_ldf.columns):
-            seq_start_col = 'enformer_start'
-            seq_end_col = 'enformer_end'
+        # The keys leave out the input window (seq_start and seq_end, or enformer_start and enformer_end in
+        # older files). The window follows from the TSS, and the published reference scores hold a seq_end
+        # that is one too large. A reference file has one row per transcript and tissue.
+        on = ['tss', 'chrom', 'strand', 'gene_id', 'transcript_id', 'transcript_start', 'transcript_end', 'tissue']
 
-        on = ['tss', 'chrom', 'strand', 'gene_id', 'transcript_id', 'transcript_start', 'transcript_end',
-              seq_start_col, seq_end_col, 'tissue']
-
-        veff_ldf = alt_ldf.join(ref_ldf, how='left', on=on)
-        veff_ldf = veff_ldf.select([seq_start_col, seq_end_col, 'tss', 'chrom', 'strand',
+        veff_ldf = alt_ldf.join(ref_ldf.select(*on, 'ref_score'), how='left', on=on, validate='m:1')
+        veff_ldf = veff_ldf.select(['tss', 'chrom', 'strand',
                                     'gene_id', 'transcript_id', 'transcript_start', 'transcript_end',
                                     'variant_start', 'variant_end', 'ref', 'alt', 'tissue',
                                     'ref_score', 'alt_score'])

@@ -4,11 +4,11 @@ from collections.abc import Mapping
 import numpy as np
 import pyarrow as pa
 import math
-import pandas as pd
+import polars as pl
 from kipoiseq2.extractors import VariantSeqExtractor, FastaStringExtractor
 from kipoiseq2 import Interval, Variant
 from kipoiseq2.transforms.functional import one_hot_dna
-from kipoi_enformer.utils import gtf_to_pandas
+from kipoi_enformer.utils import genome_annotation_to_polars
 
 
 def numpy_collate(samples: list):
@@ -109,59 +109,42 @@ class Dataloader(ABC):
             yield numpy_collate(batch)
 
 
-def get_tss_from_genome_annotation(gtf: pd.DataFrame | str, chromosome: str | None = None,
+def get_tss_from_genome_annotation(gtf, chromosome: str | None = None,
                                    protein_coding_only: bool = False, canonical_only: bool = False,
-                                   gene_ids: list | None = None):
+                                   gene_ids: list | None = None) -> pl.DataFrame:
     """
     Get TSS from genome annotation
-    :return: genome_annotation with additional columns tss (0-based), transcript_start (0-based), transcript_end (1-based)
+    :param gtf: GTF file or DataFrame with the genome annotation, see `genome_annotation_to_polars`
+    :return: genome_annotation with Start and End set to the TSS
+        and the additional columns tss (0-based), transcript_start (0-based), transcript_end (1-based)
     """
     roi = get_roi_from_genome_annotation(gtf, chromosome, protein_coding_only, canonical_only, gene_ids)
-
-    def adjust_row(row):
-        if row.Strand == '-':
-            # convert 1-based to 0-based
-            tss = row.End - 1
-        else:
-            tss = row.Start
-
-        row.Start = tss
-        row.End = tss + 1
-        return row
-    if len(roi) > 0:
-        roi = roi.apply(adjust_row, axis=1)
-        roi['tss'] = roi["Start"]
-    return roi
+    # the TSS of a transcript on the minus strand is its last base
+    tss = pl.when(pl.col('Strand') == '-').then(pl.col('End') - 1).otherwise(pl.col('Start'))
+    return roi.with_columns(Start=tss, End=tss + 1, tss=tss)
 
 
-def get_roi_from_genome_annotation(gtf: pd.DataFrame | str, chromosome: str | None = None,
+def get_roi_from_genome_annotation(gtf, chromosome: str | None = None,
                                    protein_coding_only: bool = False, canonical_only: bool = False,
-                                   gene_ids: list | None = None):
+                                   gene_ids: list | None = None) -> pl.DataFrame:
     """
     Get ROI from genome annotation
-    :return: filtered genome_annotation
+    :param gtf: GTF file or DataFrame with the genome annotation, see `genome_annotation_to_polars`
+    :return: the transcripts of the genome annotation, filtered,
+        with the additional columns transcript_start (0-based), transcript_end (1-based)
     """
-    if not isinstance(gtf, pd.DataFrame):
-        genome_annotation = gtf_to_pandas(gtf)
-    else:
-        genome_annotation = gtf.copy()
+    roi = genome_annotation_to_polars(gtf)
     if gene_ids is not None:
-        genome_annotation = genome_annotation[genome_annotation['gene_id'].str.contains('|'.join(gene_ids))]
+        roi = roi.filter(pl.col('gene_id').str.contains('|'.join(gene_ids)))
     if chromosome is not None:
-        genome_annotation = genome_annotation.query("`Chromosome` == @chromosome")
-    roi = genome_annotation.query("`Feature` == 'transcript'")
+        roi = roi.filter(pl.col('Chromosome') == chromosome)
+    roi = roi.filter(pl.col('Feature') == 'transcript')
     if protein_coding_only:
-        roi = roi.query("`gene_type` == 'protein_coding'")
+        roi = roi.filter(pl.col('gene_type') == 'protein_coding')
     if canonical_only:
         # check if Ensembl_canonical is in the set of tags
-        roi = roi[roi['tag'].apply(lambda x: False if pd.isna(x) else ('Ensembl_canonical' in x.split(',')))]
-    if len(roi) > 0:
-        roi = roi.assign(
-            transcript_start=roi["Start"],
-            transcript_end=roi["End"],
-        )
-
-    return roi
+        roi = roi.filter(pl.col('tag').str.split(',').list.contains('Ensembl_canonical').fill_null(False))
+    return roi.with_columns(transcript_start=pl.col('Start'), transcript_end=pl.col('End'))
 
 
 def construct_interval(chrom, strand, anchor, seq_length):
@@ -211,7 +194,7 @@ def extract_sequences_around_anchor(shifts, chromosome, strand, anchor, seq_leng
             seq = variant_extractor.extract(shifted_interval,
                                             [variant],
                                             anchor=anchor,
-                                            fixed_length=True,
+                                            fixed_len=True,
                                             is_padding=True,
                                             chrom_len=chrom_len,
                                             )

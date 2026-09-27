@@ -1,7 +1,9 @@
+import polars as pl
 import pytest
 
 from kipoi_enformer.dataloader import VCFTSSDataloader, RefTSSDataloader
 from kipoi_enformer.dataloader.dataloader import get_tss_from_genome_annotation
+from kipoi_enformer.utils import read_gtf
 from kipoiseq2.transforms.functional import one_hot2string
 
 UPSTREAM_TSS = 10
@@ -208,29 +210,43 @@ def test_get_tss_from_genome_annotation(chr22_example_files):
     # criteria are the strand and transcript start and end
     # roi start is zero based
     # roi end is 1 based
-    def test_tss(row):
+    for row in roi.iter_rows(named=True):
         # make tss zero-based
-        if row.Strand == '-':
-            tss = row.transcript_end - 1
+        if row['Strand'] == '-':
+            tss = row['transcript_end'] - 1
         else:
-            tss = row.transcript_start
+            tss = row['transcript_start']
 
-        assert row.Start == tss, \
-            f'Transcript {row.transcript_id}; Strand {row.Strand}: {row.Start} != {tss}'
-        assert row.End == tss + 1, \
-            f'Transcript {row.transcript_id}; Strand {row.Strand}: {row.End} != ({tss} + 1)'
-
-    roi.apply(test_tss, axis=1)
+        assert row['Start'] == tss, \
+            f"Transcript {row['transcript_id']}; Strand {row['Strand']}: {row['Start']} != {tss}"
+        assert row['End'] == tss + 1, \
+            f"Transcript {row['transcript_id']}; Strand {row['Strand']}: {row['End']} != ({tss} + 1)"
 
     # check the extracted ROI for a negative strand transcript
-    roi_i = roi.set_index('transcript_id').loc['ENST00000448070.1']
-    assert roi_i.Start == (16076172 - 1)
-    assert roi_i.End == 16076172
+    roi_i = roi.row(by_predicate=pl.col('transcript_id') == 'ENST00000448070.1', named=True)
+    assert roi_i['Start'] == (16076172 - 1)
+    assert roi_i['End'] == 16076172
 
     # check the extracted ROI for a positive strand transcript
-    roi_i = roi.set_index('transcript_id').loc['ENST00000424770.1']
-    assert roi_i.Start == (16062157 - 1)
-    assert roi_i.End == 16062157
+    roi_i = roi.row(by_predicate=pl.col('transcript_id') == 'ENST00000424770.1', named=True)
+    assert roi_i['Start'] == (16062157 - 1)
+    assert roi_i['End'] == 16062157
+
+
+def test_genome_annotation_from_pandas(chr22_example_files):
+    # a pandas DataFrame with pyranges-style columns gives the same TSS as the GTF file
+    gtf = read_gtf(chr22_example_files['gtf'])
+    gtf_pandas = gtf.to_pandas()
+    # pyranges stores the chromosome as a category
+    gtf_pandas['Chromosome'] = gtf_pandas['Chromosome'].astype('category')
+
+    columns = ['Chromosome', 'Start', 'End', 'Strand', 'gene_id', 'transcript_id', 'tag', 'tss',
+               'transcript_start', 'transcript_end']
+    args = dict(chromosome='chr22', protein_coding_only=True, canonical_only=True)
+    roi = get_tss_from_genome_annotation(gtf, **args).select(columns)
+    roi_from_pandas = get_tss_from_genome_annotation(gtf_pandas, **args).select(columns)
+    assert len(roi) == 441
+    assert roi_from_pandas.equals(roi)
 
 
 def test_genome_annotation_protein_canonical(chr22_example_files):
@@ -244,7 +260,7 @@ def test_genome_annotation_protein_canonical(chr22_example_files):
     assert len(roi) == 441
     roi = get_tss_from_genome_annotation(chr22_example_files['gtf'], chromosome=chromosome, protein_coding_only=True,
                                          canonical_only=True, gene_ids=['ENSG00000172967'])
-    assert roi.gene_id.iloc[0] == 'ENSG00000172967.8_5'
+    assert roi['gene_id'][0] == 'ENSG00000172967.8_5'
     roi = get_tss_from_genome_annotation(chr22_example_files['gtf'], chromosome=chromosome, protein_coding_only=False,
                                          canonical_only=False)
     assert len(roi) == 5279
@@ -254,6 +270,34 @@ def test_genome_annotation_protein_canonical(chr22_example_files):
     roi = get_tss_from_genome_annotation(chr22_example_files['gtf'], chromosome=chromosome, protein_coding_only=False,
                                          canonical_only=True)
     assert len(roi) == 1212
+
+
+def test_variant_regions_are_extended_strand_aware(chr22_example_files):
+    gtf = pl.DataFrame({
+        'Chromosome': ['chr22', 'chr22'],
+        'Feature': ['transcript', 'transcript'],
+        'Start': [1000, 2000],
+        'End': [1500, 2500],
+        'Strand': ['+', '-'],
+        'gene_id': ['g1', 'g2'],
+        'transcript_id': ['t1', 't2'],
+    })
+    dl = VCFTSSDataloader(
+        fasta_file=chr22_example_files['fasta'],
+        gtf=gtf,
+        vcf_file=chr22_example_files['vcf'],
+        variant_upstream_tss=5,
+        variant_downstream_tss=20,
+        seq_length=21,
+        shifts=[0],
+    )
+    regions = dl._get_single_variant_matcher().regions
+    # + strand: the TSS is 1000, upstream is towards lower positions
+    # - strand: the TSS is 2499, upstream is towards higher positions
+    assert regions.select('chrom', 'start', 'end', 'strand', 'tss').rows() == [
+        ('chr22', 995, 1021, '+', 1000),
+        ('chr22', 2479, 2505, '-', 2499),
+    ]
 
 
 def test_vcf_dataloader(chr22_example_files, variants):

@@ -1,8 +1,5 @@
-from abc import ABC, abstractmethod
-
-import pandas as pd
-from kipoiseq2.extractors import VariantSeqExtractor, SingleVariantMatcher, FastaStringExtractor
-import pyranges as pr
+import polars as pl
+from kipoiseq2.extractors import VariantSeqExtractor, SingleVariantMatcher
 from kipoiseq2.extractors import MultiSampleVCF
 import pyarrow as pa
 import numpy as np
@@ -18,7 +15,7 @@ ENFORMER_SEQUENCE_LENGTH = 393_216
 
 
 class TSSDataloader(Dataloader):
-    def __init__(self, allele_type: AlleleType, fasta_file, gtf: pd.DataFrame | str, chromosome: str | None = None,
+    def __init__(self, allele_type: AlleleType, fasta_file, gtf, chromosome: str | None = None,
                  seq_length: int = ENFORMER_SEQUENCE_LENGTH, shifts: list[int] = (-43, 0, 43), size: int = None,
                  canonical_only: bool = False,
                  protein_coding_only: bool = False, gene_ids: list | None = None,
@@ -26,7 +23,8 @@ class TSSDataloader(Dataloader):
         """
 
         :param fasta_file: Fasta file with the reference genome
-        :param gtf: GTF file with genome annotation or DataFrame with genome annotation
+        :param gtf: GTF file with genome annotation or DataFrame with genome annotation,
+            see `kipoi_enformer.utils.genome_annotation_to_polars`
         :param chromosome: The chromosome to filter for. If None, all chromosomes are used.
         :param seq_length: The length of the sequence to return.
         :param shifts: The shifts in relation to the TSS.
@@ -64,7 +62,7 @@ class TSSDataloader(Dataloader):
 
 
 class RefTSSDataloader(TSSDataloader):
-    def __init__(self, fasta_file, gtf: pd.DataFrame | str, chromosome: str,
+    def __init__(self, fasta_file, gtf, chromosome: str,
                  seq_length: int = ENFORMER_SEQUENCE_LENGTH, shifts: list[int] = (-43, 0, 43), size: int = None,
                  canonical_only: bool = False,
                  protein_coding_only: bool = False, gene_ids: list | None = None, *args, **kwargs):
@@ -86,7 +84,7 @@ class RefTSSDataloader(TSSDataloader):
         logger.debug(f"Dataloader is ready for chromosome {chromosome}")
 
     def _sample_gen(self):
-        for _, row in self._genome_annotation.iterrows():
+        for row in self._genome_annotation.iter_rows(named=True):
             try:
                 chromosome = row['Chromosome']
                 strand = row.get('Strand', '.')
@@ -137,7 +135,7 @@ class RefTSSDataloader(TSSDataloader):
 
 
 class VCFTSSDataloader(TSSDataloader):
-    def __init__(self, fasta_file, gtf: pd.DataFrame | str, vcf_file, vcf_lazy=True,
+    def __init__(self, fasta_file, gtf, vcf_file, vcf_lazy=True,
                  variant_upstream_tss: int = 10, variant_downstream_tss: int = 10,
                  seq_length: int = ENFORMER_SEQUENCE_LENGTH, shifts: list[int] = (-43, 0, 43),
                  size: int = None, canonical_only: bool = False, protein_coding_only: bool = False,
@@ -211,8 +209,7 @@ class VCFTSSDataloader(TSSDataloader):
     def __len__(self):
         if self._genome_annotation is None or len(self._genome_annotation) == 0:
             return 0
-        tmp_matcher = self._get_single_variant_matcher(vcf_lazy=False)
-        total = sum(1 for _, _ in tmp_matcher)
+        total = self._get_single_variant_matcher(vcf_lazy=False).pairs().height
         if self._size:
             return min(self._size, total)
         return total
@@ -220,20 +217,26 @@ class VCFTSSDataloader(TSSDataloader):
     def _get_single_variant_matcher(self, vcf_lazy=True):
         if self._genome_annotation is None or len(self._genome_annotation) == 0:
             return iter([])
-        # reads the genome annotation
-        # start and end are transformed to 0-based and 1-based respectively
-        roi = pr.PyRanges(self._genome_annotation)
-        roi = roi.extend(ext={"5": self.variant_upstream_tss, "3": self.variant_downstream_tss})
-        # todo do assert length of roi
-
         interval_attrs = ['gene_id', 'transcript_id', 'tss', 'transcript_start', 'transcript_end']
         for attr in interval_attrs:
-            assert attr in roi.columns, f"attr must be in {roi.columns}"
+            assert attr in self._genome_annotation.columns, f"attr must be in {self._genome_annotation.columns}"
+
+        # extend the TSS by variant_upstream_tss bases upstream and variant_downstream_tss bases downstream
+        # (0-based start, 1-based end)
+        minus = pl.col('Strand') == '-'
+        upstream, downstream = self.variant_upstream_tss, self.variant_downstream_tss
+        regions = self._genome_annotation.select(
+            pl.col('Chromosome').alias('chrom'),
+            (pl.col('Start') - pl.when(minus).then(downstream).otherwise(upstream)).clip(lower_bound=0).alias('start'),
+            (pl.col('End') + pl.when(minus).then(upstream).otherwise(downstream)).alias('end'),
+            pl.col('Strand').alias('strand'),
+            *interval_attrs,
+        )
         variants = MultiSampleVCF(self.vcf_file, lazy=vcf_lazy)
 
         return SingleVariantMatcher(
             variant_fetcher=variants,
-            pranges=roi,
+            regions=regions,
             interval_attrs=interval_attrs
         )
 

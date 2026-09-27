@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow_hub as hub
 import tensorflow as tf
 from kipoi_enformer.dataloader import TSSDataloader
-from kipoi_enformer.utils import RandomModel, gtf_to_pandas
+from kipoi_enformer.utils import RandomModel, genome_annotation_to_polars
 from kipoi_enformer.logger import logger
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -15,7 +15,6 @@ import polars as pl
 from scipy.special import logsumexp
 import xarray as xr
 from sklearn import linear_model, pipeline, preprocessing
-import pandas as pd
 import sklearn as sk
 
 __all__ = ['Enformer', 'EnformerAggregator', 'EnformerTissueMapper', 'EnformerVeff']
@@ -325,12 +324,12 @@ class EnformerTissueMapper:
 
 class EnformerVeff:
 
-    def __init__(self, isoforms_path: str | pathlib.Path | None = None,
-                 gtf: pd.DataFrame | str | pathlib.Path | None = None):
+    def __init__(self, isoforms_path: str | pathlib.Path | None = None, gtf=None):
         """
 
         :param isoforms_path: The path to the file containing the isoform proportions.
-        :param gtf: The path to the GTF file or a pandas DataFrame containing the genome annotation.
+        :param gtf: The path to the GTF file or a polars or pandas DataFrame containing the genome annotation,
+            see `kipoi_enformer.utils.genome_annotation_to_polars`.
         """
 
         self.isoform_proportion_ldf = None
@@ -342,17 +341,14 @@ class EnformerVeff:
                                            filter(~pl.col('isoform_proportion').is_null()))
 
         # if GTF file is given, then extract the canonical transcripts for the canonical aggregation mode
+        self.canonical_transcripts = None
         if gtf is not None:
-            if isinstance(gtf, str) or isinstance(gtf, pathlib.Path):
-                gtf = gtf_to_pandas(gtf)
-            elif not isinstance(gtf, pd.DataFrame):
-                raise ValueError('gtf must be a path or a pandas DataFrame')
-
+            gtf = genome_annotation_to_polars(gtf)
             # only keep protein_coding transcripts
-            gtf = gtf.query("`gene_type` == 'protein_coding'")
+            gtf = gtf.filter(pl.col('gene_type') == 'protein_coding')
             # check if Ensembl_canonical is in the set of tags
-            gtf = gtf[gtf['tag'].apply(lambda x: False if pd.isna(x) else ('Ensembl_canonical' in x.split(',')))]
-            self.canonical_transcripts = gtf['transcript_id'].str.extract(r'([^\.]+)\..+$')[0].unique()
+            gtf = gtf.filter(pl.col('tag').str.split(',').list.contains('Ensembl_canonical').fill_null(False))
+            self.canonical_transcripts = gtf['transcript_id'].str.extract(r'([^\.]+)\..+$', 1).unique()
 
     def run(self, ref_paths: list[str] | list[pathlib.Path], alt_path: str | pathlib.Path,
             output_path: str | pathlib.Path, aggregation_mode: str, upstream_tss: int | None = None,
@@ -448,7 +444,7 @@ class EnformerVeff:
 
         :param veff_ldf: A polars dataframe containing the variant effect scores.
         :param aggregation_mode: One of ['logsumexp', 'weighted_sum', 'median', 'canonical'].
-        :return: A pandas dataframe containing the aggregated scores.
+        :return: A polars DataFrame containing the aggregated scores.
         """
 
         def logsumexp_udf(score, weight):
@@ -499,7 +495,7 @@ class EnformerVeff:
             max_transcripts_per_gene = veff_df['num_transcripts'].max()
             if max_transcripts_per_gene is not None and max_transcripts_per_gene > 1:
                 logger.error('Multiple canonical transcripts found for a gene.')
-                logger.error(veff_df[veff_df['num_transcripts'] > 1])
+                logger.error(veff_df.filter(pl.col('num_transcripts') > 1))
                 raise ValueError('Multiple canonical transcripts found for a gene.')
 
             # Remove the num_transcripts column

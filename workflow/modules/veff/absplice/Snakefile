@@ -51,5 +51,6 @@ ABSPLICE = {
 del _splicemap, _spliceai_rocksdb_path
 
 
+include: "download.smk"
 include: "absplice_denovo.py.smk"
 include: "absplice.py.smk"

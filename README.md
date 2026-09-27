@@ -39,10 +39,16 @@ The publication to this method can be found in [Nature Communications](https://w
    Otherwise, the first run downloads them.
    With a cluster executor, the downloads run as cluster jobs. If the compute nodes have no internet access,
    run `snakemake setup -c 4` without the executor on a host with internet access.
-   An interrupted download of the VEP cache, CADD or LOFTEE resumes on the next run, and Snakemake
-   write-protects these files.
+   An interrupted download of the VEP cache, CADD, LOFTEE or SpliceAI-RocksDB resumes on the next run, and
+   Snakemake write-protects these files.
    If a later version of AbExp changes a download rule, Snakemake stops with `ProtectedOutputException`.
    Run `snakemake --cleanup-metadata <files>` to keep the downloaded files.
+   Earlier versions downloaded SpliceAI-RocksDB in a conda environment. Its download rule has changed, and the
+   databases are not write-protected, so Snakemake would delete them and download them again. To keep them, run
+   `snakemake --cleanup-metadata <resources_dir>/spliceai_rocksdb/spliceAI_hg38_chr*.db` once (for hg19:
+   `spliceAI_hg19_chr*.db`; or the paths of `absplice.spliceai_rocksdb_path`). The `*.db_backup.tar.gz` files
+   and `*.db_backup` folders next to the databases are not needed; deleting them frees about 300GB per genome
+   assembly.
 4) (optional) Create the conda environments before the first run: `snakemake --conda-create-envs-only`.
 
 ## Usage

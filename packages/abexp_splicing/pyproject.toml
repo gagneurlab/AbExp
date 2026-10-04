@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=77", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "abexp-splicing"
+version = "0.0.1"
+description = "MMSplice, AbSplice-DNA and SpliceAI-RocksDB for the AbExp pipeline, on kipoiseq2"
+# the authors of the ported code of mmsplice, absplice, splicemap and spliceai_rocksdb
+authors = [
+    { name = "Jun Cheng" },
+    { name = "Muhammed Hasan Çelik" },
+    { name = "Nils Wagner" },
+]
+maintainers = [
+    { name = "Florian Hölzlwimmer", email = "git.ich@frhoelzlwimmer.de" },
+]
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+license-files = ["LICENSE"]
+keywords = ["splicing", "variant effect prediction", "mmsplice", "absplice", "spliceai",
+    "computational biology", "bioinformatics", "genomics"]
+dependencies = [
+    "numpy>=1.26.4",
+    "pandas>=2.2.1",
+    # kipoiseq2 0.1 needs polars 1.37.1
+    "polars>=1.37.1",
+    "kipoiseq2[ranges]>=0.1,<0.2",
+    "tensorflow>=2.14.0",
+    "tqdm",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+]
+
+[project.urls]
+Homepage = "https://github.com/gagneurlab/AbExp"
+Source = "https://github.com/gagneurlab/AbExp/tree/main/packages/abexp_splicing"
+Issues = "https://github.com/gagneurlab/AbExp/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["abexp*"]
+
+[tool.setuptools.package-data]
+"abexp.mmsplice" = ["models/*.h5"]

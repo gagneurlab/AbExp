@@ -86,7 +86,8 @@ class SpliceAI:
     """SpliceAI scores of variants: looked up in SpliceAI-RocksDB, or predicted with SpliceAI.
 
     Args:
-      fasta: FASTA file of the genome. Without it, only the database is used.
+      fasta: FASTA file of the genome. With it, SpliceAI predicts the variants that are not in the database.
+        This needs the package spliceai, see the README. Without a FASTA file, only the database is used.
       annotation: 'grch37' or 'grch38'
       db_path: dict of the SpliceAI-RocksDB paths per chromosome name without 'chr', e.g. {'22': path}
       dist: area of interest based on distance to variant

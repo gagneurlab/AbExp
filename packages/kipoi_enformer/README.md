@@ -43,6 +43,16 @@ as a GENCODE annotation, or a polars or pandas DataFrame with pyranges-style col
 `gtf`. `gtf` still works as a deprecated alias and emits a `DeprecationWarning`, but a path must now point to a GFF3
 file.
 
+## Tissue mapper
+
+`EnformerTissueMapper` maps the Enformer CAGE tracks to an expression score per GTEx tissue, with one linear model per
+tissue. `train` fits a scikit-learn pipeline of a `StandardScaler` and a linear model for each tissue. The model must
+be linear, e.g. from `sklearn.linear_model`; other models raise a `TypeError`. `train` writes the parameters of the
+pipelines to a parquet file with one row per tissue: `tissue`, the `mean` and `scale` of the `StandardScaler`, and
+the `coef` and `intercept` of the linear model. The features are the tracks in the order of the tracks yaml file.
+`predict` computes the scores from this file with numpy and gives the same scores as the pipelines with scikit-learn
+1.5 to 1.7.
+
 ## Usage
 
 The example reads the chr22 sequence and genome annotation in `example/` of the AbExp repository and the test
@@ -87,7 +97,7 @@ enformer_aggregator.aggregate(output_dir / 'raw/ref.parquet/chrom=chr22/data.par
                               output_dir / 'aggregated/ref.parquet/chrom=chr22/data.parquet')
 # train tissue mapper using reference genome
 enformer_tissue_mapper.train([output_dir / 'aggregated/ref.parquet/chrom=chr22/data.parquet'],
-                             output_path=output_dir / 'tissue_mapper.pkl',
+                             output_path=output_dir / 'tissue_mapper.parquet',
                              expression_path=data_dir / 'transcripts_tpms.zarr',
                              model=linear_model.ElasticNetCV(cv=2))
 # map reference to tissues

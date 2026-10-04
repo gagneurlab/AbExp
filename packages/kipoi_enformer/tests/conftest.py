@@ -50,7 +50,7 @@ def output_dir(tmp_path_factory):
 
 @pytest.fixture
 def gtex_tissue_mapper_path():
-    return require(DATA_DIR / 'gtex_enformer_lm_models_pseudocount1.pkl')
+    return require(DATA_DIR / 'gtex_enformer_lm_models_pseudocount1.parquet')
 
 
 @pytest.fixture

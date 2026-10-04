@@ -16,21 +16,20 @@ class SpliceOutlier:
         self.clip_threshold = clip_threshold
 
     def _add_metadata_event(self, df, metadata, event_type):
-        df = df[df['event_type'] == event_type].set_index('junction')
+        """The rows of `df` with `event_type`, each repeated for the rows of its junction in `metadata`.
 
-        return df.join(pd.DataFrame(
-            [
-                row
-                for junc in df.index
-                for row in metadata[junc]
-            ],
-            columns=['junction', 'gene_id', 'tissue', 'ref_psi', 'median_n', 'gene_name', 'splice_site']
-        ).set_index('junction')).reset_index().drop_duplicates()
+        The rows keep their order, and the metadata rows of a junction the order of the SpliceMaps. Duplicate rows
+        are dropped, as absplice did.
+        """
+        df = df[df['event_type'] == event_type]
+        rows, junction_metadata = metadata.lookup(df['junction'].tolist())
+        df = df.iloc[rows].reset_index(drop=True)
+        return pd.concat([df, junction_metadata.to_pandas()], axis=1).drop_duplicates()
 
     def _add_metadata(self, df, dl):
         dfs = [
-            self._add_metadata_event(df, dl.metadata_splicemap5, 'psi5'),
-            self._add_metadata_event(df, dl.metadata_splicemap3, 'psi3')
+            self._add_metadata_event(df, metadata, event_type)
+            for event_type, metadata in dl.junction_metadata.items()
         ]
         # A batch may hold only psi5 or only psi3 junctions. pandas 3 would give the columns of the empty
         # frame's object dtype to the result, and pandas 2 ignored empty frames.

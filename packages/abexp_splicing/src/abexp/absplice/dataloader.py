@@ -1,78 +1,85 @@
 # Ported from absplice (https://github.com/gagneurlab/absplice, commit daad7b6), absplice/dataloader.py.
-# abexp.mmsplice.batch_iter replaces kipoi's SampleIterator.
+# abexp.mmsplice.batch_iter replaces kipoi's SampleIterator. polars reads the SpliceMaps, and SpliceOutlier looks up
+# the junction metadata per batch.
 # MIT License, Copyright (c) 2023 Muhammed Hasan Çelik and Nils Wagner; see LICENSE.
+import collections
 import itertools
 import os
-from collections import defaultdict
-from typing import List
+from concurrent.futures import ThreadPoolExecutor
 
-import pandas as pd
-from tqdm import tqdm
+import polars as pl
 
-from abexp.absplice.splicemap import SpliceMap
+from abexp.absplice.splicemap import JunctionMetadata, SpliceMap
 from abexp.mmsplice import JunctionPSI5VCFDataloader, JunctionPSI3VCFDataloader, batch_iter, encodeDNA
+
+# the number of SpliceMap files that are read at the same time
+READ_THREADS = 3
+
+
+def _map_bounded(f, items, workers=READ_THREADS):
+    """Like `map(f, items)`, in threads, with at most `workers` results ahead of the consumer."""
+    with ThreadPoolExecutor(workers) as executor:
+        futures = collections.deque()
+        for item in items:
+            futures.append(executor.submit(f, item))
+            if len(futures) > workers:
+                yield futures.popleft().result()
+        while futures:
+            yield futures.popleft().result()
 
 
 class SpliceMapMixin:
+    """Reads the SpliceMaps of all tissues.
 
-    def __init__(self, splicemap5=None, splicemap3=None, progress=True):
-        self.progress = progress
+    Attributes:
+      combined_splicemap5, combined_splicemap3: pandas DataFrame of the unique junctions of the psi5 or psi3
+        SpliceMaps, indexed by junction, for the junction dataloaders. None if there are no such SpliceMaps.
+      junction_metadata: dict of `JunctionMetadata` by event type, psi5 and psi3, for the given SpliceMaps.
+    """
 
+    def __init__(self, splicemap5=None, splicemap3=None):
         if splicemap5 is None and splicemap3 is None:
             raise ValueError(
                 '`ref_tables5` and `ref_tables3` cannot be both empty')
 
+        self.combined_splicemap5 = self.combined_splicemap3 = None
+        self.junction_metadata = {}
         if splicemap5 is not None:
-            self.splicemaps5 = self._read_splicemap(splicemap5)
-            self.combined_splicemap5 = self._combine_junctions(
-                self.splicemaps5)
-            self.metadata_splicemap5 = self._splicemap_metadata(self.splicemaps5)
-        else:
-            self.combined_splicemap5 = None
-
+            self.combined_splicemap5, self.junction_metadata['psi5'] = self._read_splicemaps(splicemap5)
         if splicemap3 is not None:
-            self.splicemaps3 = self._read_splicemap(splicemap3)
-            self.combined_splicemap3 = self._combine_junctions(
-                self.splicemaps3)
-            self.metadata_splicemap3 = self._splicemap_metadata(self.splicemaps3)
-        else:
-            self.combined_splicemap3 = None
-
-    def _splicemap_metadata(self, splicemaps):
-        metadata = defaultdict(list)
-
-        cols = ['junction', 'gene_id', 'tissue', 'ref_psi', 'median_n', 'gene_name', 'splice_site']
-
-        for splicemap in splicemaps:
-            df = splicemap.df.copy()
-            df = df.rename(columns={'junctions': 'junction'})
-            df['tissue'] = splicemap.name
-            itertuples = df[cols].itertuples(index=False)
-
-            if self.progress:
-                itertuples = tqdm(itertuples)
-
-            for row in itertuples:
-                metadata[row.junction].append(tuple(row))
-
-        return dict(metadata)
+            self.combined_splicemap3, self.junction_metadata['psi3'] = self._read_splicemaps(splicemap3)
 
     @staticmethod
-    def _combine_junctions(splicemaps: List[SpliceMap]):
-        columns = ['junctions', 'Chromosome', 'Start', 'End', 'Strand']
-        df = pd.concat(
-            [s.df[columns] for s in splicemaps]
-        ).drop_duplicates(subset='junctions').set_index('junctions')
-        return df
+    def _read_splicemaps(splicemaps):
+        """The unique junctions and the `JunctionMetadata` of the SpliceMaps of one event type.
+
+        The files are read in threads. Each SpliceMap is reduced to its new junctions and its metadata columns
+        when it arrives, so the full SpliceMaps of all tissues are never in memory at the same time.
+        """
+        coordinates, parts, tissues = None, [], []
+        for splicemap in _map_bounded(SpliceMapMixin._load_splicemap, SpliceMapMixin._splicemap_list(splicemaps)):
+            new = splicemap.df.select(
+                pl.col('junctions').cast(pl.Categorical), 'Chromosome', 'Start', 'End', 'Strand')
+            if coordinates is not None:
+                new = new.join(coordinates.select('junctions'), on='junctions', how='anti', maintain_order='left')
+            new = new.unique(subset='junctions', keep='first', maintain_order=True)
+            coordinates = new if coordinates is None else pl.concat([coordinates, new])
+            parts.append(JunctionMetadata.columns(splicemap, len(tissues)))
+            tissues.append(splicemap.name)
+        combined = coordinates.with_columns(pl.col('junctions', 'Chromosome', 'Strand').cast(pl.String)) \
+            .to_pandas().set_index('junctions')
+        return combined, JunctionMetadata(pl.concat(parts, rechunk=False), tissues)
 
     @staticmethod
-    def _read_splicemap(path):
-        if isinstance(path, (str, os.PathLike)):
-            return [SpliceMap.read_csv(path)]
-        elif isinstance(path, SpliceMap):
+    def _load_splicemap(splicemap):
+        return SpliceMap.read_csv(splicemap) if isinstance(splicemap, (str, os.PathLike)) else splicemap
+
+    @staticmethod
+    def _splicemap_list(path):
+        if isinstance(path, (str, os.PathLike, SpliceMap)):
             return [path]
         elif isinstance(path, list):
-            return [SpliceMapMixin._read_splicemap(i)[0] for i in path]
+            return [i for p in path for i in SpliceMapMixin._splicemap_list(p)]
         else:
             raise ValueError(
                 '`splicemap5` or `splicemap3` arguments should'
@@ -106,23 +113,23 @@ class SpliceOutlierDataloader(SpliceMapMixin):
                 self.combined_splicemap5, fasta_file, vcf_file, encode=False)
             self._generator = itertools.chain(
                 self._generator,
-                self._iter_dl(self.dl5, self.combined_splicemap5, event_type='psi5'))
+                self._iter_dl(self.dl5, event_type='psi5'))
 
         if self.combined_splicemap3 is not None:
             self.dl3 = JunctionPSI3VCFDataloader(
                 self.combined_splicemap3, fasta_file, vcf_file, encode=False)
             self._generator = itertools.chain(
                 self._generator,
-                self._iter_dl(self.dl3, self.combined_splicemap3, event_type='psi3'))
+                self._iter_dl(self.dl3, event_type='psi3'))
 
-    def _iter_dl(self, dl, intron_annotations, event_type):
+    @staticmethod
+    def _iter_dl(dl, event_type):
+        # SpliceOutlier joins the junction metadata per batch
         for row in dl:
-            junction_id = row['metadata']['exon']['junction']
-            ref_row = intron_annotations.loc[junction_id]
-            row['metadata']['junction'] = dict()
-            row['metadata']['junction']['junction'] = ref_row.name
-            row['metadata']['junction']['event_type'] = event_type
-            row['metadata']['junction'].update(ref_row.to_dict())
+            row['metadata']['junction'] = {
+                'junction': row['metadata']['exon']['junction'],
+                'event_type': event_type,
+            }
             yield row
 
     def __next__(self):

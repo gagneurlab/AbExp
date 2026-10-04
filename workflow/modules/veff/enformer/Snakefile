@@ -46,7 +46,7 @@ ENFORMER_REF = config.get("enformer_ref", {}).get(
     HUMAN_GENOME_VERSION,
     f"{RESOURCES_DIR}/enformer_{HUMAN_GENOME_VERSION}/chrom={{chromosome}}/data.parquet",
 )
-ENFORMER_TISSUE_MAPPER_PKL = config.get("tissue_mapper_pkl") or workflow.source_path("resources/tissue_mapper.pkl")
+ENFORMER_TISSUE_MAPPER = config.get("tissue_mapper") or workflow.source_path("resources/tissue_mapper.parquet")
 ENFORMER_TRACKS_YML = config.get("tracks_yml") or workflow.source_path("resources/tracks.yaml")
 
 # settings for the scripts, passed as `params`

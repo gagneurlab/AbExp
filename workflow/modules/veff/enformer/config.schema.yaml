@@ -46,9 +46,9 @@ properties:
     default:
       hg19: "https://zenodo.org/records/14900896/files/enformer_hg19.tar?download=1"
       hg38: "https://zenodo.org/records/14900896/files/enformer_hg38.tar?download=1"
-  tissue_mapper_pkl:
+  tissue_mapper:
     type: string
-    description: Default is resources/tissue_mapper.pkl of this module.
+    description: Default is resources/tissue_mapper.parquet of this module.
   tracks_yml:
     type: string
     description: Default is resources/tracks.yaml of this module.

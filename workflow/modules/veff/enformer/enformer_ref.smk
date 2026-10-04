@@ -45,7 +45,7 @@ if not config['download_reference']:
         input:
             rules.enformer__aggregate_ref.output[0],
             tracks_yml=ENFORMER_TRACKS_YML,
-            tissue_mapper_pkl=ENFORMER_TISSUE_MAPPER_PKL,
+            tissue_mapper=ENFORMER_TISSUE_MAPPER,
         params:
             output_version=OUTPUT_VERSION["tissue"],
             enformer=ENFORMER,

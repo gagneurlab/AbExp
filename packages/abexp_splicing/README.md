@@ -94,6 +94,9 @@ repository. Pytest skips the tests that need the sequence, if it is missing, e.g
 pytest packages/abexp_splicing/tests
 ```
 
+The tests run across all cores by default, through pytest-xdist. Pass `-n0` to run them in one process, which a
+debugger needs and which restores per-test output order.
+
 The expected outputs in `tests/data/expected/` come from the upstream packages, see `tests/make_expected.py`.
 The SpliceAI-RocksDB test also needs the extra `rocksdb` and the hg38 chr22 database (2.6 GB). Set
 `ABEXP_SPLICEAI_ROCKSDB_HG38_CHR22` to the path of `spliceAI_hg38_chr22.db`, otherwise pytest skips it.

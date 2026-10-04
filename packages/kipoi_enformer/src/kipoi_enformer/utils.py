@@ -105,7 +105,10 @@ class RandomModel(tf.keras.Model):
 
     def predict_on_batch(self, input_tensor):
         # tf.random.set_seed(42)
+        # Uniform integers from 0 to 2 * lamda have about the mean lamda, like poisson values, and are much faster to
+        # draw. They also have few distinct values, which compress well in parquet.
+        # Enformer reads only the human tracks.
+        tracks = tf.random.uniform((input_tensor.shape[0], 896, 5313,), maxval=int(2 * self.lamda) + 1, dtype=tf.int32)
         return {
-            'human': tf.abs(tf.random.poisson((input_tensor.shape[0], 896, 5313,), lam=self.lamda)),
-            'mouse': tf.abs(tf.random.poisson((input_tensor.shape[0], 896, 1643), lam=self.lamda)),
+            'human': tf.cast(tracks, tf.float32),
         }

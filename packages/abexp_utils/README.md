@@ -26,4 +26,7 @@ pip install -e "packages/abexp_utils[dev,all]"
 pytest packages/abexp_utils/tests
 ```
 
+The tests run across all cores by default, through pytest-xdist. Pass `-n0` to run them in one process, which a
+debugger needs and which restores per-test output order.
+
 The Spark tests need a Java runtime. pyspark 4 requires Java 17 or newer.

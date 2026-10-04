@@ -19,6 +19,15 @@ pip install -e "packages/kipoi_enformer[dev]"
 
 For GPU support on Linux, also install `tensorflow[and-cuda]`.
 
+## Enformer model
+
+`Enformer()` loads the Enformer model from Kaggle Models with kagglehub, under the handle
+`deepmind/enformer/tensorFlow2/enformer/1`. These are the same files that TF Hub served at
+`https://tfhub.dev/deepmind/enformer/1`. On first use, kagglehub downloads the model, about 1 GB, and caches it in
+`~/.cache/kagglehub`. Set `KAGGLEHUB_CACHE` to use another directory. Once the model is cached, kagglehub loads it
+without contacting Kaggle. Version 0.0.1 downloaded the model with tensorflow-hub instead and cached it in
+`TFHUB_CACHE_DIR`.
+
 ## Tests
 
 Most tests read example files: the files in `tests/data/` of this package and the chr22 sequence in

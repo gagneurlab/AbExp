@@ -1,6 +1,6 @@
 import pathlib
 import numpy as np
-import tensorflow_hub as hub
+import kagglehub
 import tensorflow as tf
 from kipoi_enformer.dataloader import TSSDataloader
 from kipoi_enformer.utils import RandomModel, genome_annotation_to_polars, renamed_parameter
@@ -17,8 +17,8 @@ import sklearn as sk
 
 __all__ = ['Enformer', 'EnformerAggregator', 'EnformerTissueMapper', 'EnformerVeff']
 
-# Enformer model URI
-MODEL_PATH = 'https://tfhub.dev/deepmind/enformer/1'
+# kagglehub handle of the Enformer model on Kaggle Models, formerly https://tfhub.dev/deepmind/enformer/1
+MODEL_HANDLE = 'deepmind/enformer/tensorFlow2/enformer/1'
 
 
 class Enformer:
@@ -39,8 +39,8 @@ class Enformer:
         :param is_random: If True, load a random model for testing purposes.
         """
         if not is_random:
-            logger.debug(f'Loading model from {MODEL_PATH}')
-            self._model = hub.load(MODEL_PATH).model
+            logger.debug(f'Loading model {MODEL_HANDLE} from Kaggle Models')
+            self._model = tf.saved_model.load(kagglehub.model_download(MODEL_HANDLE)).model
         else:
             self._model = RandomModel(**random_kwargs)
 

@@ -21,9 +21,8 @@ dependencies = [
     "pandas>=2.2.1",
     "pyarrow",
     "kipoiseq2[ranges]>=0.1,<0.2",
-    "tensorflow-hub>=0.16.1",
-    # tensorflow-hub imports pkg_resources, which setuptools 82 removed
-    "setuptools<82",
+    # downloads the Enformer model
+    "kagglehub",
     "tensorflow>=2.14.0",
     # kipoiseq2 0.1 needs polars 1.37.1
     "polars>=1.37.1",

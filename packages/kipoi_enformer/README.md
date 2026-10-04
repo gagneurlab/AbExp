@@ -33,6 +33,10 @@ pytest packages/kipoi_enformer/tests
 
 Pytest skips a test if one of its files is missing or not fetched, e.g. in an sdist.
 
+The tests run across all cores by default, through pytest-xdist. Pass `-n0` to run them in one process, which a
+debugger needs and which restores per-test output order.
+The tests that run Enformer share their outputs, so one worker runs them, one after the other.
+
 The tests with 896 output bins and a size of 10 need about 10 GB of memory. `-k "not 10-5-896"` deselects them.
 
 ## Genome annotation

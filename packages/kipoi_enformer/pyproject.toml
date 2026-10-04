@@ -46,3 +46,11 @@ dev = [
     "pytest-xdist",
     "cython"
 ]
+
+[tool.pytest.ini_options]
+addopts = [
+    # Pass -n0 to turn this off, which a debugger needs and which restores per-test output order.
+    "-n", "auto",
+    # one worker runs the tests of the xdist_group "enformer", see tests/test_enformer.py
+    "--dist", "loadgroup",
+]

@@ -1,4 +1,4 @@
-from absplice import SpliceOutlier, SpliceOutlierDataloader
+from abexp.absplice import SpliceOutlier, SpliceOutlierDataloader
 
 dl = SpliceOutlierDataloader(
     snakemake.input['fasta'], snakemake.input['vcf'],

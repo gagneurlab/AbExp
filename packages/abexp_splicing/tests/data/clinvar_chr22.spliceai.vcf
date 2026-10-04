@@ -1,0 +1,24 @@
+##fileformat=VCFv4.2
+##FILTER=<ID=PASS,Description="All filters passed">
+##contig=<ID=chr22,length=50818468>
+##INFO=<ID=SpliceAI,Number=.,Type=String,Description="SpliceAIv1.3.1 variant annotation. These include delta scores (DS) and delta positions (DP) for acceptor gain (AG), acceptor loss (AL), donor gain (DG), and donor loss (DL). Format: ALLELE|SYMBOL|DS_AG|DS_AL|DS_DG|DS_DL|DP_AG|DP_AL|DP_DG|DP_DL">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+chr22	17108966	.	G	C	.	.	SpliceAI=C|IL17RA|0.00|0.00|0.00|0.00|34|-28|-13|12
+chr22	17182776	.	ATGGTCTTCCATGGGGGATGGATGGGTC	A	.	.	SpliceAI=A|CECR1|0.21|0.06|0.00|0.00|-15|4|-40|-23
+chr22	18918093	.	G	C	.	.	SpliceAI=C|PRODH|0.00|0.00|0.00|0.00|37|-19|-36|-19
+chr22	19973199	.	G	A	.	.	SpliceAI=A|ARVCF|0.03|0.00|0.00|0.03|-12|-2|0|-39
+chr22	20990466	.	T	TG	.	.	SpliceAI=TG|LZTR1|0.00|0.00|0.00|0.00|40|-14|-13|-30
+chr22	20994889	.	TG	T	.	.	SpliceAI=T|LZTR1|0.01|0.05|0.00|0.00|8|26|25|1
+chr22	23096349	.	C	T	.	.	SpliceAI=T|RSPH14|0.00|0.04|0.00|0.00|-13|50|40|50,T|GNAZ|0.00|0.00|0.00|0.00|28|-38|-37|19
+chr22	23253947	.	G	A	.	.	SpliceAI=A|BCR|0.00|0.00|0.00|0.00|33|-27|3|48
+chr22	28703486	.	T	TA	.	.	SpliceAI=TA|CHEK2|0.00|0.00|0.01|0.00|40|-35|19|15
+chr22	28710005	.	C	A,G	.	.	SpliceAI=A|CHEK2|0.00|0.01|0.00|0.98|-37|47|-46|1,G|CHEK2|0.00|0.01|0.00|0.98|-3|47|-46|1
+chr22	29231588	.	C	G	.	.	SpliceAI=G|EMID1|0.03|0.04|0.00|0.00|11|5|9|38
+chr22	31809555	.	G	A	.	.	SpliceAI=A|DEPDC5|0.00|0.01|0.00|0.00|17|-47|-3|-41
+chr22	36285795	.	G	A	.	.	SpliceAI=A|MYH9|0.00|0.01|0.00|0.00|-28|15|-22|20
+chr22	36767308	.	CA	C	.	.	SpliceAI=C|IFT27|0.00|0.00|0.21|0.10|50|1|2|-2
+chr22	41170653	.	C	CTT	.	.	SpliceAI=CTT|EP300|0.00|0.00|0.00|0.00|36|17|14|-10
+chr22	42627681	.	G	A	.	.	SpliceAI=A|CYB5R3|0.00|0.02|0.00|0.01|-39|2|49|-47
+chr22	50528550	.	A	G	.	.	SpliceAI=G|TYMP|0.01|0.00|0.00|0.00|23|-27|-38|-34
+chr22	50529483	.	C	T	.	.	SpliceAI=T|TYMP|0.00|0.00|0.20|0.25|13|44|-28|44
+chr22	50626900	.	G	GA	.	.	SpliceAI=GA|ARSA|0.03|0.00|0.00|0.00|41|25|-50|-34

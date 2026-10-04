@@ -48,7 +48,7 @@ rule veff__absplice_download_splicemaps:
 rule veff__mmsplice_splicemap:
     threads: lambda wildcards, attempt: 3 * attempt,
     resources:
-        mem_mb=lambda wildcards, attempt, threads: (8000 * threads) * attempt,
+        mem_mb=lambda wildcards, attempt: 8000 * attempt,
     input:
         vcf = VALID_VARIANTS_VCF_FILE_PATTERN,
         vcf_tbi = VALID_VARIANTS_VCF_FILE_PATTERN + ".tbi",
@@ -61,7 +61,7 @@ rule veff__mmsplice_splicemap:
     params:
         output_version=OUTPUT_VERSION["mmsplice_splicemap"],
     conda:
-        CONDA_ENV_YAML_DIR.join("abexp-absplice.yaml")
+        TENSORFLOW_CONDA_ENV_YAML
     script:
         "absplice_mmsplice_splicemap.py"
 
@@ -121,7 +121,7 @@ else:
         params:
             output_version=OUTPUT_VERSION["spliceai_vcf_to_csv"],
         conda:
-            CONDA_ENV_YAML_DIR.join("abexp-absplice.yaml")
+            TENSORFLOW_CONDA_ENV_YAML
         script: "spliceai_vcf_to_csv.py"
 
 
@@ -140,7 +140,7 @@ rule absplice_dna:
         output_version=OUTPUT_VERSION["absplice_dna"],
         variants_per_batch=5000,
     conda:
-        CONDA_ENV_YAML_DIR.join("abexp-absplice.yaml")
+        TENSORFLOW_CONDA_ENV_YAML
     script:
         "absplice_dna.py.py"
 

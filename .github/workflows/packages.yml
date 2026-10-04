@@ -8,6 +8,8 @@ on:
       # the kipoi-enformer tests read these example files
       - "example/chr22_hg19.fa*"
       - "example/chr22.gencode.v40lift37.annotation.gff3.gz"
+      # the abexp-splicing tests read this example file
+      - "example/chr22_hg38.fa*"
       - ".github/workflows/packages.yml"
   push:
     branches: [main]
@@ -16,6 +18,8 @@ on:
       # the kipoi-enformer tests read these example files
       - "example/chr22_hg19.fa*"
       - "example/chr22.gencode.v40lift37.annotation.gff3.gz"
+      # the abexp-splicing tests read this example file
+      - "example/chr22_hg38.fa*"
       - ".github/workflows/packages.yml"
   workflow_dispatch:
 
@@ -77,13 +81,31 @@ jobs:
       - run: pytest
         working-directory: packages/kipoi_enformer
 
+  test-abexp-splicing:
+    name: abexp-splicing tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: packages/abexp_splicing/pyproject.toml
+      # without the extra rocksdb: python-rocksdb needs the RocksDB library, and the SpliceAI-RocksDB
+      # test needs the 2.6 GB database, so pytest skips that test
+      - run: pip install "./packages/abexp_splicing[dev]"
+      - run: pytest
+        working-directory: packages/abexp_splicing
+
   build:
     name: build ${{ matrix.package }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        package: [abexp_utils, kipoi_enformer]
+        package: [abexp_utils, kipoi_enformer, abexp_splicing]
     steps:
       - uses: actions/checkout@v7
         with:

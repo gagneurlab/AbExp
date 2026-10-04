@@ -1,6 +1,6 @@
+import warnings
 import polars as pl
 from kipoiseq2.extractors import VariantSeqExtractor, SingleVariantMatcher
-from kipoiseq2.extractors import MultiSampleVCF
 import pyarrow as pa
 import numpy as np
 from .dataloader import Dataloader, get_tss_from_genome_annotation, extract_sequences_around_anchor
@@ -141,7 +141,7 @@ class RefTSSDataloader(TSSDataloader):
 
 class VCFTSSDataloader(TSSDataloader):
     @renamed_parameter('gtf', 'genome_annotation')
-    def __init__(self, fasta_file, genome_annotation, vcf_file, vcf_lazy=True,
+    def __init__(self, fasta_file, genome_annotation, vcf_file, vcf_lazy=None,
                  variant_upstream_tss: int = 10, variant_downstream_tss: int = 10,
                  seq_length: int = ENFORMER_SEQUENCE_LENGTH, shifts: list[int] = (-43, 0, 43),
                  size: int = None, canonical_only: bool = False, protein_coding_only: bool = False,
@@ -152,7 +152,7 @@ class VCFTSSDataloader(TSSDataloader):
         :param genome_annotation: GFF3 file or DataFrame with the genome annotation.
             The deprecated alias `gtf` still works.
         :param vcf_file: VCF file with variants
-        :param vcf_lazy: If True, the VCF file is read lazily
+        :param vcf_lazy: Deprecated and ignored. kipoiseq2 always reads the VCF file lazily.
         :param variant_upstream_tss: The number of bases upstream the TSS to look for variants
         :param variant_downstream_tss: The number of bases downstream the TSS to look for variants
         :param seq_length: The length of the sequence to return.
@@ -162,6 +162,9 @@ class VCFTSSDataloader(TSSDataloader):
         :param protein_coding_only: If True, only protein coding transcripts are extracted from the genome annotation
         :param gene_id: If provided, only the gene with this ID is extracted from the genome annotation
         """
+        if vcf_lazy is not None:
+            warnings.warn('The parameter vcf_lazy of VCFTSSDataloader() is deprecated and ignored: '
+                          'kipoiseq2 always reads the VCF file lazily.', DeprecationWarning, stacklevel=2)
 
         super().__init__(AlleleType.ALT, fasta_file=fasta_file, genome_annotation=genome_annotation, chromosome=None,
                          seq_length=seq_length, shifts=shifts, size=size, canonical_only=canonical_only,
@@ -173,13 +176,12 @@ class VCFTSSDataloader(TSSDataloader):
 
         self._variant_seq_extractor = VariantSeqExtractor(reference_sequence=self._reference_sequence)
         self.vcf_file = vcf_file
-        self.vcf_lazy = vcf_lazy
         self.variant_upstream_tss = variant_upstream_tss
         self.variant_downstream_tss = variant_downstream_tss
         logger.debug(f"Dataloader is ready")
 
     def _sample_gen(self):
-        for interval, variant in self._get_single_variant_matcher(self.vcf_lazy):
+        for interval, variant in self._get_single_variant_matcher():
             try:
                 attrs = interval.attrs
                 tss = attrs['tss']
@@ -216,12 +218,12 @@ class VCFTSSDataloader(TSSDataloader):
     def __len__(self):
         if self._genome_annotation is None or len(self._genome_annotation) == 0:
             return 0
-        total = self._get_single_variant_matcher(vcf_lazy=False).pairs().height
+        total = self._get_single_variant_matcher().pairs().height
         if self._size:
             return min(self._size, total)
         return total
 
-    def _get_single_variant_matcher(self, vcf_lazy=True):
+    def _get_single_variant_matcher(self):
         if self._genome_annotation is None or len(self._genome_annotation) == 0:
             return iter([])
         interval_attrs = ['gene_id', 'transcript_id', 'tss', 'transcript_start', 'transcript_end']
@@ -239,11 +241,9 @@ class VCFTSSDataloader(TSSDataloader):
             pl.col('Strand').alias('strand'),
             *interval_attrs,
         )
-        variants = MultiSampleVCF(self.vcf_file, lazy=vcf_lazy)
-
         return SingleVariantMatcher(
-            variant_fetcher=variants,
-            regions=regions,
+            vcf_file=self.vcf_file,
+            intervals=regions,
             interval_attrs=interval_attrs
         )
 

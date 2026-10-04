@@ -17,16 +17,16 @@ license-files = ["LICENSE"]
 keywords = ["model zoo", "deep learning", "enformer", "aparent2",
     "computational biology", "bioinformatics", "genomics"]
 dependencies = [
-    "cyvcf2>=0.30.28",
     "numpy>=1.26.4",
     "pandas>=2.2.1",
     "pyarrow",
-    "kipoiseq2[vcf,ranges] @ git+https://github.com/kipoi/kipoiseq2.git@9f69c90a6d059fabcb6192ccb62acc6d0c79fddc",
+    "kipoiseq2[ranges]>=0.1,<0.2",
     "tensorflow-hub>=0.16.1",
     # tensorflow-hub imports pkg_resources, which setuptools 82 removed
     "setuptools<82",
     "tensorflow>=2.14.0",
-    "polars>=1.5.0",
+    # kipoiseq2 0.1 needs polars 1.37.1
+    "polars>=1.37.1",
     "polars-bio>=0.31",
     "scikit-learn>=1.4.1.post1",
     "lightgbm>=4.3.0",

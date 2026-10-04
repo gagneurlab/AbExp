@@ -84,7 +84,7 @@ update the workflow after the pin has moved.
 
 After a release, the workflow builds the sdist and wheel of the package. PyPI rejects direct URL dependencies.
 If the package has one, the build emits a warning. If the upload to PyPI is on, the build fails instead.
-kipoi-enformer has a direct URL dependency until kipoiseq2 is on PyPI.
+kipoi-enformer depends on kipoiseq2 0.1 from PyPI, so pip can install it only after that release.
 
 Notes:
 - GitHub starts no workflows for pull requests that the `GITHUB_TOKEN` opens, so the tests do not run on release PRs.
@@ -93,7 +93,7 @@ Notes:
 ## Enabling PyPI
 
 The upload to PyPI is prepared but off. To turn it on:
-1. Publish kipoiseq2 on PyPI, and change the kipoiseq2 dependency of kipoi-enformer from the git URL to a version.
+1. Check that kipoiseq2 0.1 is on PyPI.
 2. On PyPI, add a trusted publisher to each project (`abexp-utils`, `kipoi-enformer`): owner `gagneurlab`,
    repository `AbExp`, workflow `release-please.yml`, environment `pypi`. For a new project, add a pending publisher.
 3. Create the GitHub environment `pypi` in the repository settings.

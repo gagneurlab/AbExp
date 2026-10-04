@@ -37,7 +37,7 @@ The tests run across all cores by default, through pytest-xdist. Pass `-n0` to r
 debugger needs and which restores per-test output order.
 The tests that run Enformer share their outputs, so one worker runs them, one after the other.
 
-The tests with 896 output bins and a size of 10 need about 10 GB of memory. `-k "not 10-5-896"` deselects them.
+With `-n0`, the tests need about 3 GB of memory.
 
 ## Genome annotation
 

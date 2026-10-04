@@ -3,6 +3,7 @@ import pytest
 from kipoi_enformer.dataloader import TSSDataloader, RefTSSDataloader, VCFTSSDataloader
 from kipoi_enformer.enformer import Enformer, EnformerAggregator, EnformerTissueMapper, EnformerVeff
 from pathlib import Path
+import pyarrow.compute as pc
 import pyarrow.parquet as pq
 from kipoi_enformer.logger import logger
 import numpy as np
@@ -13,8 +14,8 @@ import sklearn as sk
 from sklearn import linear_model, pipeline, preprocessing, tree
 
 # The tests that run Enformer, or that read the outputs of one that did, share the outputs through the
-# session-scoped fixture output_dir, and some need about 10 GB of memory. With --dist loadgroup, pytest-xdist runs
-# this group on one worker, one test after the other.
+# session-scoped fixture output_dir. With --dist loadgroup, pytest-xdist runs this group on one worker, one test after
+# the other.
 enformer_group = pytest.mark.xdist_group('enformer')
 
 
@@ -27,8 +28,11 @@ def run_enformer(dl: TSSDataloader, output_path, size, batch_size, num_output_bi
 
     assert table.shape == (size, 1 + len(dl.pyarrow_metadata_schema.names))
 
-    x = table['tracks'].to_pylist()
-    x = np.array(x)
+    # flatten the nested lists into the float32 values, without Python lists
+    tracks = table['tracks']
+    for _ in range(3):
+        tracks = pc.list_flatten(tracks)
+    x = tracks.to_numpy().reshape(size, 3, num_output_bins, -1)
     assert x.shape == (size, 3, num_output_bins, 5313)
 
 

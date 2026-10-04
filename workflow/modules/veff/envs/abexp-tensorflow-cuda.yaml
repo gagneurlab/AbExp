@@ -8,8 +8,6 @@ channels:
 dependencies:
   - python=3.12 # the newest Python with tensorflow 2.21 builds on conda-forge
   - tensorflow-gpu=2.21 # the CUDA build of tensorflow 2.21, also on hosts without a GPU
-  - setuptools<82 # spliceai imports pkg_resources, which setuptools 82 removed
-  - numpy<2.3 # spliceai calls np.fromstring in binary mode, which fails from numpy 2.3 on
   - pandas
   - pyarrow
   - polars~=1.44
@@ -31,6 +29,6 @@ dependencies:
     # packages/kipoi_enformer of this repository at its release tag. release-please bumps the tag.
     - "kipoi-enformer @ git+https://github.com/gagneurlab/AbExp.git@kipoi-enformer-v0.0.1#subdirectory=packages/kipoi_enformer"  # x-release-please-version
     # SpliceAI of the branch mnp, which predicts multi-nucleotide variants
-    - "spliceai @ git+https://github.com/hoeze/SpliceAI.git@a1583bd46e76d94dfb6b95e631d877bd615cf5d4"
+    - "spliceai @ git+https://github.com/hoeze/SpliceAI.git@e3470ae185d1418fe40cf35e8c4e33431cbc5df2"
     # packages/abexp_splicing of this repository at its release tag. release-please bumps the tag.
     - "abexp-splicing[rocksdb] @ git+https://github.com/gagneurlab/AbExp.git@abexp-splicing-v0.0.1#subdirectory=packages/abexp_splicing"  # x-release-please-version

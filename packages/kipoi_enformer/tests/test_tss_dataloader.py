@@ -379,6 +379,19 @@ def test_genome_annotation_as_a_dataframe(chr22_example_files):
     assert veff.canonical_transcripts.to_list() == ['ENST01']
 
 
+def test_vcf_lazy_is_deprecated(chr22_example_files):
+    # kipoiseq2 0.1 has no eager VCF reading
+    with pytest.warns(DeprecationWarning, match='vcf_lazy'):
+        dl = VCFTSSDataloader(
+            fasta_file=chr22_example_files['fasta'],
+            genome_annotation=chr22_example_files['genome_annotation'],
+            vcf_file=chr22_example_files['vcf'],
+            vcf_lazy=True,
+            seq_length=21,
+            shifts=[0],
+        )
+    assert len(dl) > 0
+
 def test_variant_regions_are_extended_strand_aware(chr22_example_files):
     genome_annotation = pl.DataFrame({
         'Chromosome': ['chr22', 'chr22'],
@@ -398,7 +411,7 @@ def test_variant_regions_are_extended_strand_aware(chr22_example_files):
         seq_length=21,
         shifts=[0],
     )
-    regions = dl._get_single_variant_matcher().regions
+    regions = dl._get_single_variant_matcher().intervals
     # + strand: the TSS is 1000, upstream is towards lower positions
     # - strand: the TSS is 2499, upstream is towards higher positions
     assert regions.select('chrom', 'start', 'end', 'strand', 'tss').rows() == [

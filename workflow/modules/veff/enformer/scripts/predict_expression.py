@@ -32,8 +32,7 @@ elif params.type == 'alternative':
 
     dl_args.update({'vcf_file': vcf_file,
                     'variant_upstream_tss': config['variant_upstream_tss'],
-                    'variant_downstream_tss': config['variant_downstream_tss'],
-                    'vcf_lazy': True})
+                    'variant_downstream_tss': config['variant_downstream_tss']})
 else:
     raise ValueError(f'invalid allele type {params["type"]}')
 

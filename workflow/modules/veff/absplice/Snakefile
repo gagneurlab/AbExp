@@ -20,7 +20,7 @@ OUTPUT_VERSION = {
     # both variants of veff__spliceai, with and without SpliceAI-RocksDB
     "spliceai": 1,
     "spliceai_vcf_to_csv": 1,
-    "absplice_dna": 1,
+    "absplice_dna": 2,
     "absplice": 1,
 }
 

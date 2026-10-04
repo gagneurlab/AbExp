@@ -8,9 +8,26 @@ import pandas as pd
 from kipoiseq2.extractors import scan_vcf_variants
 
 
+# columns that break ties first in get_abs_max_rows
+TIE_BREAK_COLUMNS = ['junction', 'event_type', 'splice_site']
+
+
 def get_abs_max_rows(df, groupby, max_col, dropna=True):
-    return df.reset_index() \
-        .sort_values(by=max_col, key=abs, ascending=False) \
+    """Return the row with the largest absolute `max_col` per `groupby` group, indexed by `groupby`.
+
+    Ties go to the first row in the ascending order of junction, event_type and splice_site, then of the other
+    columns, with missing values last. So the result depends neither on the row order nor on the sort algorithm
+    of numpy. absplice daad7b6 kept any one of the tied rows.
+    """
+    df = df.reset_index()
+    tie_break = [c for c in TIE_BREAK_COLUMNS if c in df.columns]
+    # 'index' is the row number that reset_index adds to a frame with a plain index; it depends on the row order
+    tie_break += [c for c in df.columns if c not in tie_break and c not in groupby and c != 'index']
+    abs_col = '__abs_' + max_col
+    return df.assign(**{abs_col: df[max_col].abs()}) \
+        .sort_values([abs_col, *tie_break], ascending=[False] + [True] * len(tie_break),
+                     na_position='last', kind='stable') \
+        .drop(columns=abs_col) \
         .drop_duplicates(subset=groupby) \
         .set_index(groupby)
 

@@ -67,9 +67,10 @@ looks up the SpliceAI scores in SpliceAI-RocksDB and runs SpliceAI for the varia
   pyranges. So the rows of the MMSplice table come in another order.
 - MMSplice therefore predicts batches with other samples. TensorFlow rounds them differently, so `delta_logit_psi`
   can differ in the last digits.
-- A variant can have the same delta PSI at several junctions of a gene. AbSplice-DNA then picks one of them, and
-  the row order and the numpy version decide which one. So the reported junction can differ, and with its
-  `median_n` also `splice_site_is_expressed` and `AbSplice_DNA`.
+- A variant can have the same delta PSI at several junctions of a gene. absplice daad7b6 picked any one of them,
+  and the row order and the numpy version decided which one. abexp-splicing picks the first in the order of
+  junction, event_type, splice_site and the other columns. So the reported junction can differ from absplice, and
+  with its `median_n` also `splice_site_is_expressed` and `AbSplice_DNA`.
 - `read_spliceai_vcf` names the column `acceptor_loss_position`, not `acceptor_loss_positiin`.
 - `SpliceOutlier` works with pandas 3. absplice concatenated the psi5 and psi3 rows of each batch. With pandas 3,
   an empty part turned the PSI columns into objects, and the delta PSI failed. abexp-splicing skips the empty part.

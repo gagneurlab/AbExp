@@ -1,4 +1,4 @@
-from spliceai_rocksdb.spliceAI import SpliceAI
+from abexp.spliceai_rocksdb import SpliceAI
 
 db_paths = {
     k: v for (k, v) in zip(snakemake.params['spliceai_rocksdb_path_keys'], snakemake.input['spliceai_rocksdb_paths'])

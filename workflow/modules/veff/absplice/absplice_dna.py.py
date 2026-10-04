@@ -1,5 +1,5 @@
 # %%
-from absplice import SplicingOutlierResult
+from abexp.absplice import SplicingOutlierResult
 import pandas as pd
 
 # %%

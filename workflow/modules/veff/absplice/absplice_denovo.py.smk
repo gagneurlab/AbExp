@@ -48,7 +48,7 @@ rule veff__absplice_download_splicemaps:
 rule veff__mmsplice_splicemap:
     threads: lambda wildcards, attempt: 3 * attempt,
     resources:
-        mem_mb=lambda wildcards, attempt, threads: (8000 * threads) * attempt,
+        mem_mb=lambda wildcards, attempt: 8000 * attempt,
     input:
         vcf = VALID_VARIANTS_VCF_FILE_PATTERN,
         vcf_tbi = VALID_VARIANTS_VCF_FILE_PATTERN + ".tbi",

@@ -132,8 +132,16 @@ class Enformer:
                 v = v.tolist()
             metadata[k] = v
 
+        # nest the flat float32 values into lists of tracks, bins and shifts. This builds the same
+        # list<list<list<float32>>> array as pa.array(tracks.tolist()), without the Python lists.
+        tracks = np.ascontiguousarray(results['tracks'], dtype=np.float32)
+        tracks_array = pa.array(tracks.ravel())
+        for size in reversed(tracks.shape[1:]):
+            offsets = pa.array(np.arange(0, len(tracks_array) + 1, size), type=pa.int32())
+            tracks_array = pa.ListArray.from_arrays(offsets, tracks_array)
+
         formatted_results = {
-            'tracks': pa.array(results['tracks'].tolist(), type=pa.list_(pa.list_(pa.list_(pa.float32())))),
+            'tracks': tracks_array,
             **metadata
         }
 

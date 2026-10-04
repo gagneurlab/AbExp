@@ -28,6 +28,7 @@ dependencies = [
     "polars>=1.37.1",
     "kipoiseq2[ranges]>=0.1,<0.2",
     "tensorflow>=2.14.0",
+    "onnxruntime",
     "tqdm",
 ]
 
@@ -47,3 +48,4 @@ include = ["abexp*"]
 
 [tool.setuptools.package-data]
 "abexp.mmsplice" = ["models/*.h5"]
+"abexp.absplice" = ["precomputed/*"]

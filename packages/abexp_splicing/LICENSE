@@ -32,3 +32,12 @@ src/abexp/mmsplice, including the model files in src/abexp/mmsplice/models
 kipoi-utils 0.7.7, https://github.com/kipoi/kipoi-utils:
 src/abexp/mmsplice/batching.py
     Copyright (c) 2019 Kipoi team
+
+absplice, https://github.com/gagneurlab/absplice, commit daad7b6:
+src/abexp/absplice, including the AbSplice-DNA model src/abexp/absplice/precomputed/AbSplice_DNA.onnx
+and the gene table src/abexp/absplice/precomputed/GENE_MAP.tsv.gz
+    Copyright (c) 2023 Muhammed Hasan Çelik and Nils Wagner
+
+splicemap, https://github.com/gagneurlab/splicemap, commit cf922eb:
+src/abexp/absplice/splicemap.py
+    Copyright (c) 2023 Muhammed Hasan Çelik and Nils Wagner

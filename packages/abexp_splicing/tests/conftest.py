@@ -7,6 +7,7 @@ import pytest
 DATA_DIR = Path(__file__).resolve().parent / 'data'
 EXPECTED_DIR = DATA_DIR / 'expected'
 VCF = DATA_DIR / 'clinvar_chr22.vcf'
+SPLICEAI_VCF = DATA_DIR / 'clinvar_chr22.spliceai.vcf'
 SPLICEMAP5 = DATA_DIR / 'Whole_Blood_splicemap_psi5.csv.gz'
 SPLICEMAP3 = DATA_DIR / 'Whole_Blood_splicemap_psi3.csv.gz'
 # the tests also read the hg38 chr22 sequence of the example config, outside of the package

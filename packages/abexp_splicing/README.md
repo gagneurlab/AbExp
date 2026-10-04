@@ -1,12 +1,14 @@
 # abexp-splicing
 
-tl;dr: The parts of MMSplice that the AbExp pipeline runs, in one package on kipoiseq2. kipoi, kipoiseq 0.7 and
-pyranges are no longer needed. The outputs match mmsplice, except for the row order and rounding in the last
-digits, see [Differences](#differences-from-the-upstream-packages).
+tl;dr: The parts of MMSplice and AbSplice that the AbExp pipeline runs, in one package on kipoiseq2. kipoi,
+kipoiseq 0.7, cyvcf2 and pyranges are no longer needed. The outputs match the upstream packages,
+except for the row order, rounding in the last digits and the choice among tied junctions, see
+[Differences](#differences-from-the-upstream-packages).
 
 | import                    | ported from                                                                                     | what AbExp uses                                                     |
 | ------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
 | `abexp.mmsplice`          | [mmsplice](https://github.com/gagneurlab/MMSplice_MTSplice) 2.4.0 (31513da)                     | `MMSplice` and the junction VCF dataloaders                         |
+| `abexp.absplice`          | [absplice](https://github.com/gagneurlab/absplice) daad7b6, [splicemap](https://github.com/gagneurlab/splicemap) cf922eb | `SpliceOutlierDataloader`, `SpliceOutlier`, `SplicingOutlierResult`, `read_spliceai_vcf` |
 
 ## Installation
 
@@ -24,16 +26,51 @@ For development, install the package in editable mode from a checkout of AbExp:
 pip install -e "packages/abexp_splicing[dev]"
 ```
 
+## Usage
+
+The example runs AbSplice-DNA on the test data of this package. Run it in the root of a checkout of AbExp.
+
+```python
+import pandas as pd
+from abexp.absplice import SpliceOutlier, SpliceOutlierDataloader, SplicingOutlierResult
+
+data_dir = 'packages/abexp_splicing/tests/data'
+
+# MMSplice with SpliceMaps: delta PSI per variant, junction and tissue
+dl = SpliceOutlierDataloader(
+    'example/chr22_hg38.fa', f'{data_dir}/clinvar_chr22.vcf',
+    splicemap5=[f'{data_dir}/Whole_Blood_splicemap_psi5.csv.gz'],
+    splicemap3=[f'{data_dir}/Whole_Blood_splicemap_psi3.csv.gz'],
+)
+SpliceOutlier().predict_save(dl, 'mmsplice_splicemap.csv')
+
+# AbSplice-DNA per variant, gene and tissue, from MMSplice and SpliceAI
+result = SplicingOutlierResult(
+    df_mmsplice=pd.read_csv('mmsplice_splicemap.csv'),
+    df_spliceai=pd.read_csv(f'{data_dir}/expected/spliceai_vcf.csv'),
+)
+df = result.predict_absplice_dna()
+```
+
+`abexp.absplice.read_spliceai_vcf` reads a VCF file that the SpliceAI command line tool annotated.
+
 ## Differences from the upstream packages
 
 - kipoiseq2 yields the variant-junction pairs in the order of the VCF file, and kipoiseq 0.7 in the order of
-  pyranges. So the samples of the junction dataloaders come in another order.
+  pyranges. So the rows of the MMSplice table come in another order.
 - MMSplice therefore predicts batches with other samples. TensorFlow rounds them differently, so `delta_logit_psi`
   can differ in the last digits.
+- A variant can have the same delta PSI at several junctions of a gene. AbSplice-DNA then picks one of them, and
+  the row order and the numpy version decide which one. So the reported junction can differ, and with its
+  `median_n` also `splice_site_is_expressed` and `AbSplice_DNA`.
+- `read_spliceai_vcf` names the column `acceptor_loss_position`, not `acceptor_loss_positiin`.
+- `SpliceOutlier` works with pandas 3. absplice concatenated the psi5 and psi3 rows of each batch. With pandas 3,
+  an empty part turned the PSI columns into objects, and the delta PSI failed. abexp-splicing skips the empty part.
 - A VCF file without variants yields no samples. mmsplice compared the contigs of the VCF header with the FASTA
   file, and abexp-splicing compares the chromosomes of the variants.
 - Only the parts that AbExp uses are kept. Not included: MTSplice, the VEP plugin, the dataloaders of GTF exons
-  and exon tables, and the VCF writers.
+  and exon tables, the VCF writers, the variant filters of absplice, AbSplice-RNA, the CADD-Splice and
+  sample-based features, and the SpliceMap count tables. `predict_absplice_dna` reads only ONNX models.
 
 ## Tests
 

@@ -4,10 +4,15 @@ The tests compare abexp-splicing with these files. Run this script only to chang
 needs an environment with the upstream packages, e.g. the AbExp environments before abexp-splicing:
 
 - `python make_expected.py mmsplice`: mmsplice 2.4.0
+- `python make_expected.py spliceai_vcf`: the SpliceAI fork hoeze/SpliceAI a1583bd. It runs the SpliceAI command
+  line tool on clinvar_chr22.vcf and writes clinvar_chr22.spliceai.vcf.
+- `python make_expected.py absplice`: mmsplice 2.4.0, absplice daad7b6 and splicemap cf922eb, with pandas 2.
+  absplice daad7b6 fails with pandas 3. Run it after spliceai_vcf.
 
 All commands read the chr22 sequence of the AbExp example, example/chr22_hg38.fa.
 """
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -18,6 +23,7 @@ DATA = TESTS / 'data'
 EXPECTED = DATA / 'expected'
 FASTA = TESTS.parents[2] / 'example' / 'chr22_hg38.fa'
 VCF = DATA / 'clinvar_chr22.vcf'
+SPLICEAI_VCF = DATA / 'clinvar_chr22.spliceai.vcf'
 SPLICEMAP5 = DATA / 'Whole_Blood_splicemap_psi5.csv.gz'
 SPLICEMAP3 = DATA / 'Whole_Blood_splicemap_psi3.csv.gz'
 # sequences with overhang for the MMSplice modules; the first one is from the mmsplice tests
@@ -63,8 +69,39 @@ def mmsplice():
                 }) + '\n')
 
 
+def spliceai_vcf():
+    subprocess.run(['spliceai', '-I', VCF, '-O', SPLICEAI_VCF, '-R', FASTA, '-A', 'grch38'], check=True)
+
+
+def absplice():
+    import onnxruntime
+    from absplice import SpliceOutlierDataloader, SpliceOutlier, SplicingOutlierResult
+    from absplice.result import ABSPLICE_DNA, _load_features_from_model_file
+    from absplice.utils import read_spliceai_vcf
+
+    # MMSplice with SpliceMaps
+    dl = SpliceOutlierDataloader(str(FASTA), str(VCF), splicemap5=[str(SPLICEMAP5)], splicemap3=[str(SPLICEMAP3)])
+    SpliceOutlier().predict_save(dl, EXPECTED / 'mmsplice_splicemap.csv')
+
+    # SpliceAI VCF to CSV, as AbExp's spliceai_vcf_to_csv.py did
+    df = read_spliceai_vcf(str(SPLICEAI_VCF))
+    df = df.rename(columns={'acceptor_loss_positiin': 'acceptor_loss_position'})
+    df.to_csv(EXPECTED / 'spliceai_vcf.csv', index=False)
+
+    # AbSplice-DNA; abexp-splicing reads the model inputs with onnxruntime instead of onnx
+    session_inputs = [i.name for i in onnxruntime.InferenceSession(ABSPLICE_DNA).get_inputs()]
+    assert session_inputs == _load_features_from_model_file(ABSPLICE_DNA), session_inputs
+    df_mmsplice = pd.read_csv(EXPECTED / 'mmsplice_splicemap.csv')
+    # one entry per variant and gene, see test_predict_absplice_dna
+    df_spliceai = pd.read_csv(EXPECTED / 'spliceai_vcf.csv').drop_duplicates(subset=['variant', 'gene_name'])
+    result = SplicingOutlierResult(df_mmsplice=df_mmsplice, df_spliceai=df_spliceai)
+    result.predict_absplice_dna().reset_index().to_csv(EXPECTED / 'absplice_dna.csv', index=False)
+
+
 if __name__ == '__main__':
     EXPECTED.mkdir(exist_ok=True)
     {
         'mmsplice': mmsplice,
+        'spliceai_vcf': spliceai_vcf,
+        'absplice': absplice,
     }[sys.argv[1]](*sys.argv[2:])

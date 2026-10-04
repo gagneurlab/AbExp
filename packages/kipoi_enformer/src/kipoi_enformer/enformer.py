@@ -276,7 +276,7 @@ class EnformerTissueMapper:
             logger.info(f'Training the model for {subtissue}')
             X = subtissue_xrds['enformer'].values
             X = np.log10(1 + X)
-            y = subtissue_xrds['tpm'].values
+            y = subtissue_xrds['tpm'].squeeze('subtissue').values
             y = np.log10(1 + y)
             lm_pipe = pipeline.Pipeline([('scaler', preprocessing.StandardScaler()),
                                          ('model', sk.clone(model))])

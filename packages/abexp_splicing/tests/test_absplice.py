@@ -45,10 +45,23 @@ def test_splice_outlier_predict_save_without_variants(fasta_file, tmp_path):
         SpliceOutlier().predict_save(dl, tmp_path / 'mmsplice_splicemap.csv')
 
 
+MULTIALLELIC = 'chr22:28710005:'
+
+
 def test_read_spliceai_vcf():
     df = read_spliceai_vcf(str(SPLICEAI_VCF))
     expected = pd.read_csv(EXPECTED_DIR / 'spliceai_vcf.csv')
-    assert_frame_equal_sorted(df, expected, SPLICEAI_KEYS, atol=0)
+    # absplice daad7b6 gave each ALT allele of the multi-allelic record the entries of both ALT alleles
+    multiallelic = df['variant'].str.startswith(MULTIALLELIC)
+    assert_frame_equal_sorted(df[~multiallelic], expected[~expected['variant'].str.startswith(MULTIALLELIC)],
+                              SPLICEAI_KEYS, atol=0)
+
+
+def test_read_spliceai_vcf_keeps_the_entries_of_the_alt_allele():
+    # SpliceAI=A|CHEK2|0.00|0.01|0.00|0.98|-37|47|-46|1,G|CHEK2|0.00|0.01|0.00|0.98|-3|47|-46|1
+    df = read_spliceai_vcf(str(SPLICEAI_VCF)).set_index('variant')
+    df = df[df.index.str.startswith(MULTIALLELIC)]
+    assert df['acceptor_gain_position'].to_dict() == {'chr22:28710005:C>A': -37, 'chr22:28710005:C>G': -3}
 
 
 def test_predict_absplice_dna():

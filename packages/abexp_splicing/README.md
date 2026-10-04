@@ -72,6 +72,9 @@ looks up the SpliceAI scores in SpliceAI-RocksDB and runs SpliceAI for the varia
   junction, event_type, splice_site and the other columns. So the reported junction can differ from absplice, and
   with its `median_n` also `splice_site_is_expressed` and `AbSplice_DNA`.
 - `read_spliceai_vcf` names the column `acceptor_loss_position`, not `acceptor_loss_positiin`.
+- `read_spliceai_vcf` gives each ALT allele only the SpliceAI entries of that allele. absplice gave it the entries
+  of all ALT alleles of its record. The workflow splits multi-allelic records before SpliceAI, so its tables do
+  not change.
 - `SpliceOutlier` works with pandas 3. absplice concatenated the psi5 and psi3 rows of each batch. With pandas 3,
   an empty part turned the PSI columns into objects, and the delta PSI failed. abexp-splicing skips the empty part.
 - A VCF file without variants yields no samples. mmsplice compared the contigs of the VCF header with the FASTA

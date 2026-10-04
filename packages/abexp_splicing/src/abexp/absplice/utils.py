@@ -80,9 +80,9 @@ dtype_columns_spliceai = {
 def read_spliceai_vcf(path):
     """Read the SpliceAI scores of a VCF file that the SpliceAI command line tool annotated.
 
-    Returns one row per ALT allele and entry of the INFO field SpliceAI. Each ALT allele of a record gets all
-    entries of the record, also those of the other ALT alleles. Missing scores (`.`) become 0.
-    absplice 0.0.1 named the column acceptor_loss_position "acceptor_loss_positiin".
+    Returns one row per ALT allele and entry of the INFO field SpliceAI whose ALLELE is that ALT allele. Missing
+    scores (`.`) become 0. absplice daad7b6 gave each ALT allele all entries of its record, also those of the other
+    ALT alleles, and named the column acceptor_loss_position "acceptor_loss_positiin".
     """
     columns = ['gene_name', 'delta_score',
                'acceptor_gain', 'acceptor_loss',
@@ -97,7 +97,9 @@ def read_spliceai_vcf(path):
     for chrom, pos, ref, alt, row_all in variants.iter_rows():
         if row_all:
             for row in row_all:
-                results = row.split('|')[1:]
+                allele, *results = row.split('|')
+                if allele != alt:
+                    continue
                 results = [0 if e == '.' else e for e in results]
                 scores = np.array(list(map(float, results[1:])))
                 spliceai_info = [results[0], scores[:4].max(), *scores]

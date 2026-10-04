@@ -1,6 +1,6 @@
 import os
 
-import pandas as pd
+import polars as pl
 import pytest
 
 from conftest import EXPECTED_DIR, VCF, assert_frame_equal_sorted
@@ -25,8 +25,8 @@ def test_spliceai_predict_save(fasta_file, db_path, tmp_path):
     model = SpliceAI(fasta_file, annotation='grch38', db_path={'22': db_path})
     output_csv = tmp_path / 'spliceai.csv'
     model.predict_save(str(VCF), output_csv, batch_size=1000)
-    df = pd.read_csv(output_csv)
-    expected = pd.read_csv(EXPECTED_DIR / 'spliceai_rocksdb.csv')
+    df = pl.read_csv(output_csv)
+    expected = pl.read_csv(EXPECTED_DIR / 'spliceai_rocksdb.csv')
     assert_frame_equal_sorted(df, expected, ['variant', 'gene_name'])
 
 
@@ -34,10 +34,10 @@ def test_spliceai_db_only(db_path, tmp_path):
     from abexp.spliceai_rocksdb import SpliceAI
 
     model = SpliceAI(annotation='grch38', db_path={'22': db_path})
-    expected = pd.read_csv(EXPECTED_DIR / 'spliceai_rocksdb.csv')
+    expected = pl.read_csv(EXPECTED_DIR / 'spliceai_rocksdb.csv')
     # an SNV of the test VCF that is in the database
     variant = 'chr22:50528550:A>G'
-    df = model.predict_df([variant]).reset_index()
-    assert_frame_equal_sorted(df, expected[expected['variant'] == variant], ['variant', 'gene_name'])
+    df = model.predict_df([variant])
+    assert_frame_equal_sorted(df, expected.filter(pl.col('variant') == variant), ['variant', 'gene_name'])
     # an insertion that is not in the database
     assert model.predict('chr22:50626900:G>GA') == []

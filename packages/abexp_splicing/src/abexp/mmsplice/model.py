@@ -4,7 +4,7 @@
 from importlib.resources import files
 
 import numpy as np
-import pandas as pd
+import polars as pl
 from tensorflow.keras.models import load_model
 
 from abexp.mmsplice.layers import GlobalAveragePooling1D_Mask0, ConvDNA
@@ -86,10 +86,8 @@ class MMSplice(object):
             batch['inputs']['seq'])
         X_alt = self.predict_modular_scores_on_batch(
             batch['inputs']['mut_seq'])
-        ref_pred = pd.DataFrame(X_ref, columns=mmsplice_ref_modules)
-        alt_pred = pd.DataFrame(X_alt, columns=mmsplice_alt_modules)
 
-        df = pd.DataFrame({
+        df = pl.DataFrame({
             'ID': batch['metadata']['variant']['annotation'],
             'exons': batch['metadata']['exon']['annotation'],
         })
@@ -97,8 +95,8 @@ class MMSplice(object):
         for key in optional_metadata:
             for k, v in batch['metadata'].items():
                 if key in v:
-                    df[key] = v[key]
+                    df = df.with_columns(pl.Series(key, v[key]))
 
-        df['delta_logit_psi'] = predict_deltaLogitPsi(X_ref, X_alt)
-        df = pd.concat([df, ref_pred, alt_pred], axis=1)
-        return df
+        df = df.with_columns(pl.Series('delta_logit_psi', predict_deltaLogitPsi(X_ref, X_alt)))
+        return df.hstack(pl.DataFrame(X_ref, schema=mmsplice_ref_modules, orient='row')) \
+            .hstack(pl.DataFrame(X_alt, schema=mmsplice_alt_modules, orient='row'))

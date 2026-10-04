@@ -33,17 +33,15 @@ LINEAR_MODEL = _LINEAR_MODEL()
 
 
 def df_batch_writer(df_iter, output):
-    """Write the DataFrames of `df_iter` to one CSV file.
+    """Write the polars DataFrames of `df_iter` to one CSV file.
 
     Raises StopIteration if `df_iter` is empty.
     """
     df = next(df_iter)
-    with open(output, 'w') as f:
-        df.to_csv(f, index=False)
-
-    with open(output, 'a') as f:
+    with open(output, 'wb') as f:
+        df.write_csv(f)
         for df in df_iter:
-            df.to_csv(f, index=False, header=False)
+            df.write_csv(f, include_header=False)
 
 
 def clip(x, clip_threshold=0.00001):

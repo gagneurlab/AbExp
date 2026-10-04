@@ -7,24 +7,22 @@ import pathlib
 from collections import namedtuple
 
 import numpy as np
-import pandas as pd
+import polars as pl
 from kipoiseq2 import Variant
 from kipoiseq2.extractors import scan_vcf_variants
 from tqdm import tqdm
 
 
 def df_batch_writer(df_iter, output):
-    """Write the DataFrames of `df_iter` to one CSV file.
+    """Write the polars DataFrames of `df_iter` to one CSV file.
 
     Raises StopIteration if `df_iter` is empty.
     """
     df = next(df_iter)
-    with open(output, 'w') as f:
-        df.to_csv(f, index=False)
-
-    for df in df_iter:
-        with open(output, 'a') as f:
-            df.to_csv(f, index=False, header=False)
+    with open(output, 'wb') as f:
+        df.write_csv(f)
+        for df in df_iter:
+            df.write_csv(f, include_header=False)
 
 
 class VariantDB:
@@ -159,38 +157,26 @@ class SpliceAI:
                                       self.dist, self.mask)
         ]
 
-    def predict_df(self, variants):
-        rows = self._predict_df(variants)
-        columns = [
-            'variant', 'gene_name', 'delta_score',
-            'acceptor_gain', 'acceptor_loss',
-            'donor_gain', 'donor_loss',
-            'acceptor_gain_position',
-            'acceptor_loss_position',
-            'donor_gain_position',
-            'donor_loss_position'
-        ]
-        type_dict = {
-            'variant': 'string',
-            'gene_name': 'string',
-            'delta_score': 'float64',
-            'acceptor_gain': 'float64',
-            'acceptor_loss': 'float64',
-            'donor_gain': 'float64',
-            'donor_loss': 'float64',
-            'acceptor_gain_position': 'int64',
-            'acceptor_loss_position': 'int64',
-            'donor_gain_position': 'int64',
-            'donor_loss_position': 'int64',
-        }
-        return pd.DataFrame(rows, columns=columns).astype(type_dict).set_index('variant')
+    # the columns of `predict_df`
+    SCHEMA = {
+        'variant': pl.String,
+        'gene_name': pl.String,
+        'delta_score': pl.Float64,
+        'acceptor_gain': pl.Float64,
+        'acceptor_loss': pl.Float64,
+        'donor_gain': pl.Float64,
+        'donor_loss': pl.Float64,
+        'acceptor_gain_position': pl.Int64,
+        'acceptor_loss_position': pl.Int64,
+        'donor_gain_position': pl.Int64,
+        'donor_loss_position': pl.Int64,
+    }
 
-    def _predict_df(self, variants):
-        for v in variants:
-            for score in self.predict(v):
-                row = score._asdict()
-                row['variant'] = str(v)
-                yield row
+    def predict_df(self, variants):
+        """The SpliceAI scores of `variants` as a polars DataFrame with the columns of `SCHEMA`, one row per score."""
+        rows = [(str(v), *score) for v in variants for score in self.predict(v)]
+        # the positions are floats in the scores
+        return pl.DataFrame(rows, schema=list(self.SCHEMA), orient='row').cast(self.SCHEMA)
 
     def _predict_on_vcf(self, vcf_file, batch_size=100000):
         variants = scan_vcf_variants(vcf_file).select('chrom', 'pos', 'ref', 'alt')
@@ -199,7 +185,7 @@ class SpliceAI:
                 continue
             yield self.predict_df(
                 Variant(chrom, pos, ref, alt) for chrom, pos, ref, alt in batch.iter_rows()
-            ).reset_index('variant')
+            )
 
     def predict_save(self, vcf_file, output_path,
                      batch_size=100000, progress=True):

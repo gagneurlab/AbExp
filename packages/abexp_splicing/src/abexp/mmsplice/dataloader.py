@@ -5,8 +5,6 @@
 # MIT License, Copyright (c) 2018, Jun Cheng; see LICENSE.
 import logging
 
-import numpy as np
-import pandas as pd
 import polars as pl
 from kipoiseq2 import Interval
 from kipoiseq2.extractors import VariantSeqExtractor, SingleVariantMatcher, scan_vcf_variants
@@ -252,15 +250,11 @@ class ExonSplicingMixin:
 
 
 def _remove_chr(df):
-    df = df.copy()
-    df['Chromosome'] = df['Chromosome'].str.replace('chr', '')
-    return df
+    return df.with_columns(pl.col('Chromosome').str.replace_all('chr', '', literal=True))
 
 
 def _add_chr(df):
-    df = df.copy()
-    df['Chromosome'] = 'chr' + df['Chromosome'].astype(str)
-    return df
+    return df.with_columns(Chromosome=pl.lit('chr') + pl.col('Chromosome').cast(pl.String))
 
 
 class SplicingVCFMixin(ExonSplicingMixin):
@@ -268,7 +262,7 @@ class SplicingVCFMixin(ExonSplicingMixin):
     Matches the variants of a VCF file with exons.
 
     Args:
-      exons: pandas DataFrame with the exons (with overhang), with the
+      exons: polars DataFrame with the exons (with overhang), with the
         columns Chromosome, Start (0-based), End, Strand and the
         `interval_attrs` columns.
     """
@@ -284,9 +278,8 @@ class SplicingVCFMixin(ExonSplicingMixin):
         self.vcf_chroms = set(
             scan_vcf_variants(vcf_file).select('chrom').unique().collect().get_column('chrom'))
         self._check_chrom_annotation()
-        intervals = pl.from_pandas(
-            self.exons[['Chromosome', 'Start', 'End', 'Strand', *interval_attrs]].reset_index(drop=True)
-        ).rename({'Chromosome': 'chrom', 'Start': 'start', 'End': 'end', 'Strand': 'strand'})
+        intervals = self.exons.select('Chromosome', 'Start', 'End', 'Strand', *interval_attrs) \
+            .rename({'Chromosome': 'chrom', 'Start': 'start', 'End': 'end', 'Strand': 'strand'})
         self.matcher = SingleVariantMatcher(
             vcf_file=vcf_file, intervals=intervals,
             interval_attrs=list(interval_attrs)
@@ -325,7 +318,7 @@ class _JunctionVCFDataloader(SplicingVCFMixin):
       return reference sequence and alternative sequence.
 
     Args:
-      intron_annotation: path of tabular file or pandas DataFrame with the
+      intron_annotation: path of tabular file or polars DataFrame with the
         intron (junction) annotation, with the colunms
         `'Chromosome', 'Start', 'End', 'Strand'`. (0-based)
       fasta_file: file path; Genome sequence
@@ -351,57 +344,34 @@ class _JunctionVCFDataloader(SplicingVCFMixin):
 
     @staticmethod
     def _read_junction(intron_annotation, event_type, overhang=(100, 100), exon_len=100):
-        if type(intron_annotation) == str:
-            df = pd.read_csv(intron_annotation, dtype={'Chromosome': str})
+        """The exons of the junctions: the acceptor exons for psi5, the donor exons for psi3.
+
+        Each exon has `exon_len` bp and reaches `overhang` bp into the intron. Returns a polars DataFrame with the
+        columns Chromosome, Start (0-based), End, Strand and junction.
+        """
+        if isinstance(intron_annotation, str):
+            df = pl.read_csv(intron_annotation, schema_overrides={'Chromosome': pl.String})
         else:
             df = intron_annotation
-            df['Chromosome'] = df['Chromosome'].astype(str)
 
-        df = pd.concat([df, _JunctionVCFDataloader._junction_to_exon(
-            df, overhang, exon_len)], axis=1)
-
-        # split donor-acceptor from horizontal dataframe to two df
-        # and merge this two df as one vertical dataframes
-        df = df.rename(columns={"Start": "Junction_Start",
-                                "End": "Junction_End"})
-
+        # --...-- represents junction (- exon), (. intron), (/ cut)
+        minus = pl.col('Strand') == '-'
+        start, end = pl.col('Start'), pl.col('End')
         if event_type == 'psi5':
-            df_exons = df[['Chromosome', 'Acceptor_Start', 'Acceptor_End',
-                           'Strand', 'Junction_Start', 'Junction_End']] \
-                .rename(columns={'Acceptor_Start': 'Start', 'Acceptor_End': 'End'})
+            # /--a../.d-- on the minus strand, --d./..a--/ on the plus strand
+            exon_start = pl.when(minus).then(start - exon_len).otherwise(end - overhang[0])
+            exon_end = pl.when(minus).then(start + overhang[1]).otherwise(end + exon_len)
         elif event_type == 'psi3':
-            df_exons = df[['Chromosome', 'Donor_Start', 'Donor_End',
-                           'Strand', 'Junction_Start', 'Junction_End']] \
-                .rename(columns={'Donor_Start': 'Start', 'Donor_End': 'End'})
+            # --a./..d--/ on the minus strand, /--d../.a-- on the plus strand
+            exon_start = pl.when(minus).then(end - overhang[0]).otherwise(start - exon_len)
+            exon_end = pl.when(minus).then(end + exon_len).otherwise(start + overhang[1])
         else:
             raise ValueError('event_type should be "psi5" or "psi3"')
 
-        df_exons['junction'] = junction_df_junction_str(df_exons)
-
-        del df_exons['Junction_Start']
-        del df_exons['Junction_End']
-        return df_exons
-
-    @staticmethod
-    def _junction_to_exon(df, overhang=(100, 100), exon_len=100):
-        # calculates donor-acceptor exon start end based
-        # on given fixed exon lenght parameter and overhang (1-based)
-        # --...-- represents junction (- exon), (. intron), (/ cut)
-        mat = np.where(df['Strand'] == '-',
-                       # --a./..d--/
-                       (df['End'] - overhang[0],  df['End'] + exon_len,
-                        # /--a../.d--
-                        df['Start'] - exon_len, df['Start'] + overhang[1]),
-                       # /--d../.a--
-                       (df['Start'] - exon_len, df['Start'] + overhang[1],
-                        # --d./..a--/
-                        df['End'] - overhang[0], df['End'] + exon_len)
-                       )
-        return pd.DataFrame(
-            mat.T,
-            columns=['Donor_Start', 'Donor_End',
-                     'Acceptor_Start', 'Acceptor_End'],
-            index=df.index
+        chrom = pl.col('Chromosome').cast(pl.String)
+        return df.select(
+            chrom, exon_start.alias('Start'), exon_end.alias('End'), 'Strand',
+            junction=pl.format('{}:{}-{}:{}', chrom, 'Start', 'End', 'Strand'),
         )
 
     def __next__(self):
@@ -433,13 +403,6 @@ class _JunctionVCFDataloader(SplicingVCFMixin):
 
     def __iter__(self):
         return self
-
-
-def junction_df_junction_str(df):
-    return df['Chromosome'] + \
-        ':' + df['Junction_Start'].astype('str') + \
-        '-' + df['Junction_End'].astype('str') + \
-        ':' + df['Strand']
 
 
 class JunctionPSI5VCFDataloader(_JunctionVCFDataloader):

@@ -1,6 +1,5 @@
 import gzip
 
-import pandas as pd
 import polars as pl
 import polars.testing
 import pytest
@@ -28,7 +27,7 @@ def test_splice_outlier_dataloader_init(outlier_dl):
         metadata = outlier_dl.junction_metadata[event_type]
         assert metadata.tissues.to_list() == ['Whole_Blood']
         assert len(metadata.codes) == SpliceMap.read_csv(path).df.height
-        pd.testing.assert_frame_equal(combined, read_junctions(path), check_dtype=False, check_index_type=False)
+        pl.testing.assert_frame_equal(combined, read_junctions(path))
 
 
 def test_splice_outlier_batch(outlier_dl):
@@ -41,8 +40,8 @@ def test_splice_outlier_batch(outlier_dl):
 def test_splice_outlier_predict_save(outlier_dl, tmp_path):
     output_csv = tmp_path / 'mmsplice_splicemap.csv'
     SpliceOutlier().predict_save(outlier_dl, output_csv)
-    df = pd.read_csv(output_csv)
-    expected = pd.read_csv(EXPECTED_DIR / 'mmsplice_splicemap.csv')
+    df = pl.read_csv(output_csv)
+    expected = pl.read_csv(EXPECTED_DIR / 'mmsplice_splicemap.csv')
     assert_frame_equal_sorted(df, expected, MMSPLICE_KEYS)
 
 
@@ -61,13 +60,6 @@ def write_splicemap(df, name, path):
         df.write_csv(f)
 
 
-def assert_equal_sorted(df, expected, keys, atol=1e-5):
-    """`assert_frame_equal_sorted` for polars DataFrames."""
-    assert df.columns == expected.columns
-    pl.testing.assert_frame_equal(df.sort(keys), expected.sort(keys), check_dtypes=False, check_exact=False,
-                                  rel_tol=0, abs_tol=atol)
-
-
 def test_splice_outlier_predict_save_two_tissues(fasta_file, tmp_path):
     # a second tissue with every second row of the Whole_Blood SpliceMaps and half their ref_psi
     other = {}
@@ -84,7 +76,7 @@ def test_splice_outlier_predict_save_two_tissues(fasta_file, tmp_path):
 
     # the Whole_Blood rows are those of a job with only Whole_Blood
     blood = df.filter(pl.col('tissue') == 'Whole_Blood')
-    assert_equal_sorted(blood, pl.read_csv(EXPECTED_DIR / 'mmsplice_splicemap.csv'), keys)
+    assert_frame_equal_sorted(blood, pl.read_csv(EXPECTED_DIR / 'mmsplice_splicemap.csv'), keys)
 
     # the Other rows are the Whole_Blood rows of its junctions and genes, with its ref_psi
     other_psi = pl.concat([
@@ -98,7 +90,7 @@ def test_splice_outlier_predict_save_two_tissues(fasta_file, tmp_path):
                                              clip_threshold=0.01)
     expected = expected.with_columns(tissue=pl.lit('Other'), delta_psi=pl.Series(delta_psi)).select(df.columns)
     assert expected.height > 0
-    assert_equal_sorted(df.filter(pl.col('tissue') == 'Other'), expected, keys)
+    assert_frame_equal_sorted(df.filter(pl.col('tissue') == 'Other'), expected, keys)
 
     # each variant and junction has its Whole_Blood rows before its Other rows
     tissues = df.group_by('variant', 'junction', 'event_type', maintain_order=True).agg('tissue')['tissue']
@@ -136,58 +128,58 @@ MULTIALLELIC = 'chr22:28710005:'
 
 def test_read_spliceai_vcf():
     df = read_spliceai_vcf(str(SPLICEAI_VCF))
-    expected = pd.read_csv(EXPECTED_DIR / 'spliceai_vcf.csv')
+    expected = pl.read_csv(EXPECTED_DIR / 'spliceai_vcf.csv')
     # absplice daad7b6 gave each ALT allele of the multi-allelic record the entries of both ALT alleles
-    multiallelic = df['variant'].str.startswith(MULTIALLELIC)
-    assert_frame_equal_sorted(df[~multiallelic], expected[~expected['variant'].str.startswith(MULTIALLELIC)],
-                              SPLICEAI_KEYS, atol=0)
+    biallelic = ~pl.col('variant').str.starts_with(MULTIALLELIC)
+    assert_frame_equal_sorted(df.filter(biallelic), expected.filter(biallelic), SPLICEAI_KEYS, atol=0)
 
 
 def test_read_spliceai_vcf_keeps_the_entries_of_the_alt_allele():
     # SpliceAI=A|CHEK2|0.00|0.01|0.00|0.98|-37|47|-46|1,G|CHEK2|0.00|0.01|0.00|0.98|-3|47|-46|1
-    df = read_spliceai_vcf(str(SPLICEAI_VCF)).set_index('variant')
-    df = df[df.index.str.startswith(MULTIALLELIC)]
-    assert df['acceptor_gain_position'].to_dict() == {'chr22:28710005:C>A': -37, 'chr22:28710005:C>G': -3}
+    df = read_spliceai_vcf(str(SPLICEAI_VCF)).filter(pl.col('variant').str.starts_with(MULTIALLELIC))
+    assert dict(df.select('variant', 'acceptor_gain_position').iter_rows()) == \
+        {'chr22:28710005:C>A': -37, 'chr22:28710005:C>G': -3}
 
 
 def test_predict_absplice_dna():
-    df_mmsplice = pd.read_csv(EXPECTED_DIR / 'mmsplice_splicemap.csv')
+    df_mmsplice = pl.read_csv(EXPECTED_DIR / 'mmsplice_splicemap.csv')
     # spliceai_vcf.csv gives each ALT allele of a record the entries of all its ALT alleles. Their delta scores
     # tie, and absplice daad7b6 kept any one of the tied entries. So the test keeps one entry per variant and gene
     # to compare with its output.
-    df_spliceai = pd.read_csv(EXPECTED_DIR / 'spliceai_vcf.csv').drop_duplicates(subset=['variant', 'gene_name'])
+    df_spliceai = pl.read_csv(EXPECTED_DIR / 'spliceai_vcf.csv') \
+        .unique(subset=['variant', 'gene_name'], keep='first', maintain_order=True)
     result = SplicingOutlierResult(df_mmsplice=df_mmsplice, df_spliceai=df_spliceai)
-    df = result.predict_absplice_dna().reset_index()
-    expected = pd.read_csv(EXPECTED_DIR / 'absplice_dna.csv')
+    df = result.predict_absplice_dna()
+    expected = pl.read_csv(EXPECTED_DIR / 'absplice_dna.csv')
     assert_frame_equal_sorted(df, expected, ['variant', 'gene_id', 'tissue'], atol=1e-6)
 
 
 def test_get_abs_max_rows_breaks_ties():
-    df = pd.DataFrame({
+    df = pl.DataFrame({
         'variant': ['v1', 'v1', 'v1', 'v2', 'v2'],
         'gene_id': ['g1'] * 5,
         'junction': ['j2', 'j1', 'j3', 'j1', 'j2'],
         'delta_psi': [0.3, -0.3, 0.1, 0.2, -0.5],
         'median_n': [5.0, 20.0, 1.0, 3.0, 4.0],
     })
-    expected = df.iloc[[1, 4]].set_index(['variant', 'gene_id'])
+    expected = df[[1, 4]]
     for seed in range(5):
-        shuffled = df.sample(frac=1, random_state=seed)
-        result = get_abs_max_rows(shuffled.set_index(['variant', 'gene_id']), ['variant', 'gene_id'], 'delta_psi')
+        shuffled = df.sample(fraction=1, shuffle=True, seed=seed)
+        result = get_abs_max_rows(shuffled, ['variant', 'gene_id'], 'delta_psi')
         # the tie of v1 goes to the smaller junction
-        pd.testing.assert_frame_equal(result.sort_index(), expected)
+        pl.testing.assert_frame_equal(result.sort('variant'), expected)
 
 
 def test_predict_absplice_dna_does_not_depend_on_row_order():
     # with both SpliceAI entries of the multi-allelic record, which tie
-    df_mmsplice = pd.read_csv(EXPECTED_DIR / 'mmsplice_splicemap.csv')
-    df_spliceai = pd.read_csv(EXPECTED_DIR / 'spliceai_vcf.csv')
+    df_mmsplice = pl.read_csv(EXPECTED_DIR / 'mmsplice_splicemap.csv')
+    df_spliceai = pl.read_csv(EXPECTED_DIR / 'spliceai_vcf.csv')
     results = [
         SplicingOutlierResult(
-            df_mmsplice=df_mmsplice.sample(frac=1, random_state=seed),
-            df_spliceai=df_spliceai.sample(frac=1, random_state=seed),
+            df_mmsplice=df_mmsplice.sample(fraction=1, shuffle=True, seed=seed),
+            df_spliceai=df_spliceai.sample(fraction=1, shuffle=True, seed=seed),
         ).predict_absplice_dna()
         for seed in range(3)
     ]
     for result in results[1:]:
-        pd.testing.assert_frame_equal(result, results[0])
+        pl.testing.assert_frame_equal(result, results[0])

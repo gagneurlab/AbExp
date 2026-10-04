@@ -36,7 +36,7 @@ pip install -e "packages/abexp_splicing[rocksdb,dev]"
 The example runs AbSplice-DNA on the test data of this package. Run it in the root of a checkout of AbExp.
 
 ```python
-import pandas as pd
+import polars as pl
 from abexp.absplice import SpliceOutlier, SpliceOutlierDataloader, SplicingOutlierResult
 
 data_dir = 'packages/abexp_splicing/tests/data'
@@ -51,8 +51,8 @@ SpliceOutlier().predict_save(dl, 'mmsplice_splicemap.csv')
 
 # AbSplice-DNA per variant, gene and tissue, from MMSplice and SpliceAI
 result = SplicingOutlierResult(
-    df_mmsplice=pd.read_csv('mmsplice_splicemap.csv'),
-    df_spliceai=pd.read_csv(f'{data_dir}/expected/spliceai_vcf.csv'),
+    df_mmsplice=pl.read_csv('mmsplice_splicemap.csv'),
+    df_spliceai=pl.read_csv(f'{data_dir}/expected/spliceai_vcf.csv'),
 )
 df = result.predict_absplice_dna()
 ```
@@ -75,8 +75,10 @@ looks up the SpliceAI scores in SpliceAI-RocksDB and runs SpliceAI for the varia
 - `read_spliceai_vcf` gives each ALT allele only the SpliceAI entries of that allele. absplice gave it the entries
   of all ALT alleles of its record. The workflow splits multi-allelic records before SpliceAI, so its tables do
   not change.
-- `SpliceOutlier` works with pandas 3. absplice concatenated the psi5 and psi3 rows of each batch. With pandas 3,
-  an empty part turned the PSI columns into objects, and the delta PSI failed. abexp-splicing skips the empty part.
+- abexp-splicing uses polars and numpy instead of pandas. The tables in and out are polars DataFrames.
+  `predict_absplice_dna` returns variant, gene_id and tissue as columns, sorted by them, and not as an index.
+- The CSV files of `predict_save` format floats as polars does, e.g. `6.4e-6` instead of `6.4e-06`. The values do
+  not change.
 - A VCF file without variants yields no samples. mmsplice compared the contigs of the VCF header with the FASTA
   file, and abexp-splicing compares the chromosomes of the variants.
 - Only the parts that AbExp uses are kept. Not included: MTSplice, the VEP plugin, the dataloaders of GTF exons

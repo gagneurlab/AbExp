@@ -1,7 +1,7 @@
 import json
 
 import numpy as np
-import pandas as pd
+import polars as pl
 import pytest
 
 from abexp.mmsplice import JunctionPSI3VCFDataloader, JunctionPSI5VCFDataloader, MMSplice, batch_iter, encodeDNA, \
@@ -58,27 +58,27 @@ def test_mmsplice_modular_scores():
     for seq, overhang in MODULAR_SEQS:
         batch = {k: encodeDNA([v]) for k, v in spliter.split(seq, overhang).items()}
         scores.append(model.predict_modular_scores_on_batch(batch)[0])
-    expected = pd.read_csv(EXPECTED_DIR / 'mmsplice_modular_scores.csv')
-    np.testing.assert_allclose(np.array(scores), expected.values, rtol=0, atol=1e-5)
+    expected = pl.read_csv(EXPECTED_DIR / 'mmsplice_modular_scores.csv')
+    np.testing.assert_allclose(np.array(scores), expected.to_numpy(), rtol=0, atol=1e-5)
 
 
 
 def test_read_junction():
     # from test_JunctionVCFDataloader_read_junction of mmsplice
-    junctions = pd.DataFrame({
+    junctions = pl.DataFrame({
         'Chromosome': ['17', '17'],
         'Start': [41276032, 41276002],
         'End': [41279742, 41279042],
         'Strand': ['-', '+'],
     })
 
-    df = JunctionPSI3VCFDataloader._read_junction(junctions.copy(), 'psi3', overhang=(100, 100), exon_len=50)
-    assert df.shape[0] == 2
-    assert df[['Start', 'End']].values.tolist() == [[41279742 - 100, 41279742 + 50], [41276002 - 50, 41276002 + 100]]
-    assert df['junction'].tolist() == ['17:41276032-41279742:-', '17:41276002-41279042:+']
+    df = JunctionPSI3VCFDataloader._read_junction(junctions, 'psi3', overhang=(100, 100), exon_len=50)
+    assert df.height == 2
+    assert df.select('Start', 'End').rows() == [(41279742 - 100, 41279742 + 50), (41276002 - 50, 41276002 + 100)]
+    assert df['junction'].to_list() == ['17:41276032-41279742:-', '17:41276002-41279042:+']
 
-    df = JunctionPSI5VCFDataloader._read_junction(junctions.copy(), 'psi5', overhang=(100, 100), exon_len=50)
-    assert df[['Start', 'End']].values.tolist() == [[41276032 - 50, 41276032 + 100], [41279042 - 100, 41279042 + 50]]
+    df = JunctionPSI5VCFDataloader._read_junction(junctions, 'psi5', overhang=(100, 100), exon_len=50)
+    assert df.select('Start', 'End').rows() == [(41276032 - 50, 41276032 + 100), (41279042 - 100, 41279042 + 50)]
 
 
 @pytest.mark.parametrize('event_type, cls, splicemap', [

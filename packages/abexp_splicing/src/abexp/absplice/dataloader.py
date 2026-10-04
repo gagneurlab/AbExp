@@ -32,8 +32,9 @@ class SpliceMapMixin:
     """Reads the SpliceMaps of all tissues.
 
     Attributes:
-      combined_splicemap5, combined_splicemap3: pandas DataFrame of the unique junctions of the psi5 or psi3
-        SpliceMaps, indexed by junction, for the junction dataloaders. None if there are no such SpliceMaps.
+      combined_splicemap5, combined_splicemap3: polars DataFrame of the unique junctions of the psi5 or psi3
+        SpliceMaps, with the columns junctions, Chromosome, Start, End and Strand, for the junction dataloaders.
+        None if there are no such SpliceMaps.
       junction_metadata: dict of `JunctionMetadata` by event type, psi5 and psi3, for the given SpliceMaps.
     """
 
@@ -66,8 +67,7 @@ class SpliceMapMixin:
             coordinates = new if coordinates is None else pl.concat([coordinates, new])
             parts.append(JunctionMetadata.columns(splicemap, len(tissues)))
             tissues.append(splicemap.name)
-        combined = coordinates.with_columns(pl.col('junctions', 'Chromosome', 'Strand').cast(pl.String)) \
-            .to_pandas().set_index('junctions')
+        combined = coordinates.with_columns(pl.col('junctions', 'Chromosome', 'Strand').cast(pl.String))
         return combined, JunctionMetadata(pl.concat(parts, rechunk=False), tissues)
 
     @staticmethod

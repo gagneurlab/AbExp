@@ -2,7 +2,7 @@
 # MIT License, Copyright (c) 2023 Muhammed Hasan Çelik and Nils Wagner; see LICENSE.
 import pathlib
 
-import pandas as pd
+import polars as pl
 from tqdm import tqdm
 
 from abexp.mmsplice import MMSplice, df_batch_writer, delta_logit_PSI_to_delta_PSI
@@ -21,44 +21,36 @@ class SpliceOutlier:
         The rows keep their order, and the metadata rows of a junction the order of the SpliceMaps. Duplicate rows
         are dropped, as absplice did.
         """
-        df = df[df['event_type'] == event_type]
-        rows, junction_metadata = metadata.lookup(df['junction'].tolist())
-        df = df.iloc[rows].reset_index(drop=True)
-        return pd.concat([df, junction_metadata.to_pandas()], axis=1).drop_duplicates()
+        df = df.filter(pl.col('event_type') == event_type)
+        rows, junction_metadata = metadata.lookup(df['junction'])
+        return df[rows].hstack(junction_metadata).unique(keep='first', maintain_order=True)
 
     def _add_metadata(self, df, dl):
-        dfs = [
+        return pl.concat([
             self._add_metadata_event(df, metadata, event_type)
             for event_type, metadata in dl.junction_metadata.items()
-        ]
-        # A batch may hold only psi5 or only psi3 junctions. pandas 3 would give the columns of the empty
-        # frame's object dtype to the result, and pandas 2 ignored empty frames.
-        return pd.concat([d for d in dfs if not d.empty] or dfs)
+        ])
 
     def _add_delta_psi(self, df):
         delta_psi = delta_logit_PSI_to_delta_PSI(
-            df['delta_logit_psi'],
-            df['ref_psi'],
+            df['delta_logit_psi'].to_numpy(),
+            df['ref_psi'].to_numpy(),
             clip_threshold=self.clip_threshold or 0.01
         )
-        df.insert(8, 'delta_psi', delta_psi)
-        return df
+        # a missing ref_psi gives a missing delta_psi, not NaN
+        return df.with_columns(pl.Series('delta_psi', delta_psi, nan_to_null=True))
 
     def predict_on_batch(self, batch, dataloader):
         columns = batch['metadata']['junction'].keys()
-        df = self.mmsplice._predict_batch(batch, columns)
-        del df['exons']
-        df = df.rename(columns={'ID': 'variant'})
+        df = self.mmsplice._predict_batch(batch, columns).drop('exons').rename({'ID': 'variant'})
         df = self._add_metadata(df, dataloader)
         df = self._add_delta_psi(df)
-        cols = [
+        return df.select(
             'variant', 'tissue', 'junction', 'event_type',
             'splice_site', 'ref_psi', 'median_n',
             'gene_id', 'gene_name',
             'delta_logit_psi', 'delta_psi',
-        ]
-        df = df[cols]
-        return df
+        )
 
     def _predict_on_dataloader(self, dataloader,
                                batch_size=512, progress=True):

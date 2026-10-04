@@ -5,7 +5,7 @@
 from importlib.resources import files
 
 import numpy as np
-import pandas as pd
+import polars as pl
 
 from abexp.absplice.utils import get_abs_max_rows, normalize_gene_annotation, read_csv
 
@@ -14,43 +14,46 @@ GENE_MAP = str(_PRECOMPUTED / 'GENE_MAP.tsv.gz')
 ABSPLICE_DNA = str(_PRECOMPUTED / 'AbSplice_DNA.onnx')
 
 dtype_columns = {
-    'variant': pd.StringDtype(),
-    'gene_id': pd.StringDtype(),
-    'tissue': pd.StringDtype(),
-    'sample': pd.StringDtype(),
-    'Chromosome': pd.StringDtype(),
-    'Start': 'Int64',
-    'End': 'Int64',
-    'Strand': pd.StringDtype(),
-    'junction': pd.StringDtype(),
-    'event_type': pd.StringDtype(),
-    'splice_site': pd.StringDtype(),
-    'gene_name': pd.StringDtype(),
-    'delta_logit_psi': 'float64',
-    'delta_psi': 'float64',
-    'ref_psi': 'float64',
-    'k': 'Int64',
-    'n': 'Int64',
-    'median_n': 'float64',
-    'novel_junction': pd.BooleanDtype(),
-    'weak_site_donor': pd.BooleanDtype(),
-    'weak_site_acceptor': pd.BooleanDtype(),
-    'delta_score': 'float64',
-    'gene_name_spliceai': pd.StringDtype(),
-    'gene_tpm': 'float64',
-    'tissue_cat': pd.StringDtype(),
-    'k_cat': 'Int64',
-    'n_cat': 'Int64',
-    'median_n_cat': 'float64',
-    'psi_cat': 'float64',
-    'ref_psi_cat': 'float64',
-    'delta_logit_psi_cat': 'float64',
-    'delta_psi_cat': 'float64',
-    'PHRED': 'float64',
-    'AbSplice_DNA': 'float64',
-    'AbSplice_RNA': 'float64',
-    'pValueGene_g_minus_log10': 'float64',
+    'variant': pl.String,
+    'gene_id': pl.String,
+    'tissue': pl.String,
+    'sample': pl.String,
+    'Chromosome': pl.String,
+    'Start': pl.Int64,
+    'End': pl.Int64,
+    'Strand': pl.String,
+    'junction': pl.String,
+    'event_type': pl.String,
+    'splice_site': pl.String,
+    'gene_name': pl.String,
+    'delta_logit_psi': pl.Float64,
+    'delta_psi': pl.Float64,
+    'ref_psi': pl.Float64,
+    'k': pl.Int64,
+    'n': pl.Int64,
+    'median_n': pl.Float64,
+    'novel_junction': pl.Boolean,
+    'weak_site_donor': pl.Boolean,
+    'weak_site_acceptor': pl.Boolean,
+    'delta_score': pl.Float64,
+    'gene_name_spliceai': pl.String,
+    'gene_tpm': pl.Float64,
+    'tissue_cat': pl.String,
+    'k_cat': pl.Int64,
+    'n_cat': pl.Int64,
+    'median_n_cat': pl.Float64,
+    'psi_cat': pl.Float64,
+    'ref_psi_cat': pl.Float64,
+    'delta_logit_psi_cat': pl.Float64,
+    'delta_psi_cat': pl.Float64,
+    'PHRED': pl.Float64,
+    'AbSplice_DNA': pl.Float64,
+    'AbSplice_RNA': pl.Float64,
+    'pValueGene_g_minus_log10': pl.Float64,
 }
+
+# the columns of the rows of AbSplice-DNA
+GROUPBY = ['variant', 'gene_id', 'tissue']
 
 
 def _load_features_from_model_file(path):
@@ -65,7 +68,7 @@ def _predict_onnx(model_path, data):
 
     features = session.get_inputs()
     inputs = {
-        f.name: np.asarray(data[f.name].values) for f in features
+        f.name: data[f.name].to_numpy() for f in features
     }
 
     results = session.run(None, inputs)[0]
@@ -80,6 +83,8 @@ class SplicingOutlierResult:
       df_spliceai: SpliceAI scores per variant and gene name.
       gene_map: table with the columns gene_id and gene_name, which maps the SpliceAI gene names to gene IDs.
         Default is GENE_MAP.
+
+    Each table is a polars DataFrame or the path of a CSV, TSV or parquet file.
     """
 
     def __init__(
@@ -98,19 +103,13 @@ class SplicingOutlierResult:
         self._df_spliceai_agg = None
 
     def _validate_df(self, df, columns):
-        if not isinstance(df, pd.DataFrame):
+        if not isinstance(df, pl.DataFrame):
             df = read_csv(df)
-        df = df.reset_index()
-        if 'index' in df.columns:
-            df = df.drop(columns='index')
-        assert pd.Series(columns).isin(df.columns).all()
+        assert set(columns).issubset(df.columns)
         return df
 
     def _validate_dtype(self, df):
-        for col in df.columns:
-            if col in dtype_columns.keys():
-                df = df.astype({col: dtype_columns[col]})
-        return df
+        return df.cast({col: dtype for col, dtype in dtype_columns.items() if col in df.columns})
 
     def validate_df_mmsplice(self, df_mmsplice):
         if df_mmsplice is not None:
@@ -145,32 +144,26 @@ class SplicingOutlierResult:
         return gene_map
 
     def _add_tissue_info_to_spliceai(self):
+        """The SpliceAI scores, which do not depend on the tissue, for each tissue of `df_mmsplice`.
+
+        Without `df_mmsplice`, the tissue is 'Not provided'.
         """
-        checks if self.df_spliceai has 'tissue' column.
-        If self.df_mmsplice has 'tissue' column and self.df_spliceai does not have 'tissue' column,
-        tissue independent spliceai predictions are copied for each tissue in self.df_mmsplice
-        """
-        df_spliceai = self.df_spliceai
         if self.df_mmsplice is not None:
-            l = list()
-            for tissue in self.df_mmsplice['tissue'].unique():
-                _df = df_spliceai.copy()
-                _df['tissue'] = tissue
-                l.append(_df)
-            self._df_spliceai_tissue = pd.concat(l)
+            tissues = self.df_mmsplice.select(pl.col('tissue').unique(maintain_order=True))
         else:
-            self._df_spliceai_tissue = df_spliceai.copy()
-            self._df_spliceai_tissue['tissue'] = 'Not provided'
+            tissues = pl.DataFrame({'tissue': ['Not provided']})
+        self._df_spliceai_tissue = self.df_spliceai.drop('tissue', strict=False).join(tissues, how='cross')
         return self._df_spliceai_tissue
 
     def _get_maximum_effect(self, df, groupby, score):
-        df = df.reset_index()
-        if 'index' in df.columns:
-            df = df.drop(columns='index')
         if len(set(groupby).difference(df.columns)) != 0:
             raise KeyError(" %s are not in columns" %
                            set(groupby).difference(df.columns))
-        return get_abs_max_rows(df.set_index(groupby), groupby, score)
+        return get_abs_max_rows(df, groupby, score)
+
+    @staticmethod
+    def _empty(columns):
+        return pl.DataFrame(schema={col: dtype_columns[col] for col in columns})
 
     def _mmsplice_agg(self, groupby):
         # MMSplice (SpliceMap)
@@ -184,7 +177,7 @@ class SplicingOutlierResult:
             return self._get_maximum_effect(
                 self.df_mmsplice, groupby, score='delta_psi')
         else:
-            return pd.DataFrame(columns=[*cols_mmsplice, *groupby]).set_index(groupby)
+            return self._empty([*groupby, *cols_mmsplice])
 
     def _spliceai_agg(self, groupby):
         # SpliceAI
@@ -194,28 +187,38 @@ class SplicingOutlierResult:
             return self._get_maximum_effect(
                 df_spliceai, groupby, score='delta_score')
         else:
-            return pd.DataFrame(columns=[*cols_spliceai, *groupby]).set_index(groupby)
+            return self._empty([*groupby, *cols_spliceai])
+
+    @staticmethod
+    def _join(df, other, how):
+        # A missing gene_id, of a SpliceAI gene name without an entry in the gene map, matches a missing gene_id,
+        # as in the pandas index joins of absplice daad7b6.
+        return df.join(other, on=GROUPBY, how=how, coalesce=True, suffix='_spliceai', nulls_equal=True,
+                       maintain_order='left')
 
     @property
     def absplice_dna_input(self):
-        """The features of AbSplice-DNA per variant, gene and tissue: the strongest MMSplice and SpliceAI scores."""
-        if self._absplice_dna_input is None:
-            groupby = ['variant', 'gene_id', 'tissue']
+        """The features of AbSplice-DNA per variant, gene and tissue: the strongest MMSplice and SpliceAI scores.
 
+        The rows are sorted by variant, gene_id and tissue.
+        """
+        if self._absplice_dna_input is None:
             cols_mmsplice = [
                 'junction', 'event_type',
                 'splice_site', 'ref_psi', 'median_n',
                 'gene_name',
                 'delta_logit_psi', 'delta_psi',
             ]
-            self._df_mmsplice_agg = self._mmsplice_agg(groupby)
+            self._df_mmsplice_agg = self._mmsplice_agg(GROUPBY)
 
             cols_spliceai = ['delta_score', 'gene_name']
-            self._df_spliceai_agg = self._spliceai_agg(groupby)
+            self._df_spliceai_agg = self._spliceai_agg(GROUPBY)
 
             # Join MMSplice & SpliceAI
-            self._absplice_dna_input = self._df_mmsplice_agg[cols_mmsplice].join(
-                self._df_spliceai_agg[cols_spliceai], how='outer', rsuffix='_spliceai')
+            self._absplice_dna_input = self._join(
+                self._df_mmsplice_agg.select(*GROUPBY, *cols_mmsplice),
+                self._df_spliceai_agg.select(*GROUPBY, *cols_spliceai), how='full',
+            ).sort(GROUPBY, nulls_last=True)
 
         return self._absplice_dna_input
 
@@ -239,35 +242,31 @@ class SplicingOutlierResult:
         ]
 
         # get aggregated scores of SpliceAI and MMSplice + SpliceMap
-        groupby = ['variant', 'gene_id', 'tissue']
-
         if self._df_mmsplice_agg is None:
-            self._df_mmsplice_agg = self._mmsplice_agg(groupby)
+            self._df_mmsplice_agg = self._mmsplice_agg(GROUPBY)
 
         if self._df_spliceai_agg is None:
-            self._df_spliceai_agg = self._spliceai_agg(groupby)
+            self._df_spliceai_agg = self._spliceai_agg(GROUPBY)
 
         if 'acceptor_loss_positiin' in self._df_spliceai_agg.columns:
             self._df_spliceai_agg = self._df_spliceai_agg.rename(
-                columns={'acceptor_loss_positiin': 'acceptor_loss_position'})
+                {'acceptor_loss_positiin': 'acceptor_loss_position'})
 
-        self._absplice_dna = self._absplice_dna.join(
-            self._df_mmsplice_agg[mmsplice_splicemap_cols]).join(
-            self._df_spliceai_agg[spliceai_cols])
+        self._absplice_dna = self._join(
+            self._join(self._absplice_dna, self._df_mmsplice_agg.select(*GROUPBY, *mmsplice_splicemap_cols), 'left'),
+            self._df_spliceai_agg.select(*GROUPBY, *spliceai_cols), 'left')
 
         return self._absplice_dna
 
     def _predict_absplice(self, df, absplice_score, model_file, features, abs_features, median_n_cutoff):
-        df['splice_site_is_expressed'] = (
-                df['median_n'] > median_n_cutoff).astype(int)
-        df = df[features].fillna(0)
+        expressed = (pl.col('median_n') > median_n_cutoff).fill_null(False)
+        df = df.with_columns(splice_site_is_expressed=expressed.cast(pl.Int64))
+        df = df.select(*GROUPBY, pl.col(features).fill_null(0))
         if abs_features:
-            df = np.abs(df)
+            df = df.with_columns(pl.col(features).abs())
 
         onnx_pred = _predict_onnx(model_file, df)
-        df[absplice_score] = np.asarray(onnx_pred, dtype="float32")[:, 1]
-
-        return df
+        return df.with_columns(pl.Series(absplice_score, np.asarray(onnx_pred, dtype="float32")[:, 1]))
 
     def predict_absplice_dna(
             self,
@@ -287,7 +286,8 @@ class SplicingOutlierResult:
           extra_info: add the MMSplice and SpliceAI details, e.g. the junction and the SpliceAI positions.
 
         Returns:
-          DataFrame with the index variant, gene_id and tissue.
+          polars DataFrame with the columns variant, gene_id and tissue, the features and AbSplice_DNA, sorted by
+          variant, gene_id and tissue.
         """
         # Load model and extract features
         if features is None:

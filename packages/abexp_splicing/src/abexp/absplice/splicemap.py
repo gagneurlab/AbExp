@@ -84,7 +84,7 @@ class JunctionMetadata:
         """The metadata rows of `junctions`.
 
         Args:
-          junctions: list of junction strings.
+          junctions: polars Series or list of junction strings.
 
         Returns the index into `junctions` of each row, and a polars DataFrame with the columns `COLUMNS`. Each
         junction gets its rows in the order of the SpliceMaps and of their rows. The cost depends on the number of

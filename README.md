@@ -95,12 +95,12 @@ The publication to this method can be found in [Nature Communications](https://w
 
 ## GPU
 
-`use_gpu: True` in the config makes Enformer and SpliceAI use the CUDA variant of their TensorFlow
-environment (`workflow/modules/veff/envs/abexp-tensorflow-cuda.yaml`) instead of the CPU variant. Pangolin
-of the absplice2 module likewise uses the CUDA variant of its PyTorch environment
+`use_gpu: True` in the config makes Enformer, MMSplice, SpliceAI and AbSplice-DNA use the CUDA variant of their
+TensorFlow environment (`workflow/modules/veff/envs/abexp-tensorflow-cuda.yaml`) instead of the CPU variant.
+Pangolin of the absplice2 module likewise uses the CUDA variant of its PyTorch environment
 (`workflow/modules/veff/absplice2/envs/absplice2-pangolin-cuda.yaml`). The CUDA variants also run on hosts
-without a GPU, on the CPU. Only with `use_gpu: True`, these rules request one GPU (resource `gpu`), e.g.
-from SLURM.
+without a GPU, on the CPU. Only with `use_gpu: True`, the rules of Enformer, MMSplice, SpliceAI and Pangolin request
+one GPU (resource `gpu`), e.g. from SLURM. AbSplice-DNA requests none.
 
 Conda creates the CUDA variants only on a host with a CUDA driver. To create them on a host without one, e.g.
 a login node, set `CONDA_OVERRIDE_CUDA` to a CUDA version that the driver of the GPU nodes supports, e.g. 12.9:
@@ -297,10 +297,11 @@ because `--touch` also marks outputs as up to date that need a rerun. Alternativ
 
 ## Python packages
 
-`packages/` contains the Python packages `abexp-utils` and `kipoi-enformer`, which the workflow uses. The conda
-environments install them from this repository, pinned to their release tags. So a change of a package takes
-effect in the workflow only with its next release. [packages/README.md](packages/README.md) describes how to test,
-release and publish them.
+`packages/` contains the Python packages `abexp-utils`, `kipoi-enformer` and `abexp-splicing`, which the workflow
+uses. abexp-splicing holds the parts of MMSplice, AbSplice and SpliceAI-RocksDB that the absplice module runs,
+ported to kipoiseq2. The conda environments install the packages from this repository, pinned to their release
+tags. So a change of a package takes effect in the workflow only with its next release.
+[packages/README.md](packages/README.md) describes how to test, release and publish them.
 
 ## License
 All source code and model weights in this repository are licensed under the [MIT license](./LICENSE).

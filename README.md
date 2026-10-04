@@ -16,12 +16,13 @@ The publication to this method can be found in [Nature Communications](https://w
   - LOFTEE: 14GB (hg38), 1.3GB (hg19)
   - GTEx and SpliceMap tables: 2GB
   - SpliceAI-RocksDB: about 175GB per genome assembly, 349GB for hg19 + hg38
+  - Enformer model, for models with Enformer features: 1GB
 - RAM: 64GB
 - (optional) a GPU with CUDA for Enformer, SpliceAI and Pangolin, see [GPU](#gpu)
 
 ## Setup
 
-1) Install conda and mamba on your system, and create the environment with Snakemake 9 and aria2c:
+1) Install conda and mamba on your system, and create the environment with Snakemake 9, aria2c and kagglehub:
    ```bash
    mamba env create -f workflow/envs/abexp-veff-py.yaml
    conda activate abexp-veff-py
@@ -37,7 +38,8 @@ The publication to this method can be found in [Nature Communications](https://w
      The schema also lists the defaults. The options of each veff module, e.g. `vep` or `absplice`, are in
      `workflow/modules/veff/<module>/config.schema.yaml`.
 3) (optional) Download the resources before the first run: `snakemake setup -c 4`.
-   Otherwise, the first run downloads them.
+   Otherwise, the first run downloads them. For models with Enformer features, the resources include the
+   Enformer model in `<resources_dir>/kagglehub`, and the Enformer jobs load it from there.
    With a cluster executor, the downloads run as cluster jobs. If the compute nodes have no internet access,
    run `snakemake setup -c 4` without the executor on a host with internet access.
    If several runs share `resources_dir`, run `setup` once before them. Snakemake locks files only within one

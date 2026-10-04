@@ -19,7 +19,9 @@ properties:
       <output_dir>/enformer/<human_genome_version>.
   resources_dir:
     type: string
-    description: Base of the default reference score paths. Default is <output_dir>/resources.
+    description: >-
+      Base of the default paths of the Enformer model and the reference scores. Default is
+      <output_dir>/resources.
   human_genome_version:
     type: string
     enum: ["hg19", "hg38"]

@@ -1,3 +1,4 @@
+import os
 import pathlib
 
 from kipoi_enformer.enformer import Enformer, EnformerAggregator
@@ -46,5 +47,7 @@ dl_args = dl_args | {'fasta_file': input_['fasta_path'],
 logger.info(dl_args)
 
 dl = TSSDataloader.from_allele_type(allele, **dl_args, )
+# kagglehub finds the model of enformer__download_model in this cache and does not download it
+os.environ['KAGGLEHUB_CACHE'] = params['kagglehub_cache']
 Enformer().predict(dl, batch_size=config['batch_size'], filepath=pathlib.Path(output[0]),
                  num_output_bins=config['num_output_bins'])

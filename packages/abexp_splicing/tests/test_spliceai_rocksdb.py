@@ -12,13 +12,13 @@ SPLICEAI_ROCKSDB = os.environ.get('ABEXP_SPLICEAI_ROCKSDB_HG38_CHR22')
 @pytest.fixture
 def db_path():
     pytest.importorskip('rocksdb')
-    pytest.importorskip('spliceai')
     if not SPLICEAI_ROCKSDB or not os.path.isdir(SPLICEAI_ROCKSDB):
         pytest.skip('set ABEXP_SPLICEAI_ROCKSDB_HG38_CHR22 to the path of spliceAI_hg38_chr22.db')
     return SPLICEAI_ROCKSDB
 
 
 def test_spliceai_predict_save(fasta_file, db_path, tmp_path):
+    pytest.importorskip('spliceai')
     from abexp.spliceai_rocksdb import SpliceAI
 
     # variants that are not in the database get SpliceAI predictions

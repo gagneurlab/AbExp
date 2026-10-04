@@ -21,9 +21,13 @@ pip install "abexp-splicing[rocksdb] @ git+https://github.com/gagneurlab/AbExp.g
 ```
 <!-- x-release-please-end -->
 
-The extra `rocksdb` installs python-rocksdb and SpliceAI for `abexp.spliceai_rocksdb`. The AbExp pipeline uses
-the SpliceAI fork [hoeze/SpliceAI](https://github.com/hoeze/SpliceAI), which also predicts multi-nucleotide
-variants. pip keeps an installed SpliceAI, so install the fork first or in the same pip command.
+The extra `rocksdb` installs python-rocksdb for `abexp.spliceai_rocksdb`. SpliceAI predictions of the variants
+that are not in SpliceAI-RocksDB also need SpliceAI. Install it separately. The AbExp pipeline uses the SpliceAI
+fork [hoeze/SpliceAI](https://github.com/hoeze/SpliceAI), which also predicts multi-nucleotide variants:
+
+```bash
+pip install "spliceai @ git+https://github.com/hoeze/SpliceAI.git@e3470ae185d1418fe40cf35e8c4e33431cbc5df2"
+```
 
 For development, install the package in editable mode from a checkout of AbExp:
 
@@ -100,8 +104,9 @@ The tests run across all cores by default, through pytest-xdist. Pass `-n0` to r
 debugger needs and which restores per-test output order.
 
 The expected outputs in `tests/data/expected/` come from the upstream packages, see `tests/make_expected.py`.
-The SpliceAI-RocksDB test also needs the extra `rocksdb` and the hg38 chr22 database (2.6 GB). Set
-`ABEXP_SPLICEAI_ROCKSDB_HG38_CHR22` to the path of `spliceAI_hg38_chr22.db`, otherwise pytest skips it.
+The SpliceAI-RocksDB tests also need the extra `rocksdb` and the hg38 chr22 database (2.6 GB). Set
+`ABEXP_SPLICEAI_ROCKSDB_HG38_CHR22` to the path of `spliceAI_hg38_chr22.db`, otherwise pytest skips them.
+The test of the SpliceAI predictions also needs SpliceAI.
 
 ## License
 

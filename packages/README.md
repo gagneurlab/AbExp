@@ -26,6 +26,9 @@ Between releases, main installs the packages of the last release.
 
 ## Running the tests
 
+The tests run across all cores by default, through pytest-xdist. Pass `-n0` to run them in one process, which a
+debugger needs and which restores per-test output order.
+
 ```bash
 pip install -e "./packages/abexp_utils[all,dev]"
 cd packages/abexp_utils && pytest

@@ -45,3 +45,11 @@ all = [
     "pyspark>=3.4",
     "polars~=1.36",
 ]
+
+[tool.pytest.ini_options]
+addopts = [
+    # Pass -n0 to turn this off, which a debugger needs and which restores per-test output order.
+    "-n", "auto",
+    # one worker runs the Spark tests, see tests/test_spark.py
+    "--dist", "loadgroup",
+]

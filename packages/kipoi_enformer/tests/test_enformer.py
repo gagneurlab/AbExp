@@ -3,6 +3,7 @@ import pytest
 from kipoi_enformer.dataloader import TSSDataloader, RefTSSDataloader, VCFTSSDataloader
 from kipoi_enformer.enformer import Enformer, EnformerAggregator, EnformerTissueMapper, EnformerVeff
 from pathlib import Path
+import pyarrow.compute as pc
 import pyarrow.parquet as pq
 from kipoi_enformer.logger import logger
 import numpy as np
@@ -11,6 +12,11 @@ from kipoi_enformer.constants import AlleleType
 from shutil import rmtree
 import sklearn as sk
 from sklearn import linear_model, pipeline, preprocessing, tree
+
+# The tests that run Enformer, or that read the outputs of one that did, share the outputs through the
+# session-scoped fixture output_dir. With --dist loadgroup, pytest-xdist runs this group on one worker, one test after
+# the other.
+enformer_group = pytest.mark.xdist_group('enformer')
 
 
 def run_enformer(dl: TSSDataloader, output_path, size, batch_size, num_output_bins):
@@ -22,8 +28,11 @@ def run_enformer(dl: TSSDataloader, output_path, size, batch_size, num_output_bi
 
     assert table.shape == (size, 1 + len(dl.pyarrow_metadata_schema.names))
 
-    x = table['tracks'].to_pylist()
-    x = np.array(x)
+    # flatten the nested lists into the float32 values, without Python lists
+    tracks = table['tracks']
+    for _ in range(3):
+        tracks = pc.list_flatten(tracks)
+    x = tracks.to_numpy().reshape(size, 3, num_output_bins, -1)
     assert x.shape == (size, 3, num_output_bins, 5313)
 
 
@@ -71,6 +80,7 @@ def get_veff_path(output_dir: Path, size: int, rm=False):
     return path
 
 
+@enformer_group
 @pytest.mark.parametrize("size, batch_size, num_output_bins", [
     (3, 1, 896), (5, 3, 896), (10, 5, 896),
     (3, 1, 21), (5, 3, 21), (10, 5, 21), (100, 5, 21),
@@ -92,6 +102,7 @@ def test_enformer_ref(chr22_example_files, output_dir: Path, size, batch_size, n
     run_enformer(dl, enformer_filepath, size, batch_size=batch_size, num_output_bins=num_output_bins)
 
 
+@enformer_group
 @pytest.mark.parametrize("size, batch_size, num_output_bins", [
     (3, 1, 896), (5, 3, 896), (10, 5, 896),
     (3, 1, 21), (5, 3, 21), (10, 5, 21),
@@ -115,6 +126,7 @@ def test_enformer_alt(chr22_example_files, output_dir: Path, size, batch_size, n
     run_enformer(dl, enformer_filepath, size, batch_size=batch_size, num_output_bins=num_output_bins)
 
 
+@enformer_group
 @pytest.mark.parametrize("allele_type", [
     'REF', 'ALT'
 ])
@@ -150,6 +162,7 @@ def test_predict_tissue_mapper(allele_type: str, chr22_example_files, output_dir
         assert tbl.shape == (num_tissues * size, 13 + 2)
 
 
+@enformer_group
 @pytest.mark.parametrize("aggregation_mode, upstream_tss, downstream_tss", [
     ('logsumexp', 100, 50), ('canonical', 100, 50), ('median', 100, 50), ('weighted_sum', 100, 50),
     ('logsumexp', 200, 50), ('canonical', 200, 50), ('median', 200, 50), ('weighted_sum', 200, 50),
@@ -225,6 +238,7 @@ def test_veff_with_the_published_seq_end(tmp_path: Path, start_col, end_col, seq
     np.testing.assert_allclose(veff_df['veff_score'].to_list(), [1.0 / np.log10(2), -0.5 / np.log10(2)])
 
 
+@enformer_group
 @pytest.mark.parametrize("model", [
     linear_model.ElasticNetCV(cv=2),
     linear_model.RidgeCV()

@@ -41,6 +41,7 @@ rocksdb = [
 ]
 dev = [
     "pytest",
+    "pytest-xdist",
 ]
 
 [project.urls]
@@ -55,3 +56,9 @@ include = ["abexp*"]
 [tool.setuptools.package-data]
 "abexp.mmsplice" = ["models/*.h5"]
 "abexp.absplice" = ["precomputed/*"]
+
+[tool.pytest.ini_options]
+addopts = [
+    # Pass -n0 to turn this off, which a debugger needs and which restores per-test output order.
+    "-n", "auto",
+]

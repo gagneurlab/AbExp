@@ -268,9 +268,9 @@ The dict has one key per step. A step is one rule or several rules that must cha
 predictions of the reference and the alternative sequences. A new value reruns the rules of the step, and the
 rules downstream of them rerun because their input changed.
 - In a commit that changes outputs, bump the key of the earliest step whose outputs change, e.g. after a new tool
-  version in a conda environment or a changed script. For example, a scikit-learn update changes the results of
-  the Enformer tissue mapper: bump `"tissue"` in `workflow/modules/veff/enformer/Snakefile`. The tissue rules and
-  all rules downstream of them rerun, but not the Enformer predictions.
+  version in a conda environment or a changed script. For example, if a new kipoi-enformer release changes the
+  scores of the Enformer tissue mapper, bump `"tissue"` in `workflow/modules/veff/enformer/Snakefile`. The tissue
+  rules and all rules downstream of them rerun, but not the Enformer predictions.
 - A conda environment can serve several steps, e.g. the TensorFlow environment of Enformer and SpliceAI. After a
   change of such an environment, bump each step whose outputs change.
 - Do not bump a key for changes that keep the outputs, e.g. a comment.

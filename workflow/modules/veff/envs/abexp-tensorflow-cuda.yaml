@@ -14,11 +14,9 @@ dependencies:
   - pandas
   - pyarrow
   - polars~=1.44
-  # enformer/resources/tissue_mapper.pkl was written with 1.5.1; from 1.8 on, its predictions differ by up to 2.4e-7
-  - scikit-learn<1.8
   - xarray
   # not imported by the rules, but dependencies of kipoi-enformer and kipoiseq2: conda installs them instead of pip
-  - lightgbm
+  - scikit-learn
   - zarr
   - polars-bio
   - pyfaidx

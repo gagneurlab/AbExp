@@ -10,5 +10,5 @@ config = snakemake.params['enformer']
 
 logger = setup_logger()
 
-EnformerTissueMapper(tracks_path=input_['tracks_yml'], tissue_mapper_path=input_['tissue_mapper_pkl']). \
+EnformerTissueMapper(tracks_path=input_['tracks_yml'], tissue_mapper_path=input_['tissue_mapper']). \
     predict(input_[0], output_path=output[0])

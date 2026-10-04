@@ -10,7 +10,6 @@ import pyarrow.parquet as pq
 from tqdm.autonotebook import tqdm
 import math
 import yaml
-import pickle
 import polars as pl
 import xarray as xr
 from sklearn import linear_model, pipeline, preprocessing
@@ -215,16 +214,40 @@ class EnformerTissueMapper:
         """
         :param tracks_path: A yaml file mapping the name of the tracks to the index in the predictions.
         Only the tracks in the file are considered for the mapping.
-        :param tissue_mapper_path: A pickle containing a dictionary of linear models for each GTEx tissue.
+        :param tissue_mapper_path: A parquet file with a linear model for each GTEx tissue, as written by `train`.
+        The file has one row per tissue: `tissue`, the `mean` and `scale` of the StandardScaler, and the `coef` and
+        `intercept` of the linear model. The features are the tracks in the order of the tracks yaml file.
         """
-        self.tissue_mapper_lm_dict = None
+        self.tissue_mapper_df = None
         # If tissue_mapper_path is not None, load the linear models
         if tissue_mapper_path is not None:
-            with open(tissue_mapper_path, 'rb') as f:
-                self.tissue_mapper_lm_dict = pickle.load(f)
+            self.tissue_mapper_df = pl.read_parquet(tissue_mapper_path)
 
         with open(tracks_path, 'rb') as f:
             self.tracks_dict = yaml.safe_load(f)
+
+    @staticmethod
+    def _pipelines_to_polars(pipelines: dict) -> pl.DataFrame:
+        """
+        Get the parameters of fitted pipelines of a StandardScaler and a linear model, see `__init__`.
+
+        :param pipelines: A dictionary of scikit-learn pipelines for each tissue.
+        :return: polars DataFrame with one row per tissue
+        """
+        for tissue, lm_pipe in pipelines.items():
+            if not hasattr(lm_pipe[-1], 'coef_') or not hasattr(lm_pipe[-1], 'intercept_'):
+                raise TypeError(f'EnformerTissueMapper supports only linear models with coef_ and intercept_, '
+                                f'but the model for {tissue} is a {type(lm_pipe[-1]).__name__}.')
+        scalers = [lm_pipe[0] for lm_pipe in pipelines.values()]
+        models = [lm_pipe[-1] for lm_pipe in pipelines.values()]
+        # keep the dtypes, e.g. float32 coefficients, so that predict gives the same scores as the pipelines
+        return pl.DataFrame({
+            'tissue': list(pipelines.keys()),
+            'mean': np.stack([scaler.mean_ for scaler in scalers]),
+            'scale': np.stack([scaler.scale_ for scaler in scalers]),
+            'coef': np.stack([np.ravel(model.coef_) for model in models]),
+            'intercept': np.concatenate([np.ravel(model.intercept_) for model in models]),
+        }).with_columns(pl.col('mean', 'scale', 'coef').arr.to_list())
 
     def train(self, agg_enformer_paths: list[str] | list[pathlib.Path], expression_path: str | pathlib.Path
               , output_path: str | pathlib.Path, model=linear_model.ElasticNetCV(cv=5)):
@@ -232,12 +255,13 @@ class EnformerTissueMapper:
         Load the predictions from the parquet file lazily.
         For each record, calculate the average predictions over the bins centered at the tss bin.
         Collect the average predictions and train a linear model for each tissue.
-        Save the linear models in a pickle file.
+        Save the linear models in a parquet file, see `__init__`.
 
         :param agg_enformer_paths: The parquet files that contain the aggregated enformer predictions.
         :param expression_path: The zarr file that contains the expression scores. (ground truth)
-        :param output_path: The pickle file that will contain the linear models.
-        :param model: The model to use for training the tissue mapper.
+        :param output_path: The parquet file that will contain the linear models.
+        :param model: The linear model to use for training the tissue mapper, e.g. from `sklearn.linear_model`.
+            It must have `coef_` and `intercept_` after fitting.
         :return:
         """
 
@@ -276,7 +300,7 @@ class EnformerTissueMapper:
             logger.info(f'Training the model for {subtissue}')
             X = subtissue_xrds['enformer'].values
             X = np.log10(1 + X)
-            y = subtissue_xrds['tpm'].values
+            y = subtissue_xrds['tpm'].squeeze('subtissue').values
             y = np.log10(1 + y)
             lm_pipe = pipeline.Pipeline([('scaler', preprocessing.StandardScaler()),
                                          ('model', sk.clone(model))])
@@ -285,13 +309,12 @@ class EnformerTissueMapper:
             model_dict[subtissue] = lm_pipe
 
         logger.info('Saving the models...')
-        self.tissue_mapper_lm_dict = model_dict
-        with open(output_path, 'wb') as f:
-            pickle.dump(model_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
+        self.tissue_mapper_df = self._pipelines_to_polars(model_dict)
+        self.tissue_mapper_df.write_parquet(output_path)
 
     def predict(self, agg_enformer_path: str | pathlib.Path, output_path: str | pathlib.Path):
         """
-        For each tissue in the tissue_mapper_lm_dict, predict a tissue-specific expression score.
+        For each tissue of the tissue mapper, predict a tissue-specific expression score.
         Save the expression scores in a new parquet file.
 
         :param agg_enformer_path: The parquet file that contains the aggregated enformer predictions.
@@ -299,8 +322,8 @@ class EnformerTissueMapper:
 
         The average predictions will be calculated at the tss bin of each record.
         """
-        if self.tissue_mapper_lm_dict is None:
-            raise ValueError('The tissue_mapper_lm_dict is not provided. Please train the linear models first.')
+        if self.tissue_mapper_df is None:
+            raise ValueError('The tissue mapper is not provided. Please train the linear models first.')
 
         tracks = list(self.tracks_dict.values())
         logger.debug(f'Iterating over the parquet files in {agg_enformer_path}')
@@ -308,12 +331,22 @@ class EnformerTissueMapper:
         scores = enformer_df['tracks'].to_numpy()[:, tracks]
         scores = np.log10(scores + 1)
         dfs = []
-        for tissue, lm in self.tissue_mapper_lm_dict.items():
+        tissue_mapper_df = self.tissue_mapper_df
+        for tissue, mean, scale, coef, intercept in zip(tissue_mapper_df['tissue'], tissue_mapper_df['mean'],
+                                                        tissue_mapper_df['scale'], tissue_mapper_df['coef'],
+                                                        tissue_mapper_df['intercept'].to_numpy()):
             tissue_df = enformer_df.select(pl.exclude('tracks'))
             if len(scores) == 0:
                 res = []
             else:
-                res = lm.predict(scores).flatten()
+                # the operations of Pipeline(StandardScaler, linear model).predict() in scikit-learn 1.5, so that the
+                # scores stay the same. The dtypes and the memory layout matter: the float32 scores minus the float64
+                # mean round to float32, and the memory layout of x sets the summation order of the matrix product.
+                # From 1.8 on, scikit-learn rounds the mean to float32 first.
+                x = scores.copy(order='K')
+                x -= mean.to_numpy()
+                x /= scale.to_numpy()
+                res = x @ coef.to_numpy() + intercept
             tissue_df = tissue_df.with_columns(pl.Series(name='score', values=res, dtype=pl.Float32),
                                                pl.lit(tissue).alias('tissue'))
             dfs.append(tissue_df)

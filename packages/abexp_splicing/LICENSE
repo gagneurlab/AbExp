@@ -41,3 +41,8 @@ and the gene table src/abexp/absplice/precomputed/GENE_MAP.tsv.gz
 splicemap, https://github.com/gagneurlab/splicemap, commit cf922eb:
 src/abexp/absplice/splicemap.py
     Copyright (c) 2023 Muhammed Hasan Çelik and Nils Wagner
+
+spliceai_rocksdb, https://github.com/gagneurlab/spliceai_rocksdb, commit 3c40d6e:
+src/abexp/spliceai_rocksdb
+    The repository has no license file; its setup.py declares license="MIT license" and the author
+    M. Hasan Çelik.

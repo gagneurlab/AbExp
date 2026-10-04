@@ -8,6 +8,8 @@ needs an environment with the upstream packages, e.g. the AbExp environments bef
   line tool on clinvar_chr22.vcf and writes clinvar_chr22.spliceai.vcf.
 - `python make_expected.py absplice`: mmsplice 2.4.0, absplice daad7b6 and splicemap cf922eb, with pandas 2.
   absplice daad7b6 fails with pandas 3. Run it after spliceai_vcf.
+- `python make_expected.py spliceai_rocksdb <spliceAI_hg38_chr22.db>`: spliceai_rocksdb 3c40d6e and the SpliceAI
+  fork.
 
 All commands read the chr22 sequence of the AbExp example, example/chr22_hg38.fa.
 """
@@ -98,10 +100,18 @@ def absplice():
     result.predict_absplice_dna().reset_index().to_csv(EXPECTED / 'absplice_dna.csv', index=False)
 
 
+def spliceai_rocksdb(db_path):
+    from spliceai_rocksdb.spliceAI import SpliceAI
+
+    model = SpliceAI(str(FASTA), annotation='grch38', db_path={'22': db_path})
+    model.predict_save(str(VCF), EXPECTED / 'spliceai_rocksdb.csv', batch_size=1000)
+
+
 if __name__ == '__main__':
     EXPECTED.mkdir(exist_ok=True)
     {
         'mmsplice': mmsplice,
         'spliceai_vcf': spliceai_vcf,
         'absplice': absplice,
+        'spliceai_rocksdb': spliceai_rocksdb,
     }[sys.argv[1]](*sys.argv[2:])

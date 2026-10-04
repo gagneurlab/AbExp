@@ -1,7 +1,7 @@
 # abexp-splicing
 
-tl;dr: The parts of MMSplice and AbSplice that the AbExp pipeline runs, in one package on kipoiseq2. kipoi,
-kipoiseq 0.7, cyvcf2 and pyranges are no longer needed. The outputs match the upstream packages,
+tl;dr: The parts of MMSplice, AbSplice and SpliceAI-RocksDB that the AbExp pipeline runs, in one package on
+kipoiseq2. kipoi, kipoiseq 0.7, cyvcf2 and pyranges are no longer needed. The outputs match the upstream packages,
 except for the row order, rounding in the last digits and the choice among tied junctions, see
 [Differences](#differences-from-the-upstream-packages).
 
@@ -9,6 +9,7 @@ except for the row order, rounding in the last digits and the choice among tied 
 | ------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
 | `abexp.mmsplice`          | [mmsplice](https://github.com/gagneurlab/MMSplice_MTSplice) 2.4.0 (31513da)                     | `MMSplice` and the junction VCF dataloaders                         |
 | `abexp.absplice`          | [absplice](https://github.com/gagneurlab/absplice) daad7b6, [splicemap](https://github.com/gagneurlab/splicemap) cf922eb | `SpliceOutlierDataloader`, `SpliceOutlier`, `SplicingOutlierResult`, `read_spliceai_vcf` |
+| `abexp.spliceai_rocksdb`  | [spliceai_rocksdb](https://github.com/gagneurlab/spliceai_rocksdb) 3c40d6e                      | `SpliceAI`                                                          |
 
 ## Installation
 
@@ -16,14 +17,18 @@ Install a release from the AbExp repository with pip:
 
 <!-- x-release-please-start-version -->
 ```bash
-pip install "abexp-splicing @ git+https://github.com/gagneurlab/AbExp.git@abexp-splicing-v0.0.1#subdirectory=packages/abexp_splicing"
+pip install "abexp-splicing[rocksdb] @ git+https://github.com/gagneurlab/AbExp.git@abexp-splicing-v0.0.1#subdirectory=packages/abexp_splicing"
 ```
 <!-- x-release-please-end -->
+
+The extra `rocksdb` installs python-rocksdb and SpliceAI for `abexp.spliceai_rocksdb`. The AbExp pipeline uses
+the SpliceAI fork [hoeze/SpliceAI](https://github.com/hoeze/SpliceAI), which also predicts multi-nucleotide
+variants. pip keeps an installed SpliceAI, so install the fork first or in the same pip command.
 
 For development, install the package in editable mode from a checkout of AbExp:
 
 ```bash
-pip install -e "packages/abexp_splicing[dev]"
+pip install -e "packages/abexp_splicing[rocksdb,dev]"
 ```
 
 ## Usage
@@ -52,6 +57,8 @@ result = SplicingOutlierResult(
 df = result.predict_absplice_dna()
 ```
 
+`abexp.spliceai_rocksdb.SpliceAI(fasta, annotation='grch38', db_path={'22': <path>}).predict_save(vcf, csv)`
+looks up the SpliceAI scores in SpliceAI-RocksDB and runs SpliceAI for the variants that are not in it.
 `abexp.absplice.read_spliceai_vcf` reads a VCF file that the SpliceAI command line tool annotated.
 
 ## Differences from the upstream packages
@@ -82,6 +89,8 @@ pytest packages/abexp_splicing/tests
 ```
 
 The expected outputs in `tests/data/expected/` come from the upstream packages, see `tests/make_expected.py`.
+The SpliceAI-RocksDB test also needs the extra `rocksdb` and the hg38 chr22 database (2.6 GB). Set
+`ABEXP_SPLICEAI_ROCKSDB_HG38_CHR22` to the path of `spliceAI_hg38_chr22.db`, otherwise pytest skips it.
 
 ## License
 

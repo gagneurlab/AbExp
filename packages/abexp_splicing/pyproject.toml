@@ -33,6 +33,13 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# SpliceAI-RocksDB (abexp.spliceai_rocksdb)
+rocksdb = [
+    "python-rocksdb>=0.7",
+    "spliceai",
+    # spliceai imports pkg_resources, which setuptools 82 removed
+    "setuptools<82",
+]
 dev = [
     "pytest",
 ]

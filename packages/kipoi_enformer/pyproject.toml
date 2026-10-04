@@ -29,7 +29,6 @@ dependencies = [
     "polars>=1.37.1",
     "polars-bio>=0.31",
     "scikit-learn>=1.4.1.post1",
-    "lightgbm>=4.3.0",
     "zarr>=2.15.0",
     "xarray>=2024.5.0",
     "pyyaml",

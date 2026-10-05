@@ -366,12 +366,18 @@ if "NMD" in header:
 csq_struct = pl.struct(csq_struct).alias("Consequence")
 
 # %%
+# VEP writes the column LoF only if it runs LOFTEE (loftee_plugin)
+lof_struct = []
+if "LoF" in header:
+    lof_struct.append(pl.struct(multi_label_binarize("LoF", possible_LoF)).alias("LoF"))
+
+# %%
 parsed_vep_df = (
     parsed_df
     .with_columns([
         pl.struct(multi_label_binarize_array("IMPACT", possible_impacts)).alias("IMPACT"),
         csq_struct,
-        pl.struct(multi_label_binarize("LoF", possible_LoF)).alias("LoF"),
+        *lof_struct,
     ])
     .filter(pl.col("Feature_type") == pl.lit("Transcript"))
     .drop("Feature_type")

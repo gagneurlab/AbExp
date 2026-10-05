@@ -161,7 +161,8 @@ Setup:
 
 The AbExp models are LightGBM text models, e.g. `resources/models/abexp_v1.1/model.txt`.
 Any LightGBM 4.x reads them with `lightgbm.Booster(model_file=...)`.
-The predict rule passes the features to `Booster.predict()` in the order of the `features.yaml` next to the model.
+The predict rule selects the feature columns by the feature names of the model, in the order of training.
+It fails if the feature set lacks one of them.
 To add a model, set `model` and `features` of an entry in `system.models`, see `workflow/schemas/config.schema.yaml`.
 
 Earlier versions stored the models as joblib pickles (`model.joblib`), which need LightGBM 3.3.

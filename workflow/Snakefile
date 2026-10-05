@@ -169,12 +169,67 @@ rule all:
     default_target: True
 
 
-def fset_features(feature_set):
+def read_fset_template(feature_set):
     """
-    The feature tables of the feature set template scripts/fset@<feature_set>.yaml, by name
+    The feature set template scripts/fset@<feature_set>.yaml
     """
     with open(workflow.source_path(f"scripts/fset@{feature_set}.yaml")) as fd:
-        return yaml.safe_load(fd)["features"]
+        return yaml.safe_load(fd)
+
+
+def fset_features(feature_set):
+    """
+    The feature tables of the feature set template, by name
+    """
+    return read_fset_template(feature_set)["features"]
+
+
+def fset_variables(feature_set):
+    """
+    The variables of the feature set template in all feature tables, e.g. "cadd_raw.max"
+    """
+    def names(variables):
+        # a variable, or a list or a struct column (dict) of variables
+        if isinstance(variables, dict):
+            return [n for v in variables.values() for n in names(v)]
+        if isinstance(variables, list):
+            return [n for v in variables for n in names(v)]
+        return [variables]
+
+    return names(read_fset_template(feature_set)["variables"])
+
+
+def vep_plugin_option(feature):
+    """
+    The option in system.vep that runs the VEP plugin that `feature` comes from, or None
+    """
+    if feature.startswith("cadd_raw."):
+        return "cadd_plugin"
+    if feature.startswith("LoF_"):
+        return "loftee_plugin"
+    return None
+
+
+# fset fails with an unclear error if a feature is missing. So stop here if a model needs a
+# feature of a VEP plugin that does not run.
+for model in config["predict_abexp_models"]:
+    for feature in fset_variables(model):
+        option = vep_plugin_option(feature)
+        if option is None:
+            continue
+        if config["veff"]["annotator"] != "vep":
+            raise ValueError(
+                f"The model {model} needs the feature {feature}, which only the annotator vep "
+                f'provides. Set veff.annotator: "vep", or remove {model} from '
+                "predict_abexp_models, e.g. `predict_abexp_models: []` to run only the annotation."
+            )
+        # true is the default in modules/veff/vep/config.schema.yaml
+        if not config["system"]["vep"].get(option, True):
+            raise ValueError(
+                f"The model {model} needs the feature {feature}, which VEP provides only with "
+                f"system.vep.{option}: true. Set it to true, or remove {model} from "
+                "predict_abexp_models, e.g. `predict_abexp_models: []` to run only the annotation."
+            )
 
 
 # only some models use the Enformer features

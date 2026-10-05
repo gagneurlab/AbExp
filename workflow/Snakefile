@@ -59,7 +59,7 @@ CONDA_ENV_YAML_DIR = workflow.current_basedir.join("envs")
 # "When jobs rerun" in README.md.
 OUTPUT_VERSION = {
     "fset": 1,
-    "predict": 1,
+    "predict": 2,
 }
 
 VCF_INPUT_DIR = os.path.abspath(config["vcf_input_dir"])

@@ -5,7 +5,7 @@ num_tree_per_iteration=1
 label_index=0
 max_feature_idx=21
 objective=regression
-feature_names=feature.expected_expr@theta feature.splice_ensemble@AbSplice feature.splice_ensemble@MMSplice_SpliceMap_Psi_ref feature.splice_ensemble@SpliceAI feature.vep@features.cadd_raw.max feature.vep@features.LoF_HC.proportion feature.vep@features.transcript_ablation.proportion feature.vep@features.stop_gained.proportion feature.vep@features.frameshift_variant.proportion feature.vep@features.coding_sequence_variant.proportion feature.vep@features.missense_variant.proportion feature.vep@features.inframe_deletion.proportion feature.vep@features.inframe_insertion.proportion feature.vep@features.stop_lost.proportion feature.vep@features.3_prime_UTR_variant.proportion feature.vep@features.5_prime_UTR_variant.proportion feature.vep@features.NMD_transcript_variant.proportion feature.vep@features.NMD_escaping_variant.proportion feature.vep@features.start_lost.proportion feature.vep@features.splice_donor_variant.proportion feature.vep@features.splice_acceptor_variant.proportion feature.vep@features.splice_region_variant.proportion
+feature_names=feature.expected_expr@expression_dispersion feature.splice_ensemble@AbSplice feature.splice_ensemble@MMSplice_SpliceMap_Psi_ref feature.splice_ensemble@SpliceAI feature.vep@features.cadd_raw.max feature.vep@features.LoF_HC.proportion feature.vep@features.transcript_ablation.proportion feature.vep@features.stop_gained.proportion feature.vep@features.frameshift_variant.proportion feature.vep@features.coding_sequence_variant.proportion feature.vep@features.missense_variant.proportion feature.vep@features.inframe_deletion.proportion feature.vep@features.inframe_insertion.proportion feature.vep@features.stop_lost.proportion feature.vep@features.3_prime_UTR_variant.proportion feature.vep@features.5_prime_UTR_variant.proportion feature.vep@features.NMD_transcript_variant.proportion feature.vep@features.NMD_escaping_variant.proportion feature.vep@features.start_lost.proportion feature.vep@features.splice_donor_variant.proportion feature.vep@features.splice_acceptor_variant.proportion feature.vep@features.splice_region_variant.proportion
 feature_infos=[0.17043493688106537:999.99993896484375] [0:0.25940099253576121] [-0.8821236957037899:0.211799073199058] [0:1] [-2.23465895652771:11.991030693054199] [0:1.9875880479812622] [0:0.055450551211833954] [0:1.9875880479812622] [0:1] [0:0.9096531867980957] [0:1.0000001192092896] [0:1] [0:1] [0:1] [0:1.9277629852294922] [0:1.9100415706634521] [0:1] [0:1] [0:0.99800068140029907] [0:1] [0:1] [0:1.1895910501480103]
 tree_sizes=3005 3004 3013 2954 3015 3005 2983 3053 2983 3020 2997 3018 2976 3011 3020 2963 2996 2984 2995 2975 3048 2965 3044 2907 2940 2945 2950 2940 2995 2912 3015 2955 2944 2995 2941 2908 2935 2961 2932 2986 2901 2926 2943 2916 2939 2900 2938 2904 2939 2948 2904 2900 2930 2915 2848 2974 2881 2888 2943 2816 2926 2910 2930 2900 2910 2743 2806 2831 2908 2908 2922 2896 2946 2855 2851 2868 3004 2937 2906 2928 2886 2853 2816 2756 2992 2924 2917 2797 2848 2886 2839 2846 2825 2916 3008 2887 2965 2860 2891 2923
 
@@ -1913,7 +1913,7 @@ end of trees
 
 feature_importances:
 feature.vep@features.cadd_raw.max=401
-feature.expected_expr@theta=365
+feature.expected_expr@expression_dispersion=365
 feature.splice_ensemble@MMSplice_SpliceMap_Psi_ref=250
 feature.vep@features.NMD_transcript_variant.proportion=249
 feature.splice_ensemble@AbSplice=238

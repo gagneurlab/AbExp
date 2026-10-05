@@ -4,8 +4,9 @@ channels:
 - conda-forge
 
 dependencies:
-# Snakemake 9 needs >=3.11; lightgbm 3.3 (for the shipped models) has builds for 3.11
-- python=3.11
+# Snakemake 9 needs >=3.11. pyranges needs ncls, which has builds up to 3.12.
+# A range instead of an exact pin makes the solve take minutes.
+- python=3.12
 - ipykernel
 - pandas
 - pyarrow
@@ -13,7 +14,7 @@ dependencies:
 - scipy
 - joblib
 - scikit-learn
-- lightgbm~=3.3
+- lightgbm>=4,<5
 - tqdm
 - statsmodels
 - polars~=1.44

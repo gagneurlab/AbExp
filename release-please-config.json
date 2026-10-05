@@ -14,6 +14,14 @@
   ],
   "bootstrap-sha": "e7cfe6b1f5d93698b52d316a1fd6558facabda48",
   "packages": {
+    ".": {
+      "release-type": "simple",
+      "include-component-in-tag": false,
+      "exclude-paths": ["packages"],
+      "extra-files": [
+        { "type": "generic", "path": "README.md" }
+      ]
+    },
     "packages/abexp_utils": {
       "package-name": "abexp-utils",
       "component": "abexp-utils",

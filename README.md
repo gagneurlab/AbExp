@@ -225,7 +225,7 @@ stripped VCFs of `vcf_prep` as input:
 
 ```python
 ABEXP = "gagneurlab/AbExp"
-TAG = "<release tag>"
+TAG = "v2.0.0"  # x-release-please-version
 # mapping of chromosome names, e.g. a copy of workflow/modules/vcf_prep/resources/chromAlias.tsv
 CHROM_ALIAS = "chromAlias.tsv"
 
@@ -331,6 +331,13 @@ uses. abexp-splicing holds the parts of MMSplice, AbSplice and SpliceAI-RocksDB 
 ported to kipoiseq2. The conda environments install the packages from this repository, pinned to their release
 tags. So a change of a package takes effect in the workflow only with its next release.
 [packages/README.md](packages/README.md) describes how to test, release and publish them.
+
+## Releases
+
+release-please releases the workflow from the conventional commits on main, see
+`.github/workflows/release-please.yml`. The release PR updates `CHANGELOG.md` and `TAG` in the module example
+above. Merging it creates the tag `vX.Y.Z` and the GitHub release. Commits that change only files in `packages/`
+do not count for the workflow, because the packages have their own releases.
 
 ## License
 All source code and model weights in this repository are licensed under the [MIT license](./LICENSE).

@@ -22,7 +22,7 @@ rule predict_veff:
         featureset_config=FSET_CONFIG,
         featureset_pq=FSET_PQ_PATTERN,
         # the model to predict
-        model_joblib=lambda wildcards: config["system"]["models"][wildcards.model_type]["model"],
+        model_txt=lambda wildcards: config["system"]["models"][wildcards.model_type]["model"],
         features_yaml=lambda wildcards: config["system"]["models"][wildcards.model_type]["features"],
     params:
         output_version=OUTPUT_VERSION["predict"],

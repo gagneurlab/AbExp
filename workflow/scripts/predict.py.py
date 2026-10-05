@@ -27,7 +27,7 @@ import yaml
 from pprint import pprint
 
 # %%
-import joblib
+import lightgbm
 
 # %% jupyter={"outputs_hidden": false} pycharm={"name": "#%%\n"}
 import numpy as np
@@ -128,7 +128,7 @@ artifact_dir = snakemake.params["output_basedir"]
 artifact_dir
 
 # %%
-model = joblib.load(snakemake.input["model_joblib"])
+model = lightgbm.Booster(model_file=snakemake.input["model_txt"])
 
 # %% [markdown]
 # ## Store testing predictions

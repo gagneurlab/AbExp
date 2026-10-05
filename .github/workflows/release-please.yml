@@ -1,4 +1,4 @@
-# Releases the Python packages in packages/ with release-please. See packages/README.md.
+# Releases the workflow and the Python packages in packages/ with release-please. See packages/README.md.
 # Publishing to PyPI runs only if the repository variable PYPI_PUBLISH is 'true'.
 name: release-please
 
@@ -20,26 +20,31 @@ jobs:
       issues: write
       pull-requests: write
     outputs:
-      releases_created: ${{ steps.release.outputs.releases_created }}
-      paths_released: ${{ steps.release.outputs.paths_released }}
+      # the released paths in packages/, as a JSON list
+      packages_released: ${{ steps.packages.outputs.paths }}
       # all outputs, to look up per-path outputs such as packages/kipoi_enformer--tag_name
       release: ${{ toJSON(steps.release.outputs) }}
     steps:
       # reads release-please-config.json and .release-please-manifest.json
       - id: release
         uses: googleapis/release-please-action@v5
+      # The release of the workflow (path ".") is only a tag and a GitHub release, without a build.
+      - id: packages
+        env:
+          PATHS_RELEASED: ${{ steps.release.outputs.paths_released || '[]' }}
+        run: echo "paths=$(jq -c 'map(select(startswith("packages/")))' <<< "$PATHS_RELEASED")" >> "$GITHUB_OUTPUT"
 
   build:
     name: build ${{ matrix.path }}
     needs: release-please
-    if: needs.release-please.outputs.releases_created == 'true'
+    if: contains(needs.release-please.outputs.packages_released, 'packages/')
     runs-on: ubuntu-latest
     permissions:
       contents: read
     strategy:
       fail-fast: false
       matrix:
-        path: ${{ fromJSON(needs.release-please.outputs.paths_released) }}
+        path: ${{ fromJSON(needs.release-please.outputs.packages_released) }}
     env:
       PACKAGE_PATH: ${{ matrix.path }}
       TAG: ${{ fromJSON(needs.release-please.outputs.release)[format('{0}--tag_name', matrix.path)] }}

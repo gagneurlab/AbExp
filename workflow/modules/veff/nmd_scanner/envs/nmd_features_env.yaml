@@ -1,0 +1,11 @@
+name: abexp-nmd-features
+
+channels:
+- conda-forge
+
+dependencies:
+- python=3.13
+- polars=1.44.2
+# the CPU build: the rules run the model on the CPU, and the CUDA build is much larger
+- onnxruntime=1.30.0=*_cpu
+- numpy

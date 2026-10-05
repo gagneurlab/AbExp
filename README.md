@@ -184,6 +184,63 @@ With scikit-learn below 1.8, `predict()` of the joblib model also runs in this e
 the text model. For an `AbExpZscoreRegressor` like the shipped models, `Booster.predict()` of the text model returns
 exactly the values of `predict()` of the joblib model.
 
+## NMD efficiency model
+
+The rule `veff__nmd_scanner_score` of the nmd_scanner module predicts `nmd_pred_score` with the NMD efficiency random forest of
+[NMD-Scanner](https://github.com/gagneurlab/NMD-Scanner).
+The model is `workflow/modules/veff/nmd_scanner/resources/nmd_efficiency_rf.onnx`
+(sha256 `ddd71423b980ab1069eef8090d529706ac6c329b59f7415a6c9d8c8619921cd5`).
+The rule runs it with onnxruntime and needs neither scikit-learn nor a pickle.
+The model has one input `input` of type double and shape [N, 19].
+It has one output `variable` of type float and shape [N, 1].
+The metadata key `feature_names` holds the names of the 19 input columns in input order, as a JSON list.
+The rule reads them from the model file and passes the boolean columns as 0.0 and 1.0.
+
+The ONNX file is a conversion of `best_model.pkl` at the root of tag v0.3.0 of NMD-Scanner
+(sha256 `de1727b16ee6de383f6280a898c0610f0621f7821053c74ddc081b1eef31a3fa`).
+That file is a `RandomForestRegressor` pickled with scikit-learn 1.3.2, and it needs this version to load.
+The conversion keeps the split thresholds and leaf values in double precision.
+skl2onnx computes these double values, but its `RandomForestRegressor` converter stores them as float32.
+So the conversion writes the `TreeEnsembleRegressor` node (`ai.onnx.ml` opset 3) itself.
+By the ONNX specification, this node outputs float32.
+In a test with about 400,000 real and synthetic input rows, the output equaled `predict()` of the pickle,
+rounded to float32, in every row.
+The output did not depend on the number of threads or on the batch size.
+
+To redo the conversion, run in the root of this repository:
+```bash
+curl -L -o best_model.pkl https://raw.githubusercontent.com/gagneurlab/NMD-Scanner/v0.3.0/best_model.pkl
+mamba create -n abexp-nmd-onnx -c conda-forge python=3.11.16 scikit-learn=1.3.2 skl2onnx=1.20.0 onnx=1.23.1 onnxruntime=1.30.0 joblib=1.6.0 numpy=1.26.4
+mamba run -n abexp-nmd-onnx python -c '
+import json, joblib, numpy as np, onnx
+from onnx import TensorProto, helper, numpy_helper
+from skl2onnx.common.tree_ensemble import add_tree_to_attribute_pairs, get_default_tree_regressor_attribute_pairs
+model = joblib.load("best_model.pkl")
+attrs = get_default_tree_regressor_attribute_pairs()
+attrs["n_targets"] = 1
+for i, estimator in enumerate(model.estimators_):
+    # as in the RandomForestRegressor converter of skl2onnx, but with float64 thresholds and leaf weights
+    add_tree_to_attribute_pairs(attrs, False, estimator.tree_, i, 1 / len(model.estimators_), 0, False,
+                                adjust_threshold_for_sklearn=True, dtype=np.float64)
+attrs["nodes_values_as_tensor"] = numpy_helper.from_array(np.array(attrs.pop("nodes_values")))
+attrs["target_weights_as_tensor"] = numpy_helper.from_array(np.array(attrs.pop("target_weights")))
+del attrs["nodes_hitrates"]
+node = helper.make_node("TreeEnsembleRegressor", ["input"], ["variable"], domain="ai.onnx.ml", **attrs)
+graph = helper.make_graph(
+    [node], "nmd_efficiency_rf",
+    [helper.make_tensor_value_info("input", TensorProto.DOUBLE, [None, model.n_features_in_])],
+    [helper.make_tensor_value_info("variable", TensorProto.FLOAT, [None, 1])],
+)
+onx = helper.make_model(graph, opset_imports=[helper.make_opsetid("", 15), helper.make_opsetid("ai.onnx.ml", 3)],
+                        ir_version=8)
+helper.set_model_props(onx, {"feature_names": json.dumps(list(model.feature_names_in_))})
+onnx.save(onx, "workflow/modules/veff/nmd_scanner/resources/nmd_efficiency_rf.onnx")
+'
+sha256sum workflow/modules/veff/nmd_scanner/resources/nmd_efficiency_rf.onnx
+```
+With these versions, the conversion reproduces the committed file byte for byte.
+The environment also has onnxruntime, so `predict()` of the pickle and the ONNX model can run side by side.
+
 ## Using AbExp as Snakemake modules
 
 Other workflows can import all of AbExp, only the variant annotation, or single steps like VEP,
@@ -201,7 +258,7 @@ workflow/modules/veff/tissue_specific_vep/  # consequences per GTEx tissue
 workflow/modules/veff/absplice/             # AbSplice-DNA
 workflow/modules/veff/absplice2/            # AbSplice2-DNA
 workflow/modules/veff/enformer/             # Enformer
-workflow/modules/veff/nmd_scanner/          # NMD-Scanner
+workflow/modules/veff/nmd_scanner/          # NMD-Scanner, NMD efficiency, NMD features
 workflow/modules/veff/envs/                 # conda environments that several veff modules use
 ```
 
@@ -212,12 +269,23 @@ It is off by default; set `system.loftee.enabled: true` and `system.loftee.conda
 See its config.schema.yaml for the required and optional inputs.
 
 `workflow/modules/veff/nmd_scanner` adds [NMD-Scanner](https://github.com/gagneurlab/NMD-Scanner),
-which scans variants for premature termination codons and evaluates the NMD escape rules on the
-transcripts of `gff3_file`, and keeps its own per-transcript, per-variant table. It is off by
-default; set `system.nmd_scanner.enabled: true` to run it.
+which scans variants for premature termination codons (PTCs) and evaluates the NMD escape rules on the
+transcripts of `gff3_file`. It keeps NMD-Scanner's own per-transcript, per-variant table. Two more rules
+build the NMD features from this table:
+- `veff__nmd_scanner_score` predicts the NMD efficiency `nmd_pred_score` of each transcript with a PTC,
+  with the random forest of NMD-Scanner (see [NMD efficiency model](#nmd-efficiency-model)). It drops the
+  transcripts with the PTC in the last exon, because NMD-Scanner 0.3.0 computes no `ptc_to_intron` for them.
+- `veff__nmd_scanner_features` aggregates the scores per variant, gene and GTEx tissue. The GTEx isoform
+  proportions of the tissue_specific_vep module weight them. The output has the key columns and a struct
+  column `features` with 28 fields: 12 from the scores and the PTC counts, and a weighted proportion and
+  a maximum for each of 8 NMD-Scanner flags (start and stop loss, the 5 NMD escape rules and
+  `ptc_less_than_150nt_to_start`).
 
-Both modules keep the output of their tool as it is, and neither is read by tissue_specific_vep,
-fset or predict.
+The module is off by default. Set `system.nmd_scanner.enabled: true` and request
+`<output_dir>/veff/nmd_scanner/features.parquet/<vcf_file>.parquet` as target.
+
+The loftee and nmd_scanner modules keep the output of their tool as it is. Neither module is read by
+tissue_specific_vep, fset or predict.
 
 `workflow/modules/veff/absplice2` adds [AbSplice2-DNA](https://github.com/gagneurlab/absplice2).
 It runs [Pangolin](https://github.com/tkzeng/Pangolin) and scores each variant, gene and GTEx tissue

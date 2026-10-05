@@ -3,7 +3,8 @@ title: nmd_scanner module
 description: >-
   Scans variants for premature termination codons and evaluates the NMD escape rules with
   NMD-Scanner, on the transcripts of a GFF3 file. Writes NMD-Scanner's own per-transcript,
-  per-variant table.
+  per-variant table. Then predicts the NMD efficiency of each premature termination codon with
+  NMD-Scanner's random forest, and aggregates it per variant, gene and GTEx tissue.
 type: object
 additionalProperties: false
 
@@ -16,7 +17,11 @@ properties:
       {vcf_file}, e.g. the stripped VCFs of the vcf_prep module.
   output_dir:
     type: string
-    description: The output is <output_dir>/nmd_scanner/veff.parquet/<vcf_file>.parquet.
+    description: >-
+      The outputs are in <output_dir>/nmd_scanner: NMD-Scanner's table in
+      veff.parquet/<vcf_file>.parquet, the predicted NMD efficiency of the transcripts with a
+      premature termination codon in score.parquet/<vcf_file>.parquet, and the NMD features per
+      variant, gene and tissue in features.parquet/<vcf_file>.parquet.
   resources_dir:
     type: string
     description: Not used by this module; kept for consistency with the other veff submodules.
@@ -40,6 +45,14 @@ properties:
       annotations built against hg19, which numbered the exons of minus-strand transcripts
       the other way round; hg38 annotations do not need it. Default is true if
       human_genome_version is "hg19", false otherwise.
+  isoform_proportions_pq:
+    type: string
+    description: >-
+      GTEx isoform proportions as parquet, e.g. the one of the tissue_specific_vep module, which
+      the veff module passes. The features rule reads the columns `transcript` (Ensembl ID
+      without version), `tissue` (GTEx tissue, e.g. "Adipose - Subcutaneous") and
+      `median_transcript_proportions`, and ignores the others. Without this key, the module has
+      no features rule.
   conda_env:
     type: ["string", "null"]
     default: null

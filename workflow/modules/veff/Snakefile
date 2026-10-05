@@ -196,9 +196,11 @@ use rule * from enformer
 
 
 # off by default: needs its own conda environment, and its output is not read by
-# tissue_specific_vep, fset or predict
+# tissue_specific_vep, fset or predict. The NMD features use the isoform proportions of the
+# tissue_specific_vep module.
 if config["nmd_scanner"].get("enabled"):
     NMD_SCANNER_CONFIG = {
+        "isoform_proportions_pq": str(rules.isoform_proportions_tsv_to_parquet.output.file),
         **config["nmd_scanner"],
         "vcf": STRIPPED_VCF,
         "output_dir": VEFF_DIR,

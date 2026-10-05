@@ -161,9 +161,10 @@ Setup:
 
 The AbExp models are LightGBM text models, e.g. `resources/models/abexp_v1.1/model.txt`.
 Any LightGBM 4.x reads them with `lightgbm.Booster(model_file=...)`.
-The predict rule selects the feature columns by the feature names of the model, in the order of training.
+The feature names of a model are in the `feature_names=` line of its model.txt.
+The predict rule selects the feature columns by these names, in the order of training.
 It fails if the feature set lacks one of them.
-To add a model, set `model` and `features` of an entry in `system.models`, see `workflow/schemas/config.schema.yaml`.
+To add a model, set `model` of an entry in `system.models`, see `workflow/schemas/config.schema.yaml`.
 
 Earlier versions stored the models as joblib pickles (`model.joblib`), which need LightGBM 3.3.
 The predict rule no longer reads them. To keep using a custom joblib model, convert it once to a text model.
@@ -178,6 +179,7 @@ model = joblib.load("my_model/model.joblib")
 model.model.booster_.save_model("my_model/model.txt")
 '
 ```
+The `feature_names=` line of the new model.txt must list the column names of the feature set.
 With scikit-learn below 1.8, `predict()` of the joblib model also runs in this environment, e.g. to compare it with
 the text model. For an `AbExpZscoreRegressor` like the shipped models, `Booster.predict()` of the text model returns
 exactly the values of `predict()` of the joblib model.

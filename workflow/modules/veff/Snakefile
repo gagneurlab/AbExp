@@ -81,9 +81,10 @@ if ANNOTATOR == "mehari" or "gencode_transcripts_fasta" in config["mehari"]:
 # reloftee calls its own consequences from the VCF and its genome_annotation (default
 # gff3_file), independently of the annotator above.
 if config["loftee"].get("enabled"):
-    # The vep module downloads the same LOFTEE data for its LOFTEE plugin. The loftee module
-    # reads these files, and its own download rules are not imported, so that each file has
-    # one rule and one location. Paths set in the section loftee must exist.
+    # The vep module downloads the same LOFTEE data for its LOFTEE plugin, and keeps these
+    # download rules with `loftee_plugin: false`. The loftee module reads these files, and its
+    # own download rules are not imported, so that each file has one rule and one location.
+    # Paths set in the section loftee must exist.
     LOFTEE_DATA = {"human_ancestor_fa": str(rules.veff__vep_download_loftee_human_ancestor.output.fasta)}
     if config["human_genome_version"] == "hg38":
         LOFTEE_DATA["gerp_bigwig"] = str(rules.veff__vep_download_loftee_gerp_bigwig.output.bigwig)

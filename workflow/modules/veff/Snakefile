@@ -108,9 +108,20 @@ if config["loftee"].get("enabled"):
     use rule * from loftee exclude veff__loftee_download_human_ancestor, veff__loftee_download_gerp_bigwig, veff__loftee_download_phylocsf_sqlite
 
 
+# VEP writes the column LoF only with LOFTEE and CADD_RAW only with CADD. If a plugin fails to
+# load, VEP only warns, so tissue_specific_vep checks the columns of the plugins that are on.
+# mehari writes neither column. true is the default in vep/config.schema.yaml.
+REQUIRED_CONSEQUENCE_COLUMNS = []
+if ANNOTATOR == "vep":
+    if config["vep"].get("loftee_plugin", True):
+        REQUIRED_CONSEQUENCE_COLUMNS.append("LoF")
+    if config["vep"].get("cadd_plugin", True):
+        REQUIRED_CONSEQUENCE_COLUMNS.append("CADD_RAW")
+
 TISSUE_SPECIFIC_VEP_CONFIG = {
     **config["tissue_specific_vep"],
     "consequences": CONSEQUENCES,
+    "required_columns": REQUIRED_CONSEQUENCE_COLUMNS,
     "gtf_transcripts": GTF_TRANSCRIPTS,
     "output_dir": VEFF_DIR,
     "resources_dir": RESOURCES_DIR,

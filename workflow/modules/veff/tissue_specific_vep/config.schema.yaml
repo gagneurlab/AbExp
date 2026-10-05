@@ -13,6 +13,16 @@ properties:
     description: >-
       Per-transcript consequence tables, as a pattern with the wildcard {vcf_file}, e.g. the
       output of the vep or mehari module.
+  required_columns:
+    type: array
+    items:
+      type: string
+    default: []
+    description: >-
+      Columns of `consequences` that must exist, e.g. LoF and CADD_RAW of the vep module. The
+      step stops with an error if one is missing. A missing LoF or score column that is not
+      listed here is skipped. A change does not rerun the step, because the option only adds
+      this check.
   gtf_transcripts:
     type: string
     description: Transcripts of the genome annotation, e.g. the output of the gtf_transcripts module.

@@ -6,6 +6,16 @@ It was trained on aberrant gene expression calls from the GTEx dataset.
 This repository contains a bioinformatics software pipeline for calculating **AbExp variant effect predictions**, taking vcf files as input.
 The publication to this method can be found in [Nature Communications](https://www.nature.com/articles/s41467-025-58210-w). We also offer a [web interface](https://abexp.cmm.cit.tum.de/) for querying AbExp scores on any SNP.
 
+## Getting started
+
+1) Create the environment with Snakemake, see step 1 of [Setup](#setup).
+2) Run the pre-configured example from the repository root: `snakemake -c 4`. It annotates the ClinVar variants on
+   chr22 in `example/clinvar_chr22` (hg38) and predicts with `abexp_v1.1`. The results go to
+   `example/output_hg38/predict/abexp_v1.1/`. The first run downloads the resources, see
+   [Minimum resource requirements](#minimum-resource-requirements). `snakemake -n` lists the jobs without running them.
+3) For your own VCFs, edit `config/config.yaml`, see [Usage](#usage). To run only the annotation without the CADD and
+   LOFTEE downloads, see [Turning off CADD or LOFTEE](#turning-off-cadd-or-loftee).
+
 ## Minimum resource requirements
 
 - Linux with tar and gzip
@@ -31,6 +41,8 @@ The publication to this method can be found in [Nature Communications](https://w
    `human_genome_version` only: more than 100 GB. By default, they go to `<output_dir>/resources`, so each output folder gets its own copy.
    Set `dirs.resources_dir` in the `system` section to a shared folder, so that all output folders use one copy. Other options in the `system` section:
    - `vep.vep_cache_dir`, `vep.cadd_dir`, `vep.loftee_data_dir` and `vep.loftee_src_path`: existing caches to reuse instead of downloading
+   - `vep.cadd_plugin: False` and `vep.loftee_plugin: False` to skip CADD and LOFTEE; the shipped models then do not
+     run, see [Turning off CADD or LOFTEE](#turning-off-cadd-or-loftee)
    - `absplice.use_spliceai_rocksdb: False` to skip the SpliceAI-RocksDB download
    - Any option in `workflow/schemas/config.schema.yaml` can be set in this section.
      The schema also lists the defaults. The options of `vep`, `mehari`, `absplice` and `enformer` are in
@@ -103,6 +115,25 @@ a login node, set `CONDA_OVERRIDE_CUDA` to a CUDA version that the driver of the
 CONDA_OVERRIDE_CUDA=12.9 snakemake --conda-create-envs-only
 ```
 
+## Turning off CADD or LOFTEE
+
+By default, VEP runs the plugins CADD and LOFTEE. Their data take 88GB (CADD) and 14GB (LOFTEE) for hg38.
+`system.vep.cadd_plugin: False` or `system.vep.loftee_plugin: False` turns a plugin off. VEP then runs without it,
+and neither the run nor `snakemake setup` downloads its data. The LOFTEE source is still downloaded (5MB),
+because the VEP plugin MaxEntScan reads it. reloftee (`system.loftee.enabled: True`) still downloads the LOFTEE
+data, because it reads them. Changing either option reruns VEP and the steps after it.
+
+The shipped models (abexp_v1.0, abexp_v1.1, abexp_v1.1_Enformer and abexp_v1.1_nobcv) need both plugins: they read
+the features `cadd_raw.max` and `LoF_HC.proportion`. So with a plugin off, only the annotation runs, without
+prediction:
+- Set `predict_abexp_models: []`. Otherwise the workflow stops at the start with an error that names the model and
+  the option.
+- Request the annotation as target, e.g.
+  `snakemake -c 4 <output_dir>/veff/tissue_specific_vep.py/veff.parquet/<input_vcf_file>.parquet`.
+
+Turn a plugin off only if you do not predict with the shipped models, e.g. to train a new model without CADD or
+LOFTEE features, or to try the annotation without the large downloads.
+
 ## Using mehari instead of VEP
 
 [mehari](https://github.com/varfish-org/mehari) can replace VEP for the transcript consequence annotation.
@@ -111,7 +142,8 @@ The module `workflow/modules/veff/mehari` calls the mehari Python package and ke
 The per-transcript table has mehari's own consequence terms, and there are no LoF or NMD calls and no
 CADD, SIFT, PolyPhen or Condel scores.
 The shipped AbExp models were trained on VEP features and do not run on this route.
-It is meant for training new models.
+It is meant for training new models. Set `predict_abexp_models: []`, and request the annotation as target as in
+[Turning off CADD or LOFTEE](#turning-off-cadd-or-loftee). Otherwise the workflow stops at the start.
 
 Setup:
 1) Download the GENCODE transcript FASTA of the release of your `gff3_file`, e.g.
@@ -223,6 +255,9 @@ VEP_CONFIG = {
     # "cadd_dir": "<CADD v1.6>/{human_genome_assembly}",
     # "loftee_data_dir": "<LOFTEE data>/{human_genome_assembly}",
     # "loftee_src_path": "<LOFTEE source>/{human_genome_assembly}_src",
+    # optional: run VEP without CADD or LOFTEE, and skip their downloads
+    # "cadd_plugin": False,
+    # "loftee_plugin": False,
 }
 
 module vep:

@@ -64,6 +64,9 @@ system:
     version: 108
     vep_bin: "vep"
     perl_bin: "perl"
+    # False turns off a VEP plugin and its download; the shipped models need both (see README)
+    # cadd_plugin: True
+    # loftee_plugin: True
     # By default, the pipeline downloads the VEP cache, CADD and LOFTEE into resources_dir.
     # Set these to reuse existing caches instead:
     # vep_cache_dir: "/s/raw/vep/{vep_version}"

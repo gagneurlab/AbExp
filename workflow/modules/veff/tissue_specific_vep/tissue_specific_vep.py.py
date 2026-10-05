@@ -252,7 +252,7 @@ if total_num_rows > 0:
             vep_batch_df = vep_df.filter(
                 (pl.col("chrom") == pl.lit(chrom))
                 & (pl.col("start") >= start)
-                & (pl.col("end") < end)
+                & (pl.col("start") < end)
             )
 
             aggregated_df = process_batch(vep_batch_df)

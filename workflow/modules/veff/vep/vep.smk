@@ -19,6 +19,8 @@ def get_vep_cli_options(
     human_ancestor_fa,
     conservation_file,
     gerp_bigwig,
+    cadd_plugin,
+    loftee_plugin,
 ):
     ## configure LOFTEE
     if human_genome_version == "hg19":
@@ -80,18 +82,18 @@ def get_vep_cli_options(
         "--protein",
         "--regulatory",
         "--tsl",
-        f"--plugin {loftee_args}",
+        f"--plugin {loftee_args}" if loftee_plugin else None,
         "--plugin Condel",
         f"--plugin MaxEntScan,{MAXENTSCAN_DATA_DIR}",
         "--plugin Blosum62",
         "--plugin miRNA",
-        f"--plugin CADD,{cadd_snv_tsv},{cadd_indel_tsv}",
+        f"--plugin CADD,{cadd_snv_tsv},{cadd_indel_tsv}" if cadd_plugin else None,
     ]
     
     if vep_version >= 105:
         vep_cli_options.append("--plugin NMD")
     
-    return " ".join(vep_cli_options)
+    return " ".join(o for o in vep_cli_options if o is not None)
 
 
 VEP_CLI_OPTIONS = get_vep_cli_options(
@@ -107,6 +109,8 @@ VEP_CLI_OPTIONS = get_vep_cli_options(
     human_ancestor_fa=LOFTEE_HUMAN_ANCESTOR_FA,
     conservation_file=LOFTEE_CONSERVATION_FILE,
     gerp_bigwig=LOFTEE_GERP_BIGWIG,
+    cadd_plugin=CADD_PLUGIN,
+    loftee_plugin=LOFTEE_PLUGIN,
 )
 
 
@@ -159,14 +163,18 @@ export PERL5LIB="$LOFTEE_SRC_PATH:$SCRIPT_DIR:$SCRIPT_DIR/modules"
 
 cd $LOFTEE_SRC_PATH
 
-# check if we use the correct LoF.pm
-used_loftee_module="$(realpath $(perldoc -l "LoF"))"
-if [[ "$used_loftee_module" != "$LOFTEE_SRC_PATH/LoF.pm" ]]; then
-    echo "Wrong LOFTEE path: '$used_loftee_module' (used) != '$LOFTEE_SRC_PATH/LoF.pm' (expected)"
-    exit 1
+# only if VEP runs LOFTEE (loftee_plugin): check the LoF.pm that VEP loads. VEP skips a plugin
+# that fails to load with a warning only.
+if [[ ' {params.vep_cli_options} ' == *' --plugin LoF,'* ]]; then
+    # check if we use the correct LoF.pm
+    used_loftee_module="$(realpath $(perldoc -l "LoF"))"
+    if [[ "$used_loftee_module" != "$LOFTEE_SRC_PATH/LoF.pm" ]]; then
+        echo "Wrong LOFTEE path: '$used_loftee_module' (used) != '$LOFTEE_SRC_PATH/LoF.pm' (expected)"
+        exit 1
+    fi
+    # check if the LOFTEE module actually compiles
+    perl $(perldoc -l "LoF") && echo "LOFTEE OK" || {{ echo "Testing LOFTEE failed!"; exit 1; }}
 fi
-# check if the LOFTEE module actually compiles
-perl $(perldoc -l "LoF") && echo "LOFTEE OK" || {{ echo "Testing LOFTEE failed!"; exit 1; }}
 
 # original CMD:
 # > $SCRIPT $@

@@ -159,6 +159,20 @@ groupby = ["chrom", "start", "end", "ref", "alt", "gene", "tissue"]
 groupby
 
 # %%
+# The option required_columns lists the columns that must exist, e.g. LoF if VEP runs LOFTEE.
+# It is a config option and not a param, so that a change does not rerun the step: it only adds
+# this check.
+vep_columns = vep_df.collect_schema().names()
+missing_columns = [c for c in snakemake.config.get("required_columns", []) if c not in vep_columns]
+if missing_columns:
+    raise ValueError(
+        f"The consequence table {snakemake.input['vep_pq']} has no column {', '.join(missing_columns)}. "
+        "The vep module writes LoF only if VEP runs LOFTEE (loftee_plugin), and CADD_RAW only if "
+        "VEP runs CADD (cadd_plugin). If a plugin fails to load, VEP only warns: see the files "
+        "<vcf_file>.tsv.warnings and <vcf_file>.tsv.stderr in the folder vep/veff.tsv."
+    )
+
+# %%
 # `LoF` and the scores only come from VEP; the mehari table has neither
 has_lof = "LoF" in vep_df.schema
 score_aggregations = {

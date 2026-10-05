@@ -81,9 +81,10 @@ if ANNOTATOR == "mehari" or "gencode_transcripts_fasta" in config["mehari"]:
 # reloftee calls its own consequences from the VCF and its genome_annotation (default
 # gff3_file), independently of the annotator above.
 if config["loftee"].get("enabled"):
-    # The vep module downloads the same LOFTEE data for its LOFTEE plugin. The loftee module
-    # reads these files, and its own download rules are not imported, so that each file has
-    # one rule and one location. Paths set in the section loftee must exist.
+    # The vep module downloads the same LOFTEE data for its LOFTEE plugin, and keeps these
+    # download rules with `loftee_plugin: false`. The loftee module reads these files, and its
+    # own download rules are not imported, so that each file has one rule and one location.
+    # Paths set in the section loftee must exist.
     LOFTEE_DATA = {"human_ancestor_fa": str(rules.veff__vep_download_loftee_human_ancestor.output.fasta)}
     if config["human_genome_version"] == "hg38":
         LOFTEE_DATA["gerp_bigwig"] = str(rules.veff__vep_download_loftee_gerp_bigwig.output.bigwig)
@@ -107,9 +108,20 @@ if config["loftee"].get("enabled"):
     use rule * from loftee exclude veff__loftee_download_human_ancestor, veff__loftee_download_gerp_bigwig, veff__loftee_download_phylocsf_sqlite
 
 
+# VEP writes the column LoF only with LOFTEE and CADD_RAW only with CADD. If a plugin fails to
+# load, VEP only warns, so tissue_specific_vep checks the columns of the plugins that are on.
+# mehari writes neither column. true is the default in vep/config.schema.yaml.
+REQUIRED_CONSEQUENCE_COLUMNS = []
+if ANNOTATOR == "vep":
+    if config["vep"].get("loftee_plugin", True):
+        REQUIRED_CONSEQUENCE_COLUMNS.append("LoF")
+    if config["vep"].get("cadd_plugin", True):
+        REQUIRED_CONSEQUENCE_COLUMNS.append("CADD_RAW")
+
 TISSUE_SPECIFIC_VEP_CONFIG = {
     **config["tissue_specific_vep"],
     "consequences": CONSEQUENCES,
+    "required_columns": REQUIRED_CONSEQUENCE_COLUMNS,
     "gtf_transcripts": GTF_TRANSCRIPTS,
     "output_dir": VEFF_DIR,
     "resources_dir": RESOURCES_DIR,

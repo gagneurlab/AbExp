@@ -1,9 +1,10 @@
 $schema: "https://json-schema.org/draft/2020-12/schema"
 title: vep module
 description: >-
-  Annotates the variants with VEP, including LOFTEE and CADD, and parses the result into a
-  per-transcript table. Downloads the VEP cache, CADD scores and LOFTEE data that it reads,
-  unless the paths below point at existing files.
+  Annotates the variants with VEP, by default including LOFTEE and CADD, and parses the result
+  into a per-transcript table. Downloads the VEP cache, CADD scores and LOFTEE data that it
+  reads, unless the paths below point at existing files. cadd_plugin and loftee_plugin turn off
+  CADD and LOFTEE together with their downloads.
 type: object
 additionalProperties: false
 
@@ -39,6 +40,21 @@ properties:
   perl_bin:
     type: string
     default: "perl"
+  cadd_plugin:
+    type: boolean
+    default: true
+    description: >-
+      Run the VEP plugin CADD, which adds the columns CADD_RAW and CADD_PHRED. If false, the
+      module neither reads nor downloads the files in cadd_dir.
+  loftee_plugin:
+    type: boolean
+    default: true
+    description: >-
+      Run LOFTEE, the VEP plugin LoF, which adds the column LoF and more LoF_* columns. If
+      false, the module neither reads nor downloads the files in loftee_data_dir. It still
+      needs loftee_src_path, because the VEP plugin MaxEntScan reads its maxEntScan folder.
+      The download rules stay, so the files are still downloaded if another module needs them,
+      e.g. the loftee module of veff.
   vep_cache_dir:
     type: string
     description: >-
@@ -67,6 +83,7 @@ properties:
       LOFTEE source code, which also contains the MaxEntScan data; `{human_genome_assembly}` is
       filled in. If it is missing, the module clones LOFTEE at a pinned commit (branch grch38
       for GRCh38, master for GRCh37). Default is <resources_dir>/loftee/{human_genome_assembly}_src.
+      Also needed with `loftee_plugin: false`.
 
 required:
   - vcf

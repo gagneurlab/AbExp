@@ -213,9 +213,8 @@ See its config.schema.yaml for the required and optional inputs.
 
 `workflow/modules/veff/nmd_scanner` adds [NMD-Scanner](https://github.com/gagneurlab/NMD-Scanner),
 which scans variants for premature termination codons and evaluates the NMD escape rules on the
-transcripts of a GTF file, and keeps its own per-transcript, per-variant table. It is off by
-default; set `system.nmd_scanner.enabled: true` to run it. NMD-Scanner 0.2.0 reads only GTF, so
-also set `system.nmd_scanner.gtf_file` to the GENCODE GTF of the same release as `gff3_file`.
+transcripts of `gff3_file`, and keeps its own per-transcript, per-variant table. It is off by
+default; set `system.nmd_scanner.enabled: true` to run it.
 
 Both modules keep the output of their tool as it is, and neither is read by tissue_specific_vep,
 fset or predict.

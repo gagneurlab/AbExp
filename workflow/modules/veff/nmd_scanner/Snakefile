@@ -5,7 +5,7 @@ from snakemake.utils import min_version, validate
 min_version("9.0")
 
 # NMD-Scanner (https://github.com/gagneurlab/NMD-Scanner) scans variants for premature
-# termination codons and evaluates its NMD escape rules on the transcripts of a GTF file.
+# termination codons and evaluates its NMD escape rules on the transcripts of a GFF3 file.
 # It writes NMD-Scanner's own per-transcript, per-variant table, unchanged. See
 # config.schema.yaml.
 validate(config, "config.schema.yaml")
@@ -17,7 +17,7 @@ CONDA_ENV_YAML_DIR = workflow.current_basedir.join("envs")
 # One version per step. Bump the key of the earliest step whose outputs change, see
 # "When jobs rerun" in README.md.
 OUTPUT_VERSION = {
-    "annotation": 1,
+    "annotation": 2,
 }
 
 OUTPUT_DIR = os.path.abspath(config["output_dir"])
@@ -27,7 +27,7 @@ HUMAN_GENOME_VERSION = config["human_genome_version"]
 
 FASTA_FILE = os.path.abspath(config["fasta_file"])
 FASTA_INDEX_FILE = os.path.abspath(config.get("fasta_file_idx", config["fasta_file"] + ".fai"))
-GTF_FILE = os.path.abspath(config["gtf_file"])
+GFF3_FILE = os.path.abspath(config["gff3_file"])
 VCF_FILE_PATTERN = config["vcf"]
 
 # NMD-Scanner recommends recomputing the exon numbers for GENCODE annotations built against

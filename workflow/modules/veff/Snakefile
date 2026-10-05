@@ -196,8 +196,7 @@ use rule * from enformer
 
 
 # off by default: needs its own conda environment, and its output is not read by
-# tissue_specific_vep, fset or predict. NMD-Scanner 0.2.0 reads only GTF, so the section
-# nmd_scanner has its own gtf_file.
+# tissue_specific_vep, fset or predict
 if config["nmd_scanner"].get("enabled"):
     NMD_SCANNER_CONFIG = {
         **config["nmd_scanner"],
@@ -206,6 +205,7 @@ if config["nmd_scanner"].get("enabled"):
         "resources_dir": RESOURCES_DIR,
         **GENOME,
         **optional(config, "fasta_file_idx"),
+        "gff3_file": config["gff3_file"],
     }
 
     module nmd_scanner:

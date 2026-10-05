@@ -106,8 +106,7 @@ properties:
     default: {}
     description: >-
       Options of the nmd_scanner module. The module is only loaded for
-      `nmd_scanner.enabled: true`, and then needs its own `gtf_file`: NMD-Scanner 0.2.0 reads
-      only GTF.
+      `nmd_scanner.enabled: true`. It reads `gff3_file`.
 
 if:
   properties:

@@ -6,7 +6,7 @@ VEFF_VCF_PQ_PATTERN=f"{OUTPUT_BASEDIR}/veff.parquet/{{vcf_file}}.parquet"
 rule veff__nmd_scanner_annotation:
     """
     Scans the variants of one VCF for premature termination codons and evaluates the NMD
-    escape rules with NMD-Scanner, on the transcripts of the GTF file.
+    escape rules with NMD-Scanner, on the transcripts of the GFF3 file.
     """
     threads: 4
     resources:
@@ -16,7 +16,7 @@ rule veff__nmd_scanner_annotation:
         veff_pq=VEFF_VCF_PQ_PATTERN,
     input:
         vcf=VCF_FILE_PATTERN,
-        gtf=GTF_FILE,
+        gff3=GFF3_FILE,
         fasta=FASTA_FILE,
         fasta_index=FASTA_INDEX_FILE,
     params:

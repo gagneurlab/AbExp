@@ -2,7 +2,7 @@ $schema: "https://json-schema.org/draft/2020-12/schema"
 title: nmd_scanner module
 description: >-
   Scans variants for premature termination codons and evaluates the NMD escape rules with
-  NMD-Scanner, on the transcripts of a GTF file. Writes NMD-Scanner's own per-transcript,
+  NMD-Scanner, on the transcripts of a GFF3 file. Writes NMD-Scanner's own per-transcript,
   per-variant table.
 type: object
 additionalProperties: false
@@ -28,11 +28,11 @@ properties:
   fasta_file_idx:
     type: string
     description: Index of `fasta_file`. Default is `fasta_file` + ".fai".
-  gtf_file:
+  gff3_file:
     type: string
     description: >-
-      Genome annotation (GTF) with the CDS and exon rows, e.g. the GENCODE GTF of the same
-      release as the pipeline's `gff3_file`. NMD-Scanner 0.2.0 reads only GTF.
+      Genome annotation (GFF3) from GENCODE or Ensembl. The veff module passes the pipeline's
+      `gff3_file`.
   reassign_exons:
     type: boolean
     description: >-
@@ -60,4 +60,4 @@ required:
   - output_dir
   - human_genome_version
   - fasta_file
-  - gtf_file
+  - gff3_file

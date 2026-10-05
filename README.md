@@ -189,16 +189,21 @@ exactly the values of `predict()` of the joblib model.
 The rule `veff__nmd_scanner_score` of the nmd_scanner module predicts `nmd_pred_score` with the NMD efficiency random forest of
 [NMD-Scanner](https://github.com/gagneurlab/NMD-Scanner).
 The model is `workflow/modules/veff/nmd_scanner/resources/nmd_efficiency_rf.onnx`
-(sha256 `ddd71423b980ab1069eef8090d529706ac6c329b59f7415a6c9d8c8619921cd5`).
+(sha256 `b196ebd025fa5e04da36937221c3f2450a943f5922f5bab4b7b4c6821c7812c5`).
 The rule runs it with onnxruntime and needs neither scikit-learn nor a pickle.
 The model has one input `input` of type double and shape [N, 19].
 It has one output `variable` of type float and shape [N, 1].
 The metadata key `feature_names` holds the names of the 19 input columns in input order, as a JSON list.
-The rule reads them from the model file and passes the boolean columns as 0.0 and 1.0.
+The rule takes the input names from `nmd_scanner.schema.MODEL_INPUTS`, which `veff__nmd_scanner_annotation`
+stores in the parquet metadata of its output, and stops with an error if they differ from `feature_names`.
+It passes the boolean columns as 0.0 and 1.0.
 
 The ONNX file is a conversion of `best_model.pkl` at the root of tag v0.3.0 of NMD-Scanner
 (sha256 `de1727b16ee6de383f6280a898c0610f0621f7821053c74ddc081b1eef31a3fa`).
 That file is a `RandomForestRegressor` pickled with scikit-learn 1.3.2, and it needs this version to load.
+The pickle has the feature names of NMD-Scanner 0.3.0. NMD-Scanner 0.4.0 renamed two of these columns without
+changing their values: `ptc_to_intron` is now `ptc_to_exon_end`, and `stop_codon_distance` is now
+`annotated_stop_distance`. The conversion writes the new names into `feature_names` and keeps the trees as they are.
 The conversion keeps the split thresholds and leaf values in double precision.
 skl2onnx computes these double values, but its `RandomForestRegressor` converter stores them as float32.
 So the conversion writes the `TreeEnsembleRegressor` node (`ai.onnx.ml` opset 3) itself.
@@ -233,7 +238,9 @@ graph = helper.make_graph(
 )
 onx = helper.make_model(graph, opset_imports=[helper.make_opsetid("", 15), helper.make_opsetid("ai.onnx.ml", 3)],
                         ir_version=8)
-helper.set_model_props(onx, {"feature_names": json.dumps(list(model.feature_names_in_))})
+# NMD-Scanner 0.4.0 renamed two model inputs; the pickle has the names of 0.3.0
+renames = {"ptc_to_intron": "ptc_to_exon_end", "stop_codon_distance": "annotated_stop_distance"}
+helper.set_model_props(onx, {"feature_names": json.dumps([renames.get(n, n) for n in model.feature_names_in_])})
 onnx.save(onx, "workflow/modules/veff/nmd_scanner/resources/nmd_efficiency_rf.onnx")
 '
 sha256sum workflow/modules/veff/nmd_scanner/resources/nmd_efficiency_rf.onnx
@@ -270,11 +277,11 @@ See its config.schema.yaml for the required and optional inputs.
 
 `workflow/modules/veff/nmd_scanner` adds [NMD-Scanner](https://github.com/gagneurlab/NMD-Scanner),
 which scans variants for premature termination codons (PTCs) and evaluates the NMD escape rules on the
-transcripts of `gff3_file`. It keeps NMD-Scanner's own per-transcript, per-variant table. Two more rules
-build the NMD features from this table:
+transcripts of `gff3_file`. It keeps NMD-Scanner's own per-transcript, per-variant table without the
+sequence columns. Two more rules build the NMD features from this table:
 - `veff__nmd_scanner_score` predicts the NMD efficiency `nmd_pred_score` of each transcript with a PTC,
-  with the random forest of NMD-Scanner (see [NMD efficiency model](#nmd-efficiency-model)). It drops the
-  transcripts with the PTC in the last exon, because NMD-Scanner 0.3.0 computes no `ptc_to_intron` for them.
+  with the random forest of NMD-Scanner (see [NMD efficiency model](#nmd-efficiency-model)). It scores the
+  rows whose `nmd_model_status` is "ok", and its log gives the number of rows per status.
 - `veff__nmd_scanner_features` aggregates the scores per variant, gene and GTEx tissue. The GTEx isoform
   proportions of the tissue_specific_vep module weight them. The output has the key columns and a struct
   column `features` with 28 fields: 12 from the scores and the PTC counts, and a weighted proportion and

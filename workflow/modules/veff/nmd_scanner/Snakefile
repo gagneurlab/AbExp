@@ -6,9 +6,9 @@ min_version("9.0")
 
 # NMD-Scanner (https://github.com/gagneurlab/NMD-Scanner) scans variants for premature
 # termination codons and evaluates its NMD escape rules on the transcripts of a GFF3 file.
-# It writes NMD-Scanner's own per-transcript, per-variant table, unchanged. Two more steps
-# predict the NMD efficiency of each premature termination codon and aggregate it per
-# variant, gene and GTEx tissue. See config.schema.yaml.
+# It writes NMD-Scanner's own per-transcript, per-variant table without the sequence columns.
+# Two more steps predict the NMD efficiency of each premature termination codon and aggregate
+# it per variant, gene and GTEx tissue. See config.schema.yaml.
 validate(config, "config.schema.yaml")
 
 # Rules use `conda: CONDA_ENV_YAML_DIR.join("<env>.yaml")`, which does not depend on the folder
@@ -18,7 +18,7 @@ CONDA_ENV_YAML_DIR = workflow.current_basedir.join("envs")
 # One version per step. Bump the key of the earliest step whose outputs change, see
 # "When jobs rerun" in README.md.
 OUTPUT_VERSION = {
-    "annotation": 2,
+    "annotation": 3,
     "score": 1,
     "features": 1,
 }

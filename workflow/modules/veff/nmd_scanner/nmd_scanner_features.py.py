@@ -83,7 +83,7 @@ score = pl.col("nmd_pred_score")
 
 features = pl.struct(
     (proportion * score).sum().alias("nmd_pred_score.weighted_sum"),
-    (proportion * pl.col("alt_is_premature")).sum().alias("alt_is_premature.proportion"),
+    (proportion * pl.col("alt_has_ptc")).sum().alias("alt_has_ptc.proportion"),
     (proportion * pl.col("nmd_escape")).sum().alias("nmd_escape.proportion"),
     # NaN if all p are 0 or missing
     ((proportion * score).sum() / proportion.sum()).alias("nmd_pred_score.weighted_mean"),
@@ -96,7 +96,7 @@ features = pl.struct(
     pl.when(proportion > 0.8).then(score).otherwise(0.0).max().alias("nmd_pred_score.high_proportion_weighted_max"),
     # number of transcripts that escape NMD, and that have a PTC
     pl.col("nmd_escape").sum().cast(pl.Int64).alias("num_escape"),
-    pl.col("alt_is_premature").sum().cast(pl.Int64).alias("num_premature"),
+    pl.col("alt_has_ptc").sum().cast(pl.Int64).alias("num_ptc"),
     # maximum s of the transcripts with p of at least 0.2, missing if there is none
     pl.when(proportion >= 0.2).then(score).max().alias("nmd_pred_score.high_expr_max"),
     *[(proportion * pl.col(c)).sum().alias(f"{c}.proportion") for c in FLAGS],

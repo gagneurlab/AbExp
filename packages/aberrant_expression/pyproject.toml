@@ -48,7 +48,7 @@ Issues = "https://github.com/gagneurlab/AbExp/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["abexp*"]
+include = ["abexp", "abexp.*"]
 
 [tool.setuptools.package-data]
 "abexp.mmsplice" = ["models/*.h5"]

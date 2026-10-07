@@ -1,6 +1,4 @@
 {
   ".": "1.1.0",
-  "packages/abexp_utils": "0.0.1",
-  "packages/kipoi_enformer": "0.0.1",
-  "packages/abexp_splicing": "0.0.1"
+  "packages/aberrant_expression": "0.0.1"
 }

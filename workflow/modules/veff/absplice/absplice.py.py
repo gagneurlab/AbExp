@@ -97,7 +97,7 @@ variants_df = (
         # "info_SVTYPE": "INFO_SVTYPE",
     })
     .select([
-        pl.col("chrom").replace(chrom_mapping, default=pl.col("chrom"), return_dtype=t.Utf8()).cast(t.Utf8()),
+        pl.col("chrom").replace_strict(chrom_mapping, default=pl.col("chrom"), return_dtype=t.Utf8()).cast(t.Utf8()),
         (pl.col("pos") - 1).cast(t.Int64()).alias("start"),
         pl.col("INFO_END").cast(t.Int64()).alias("end"),
         pl.col("ref"),
@@ -133,7 +133,7 @@ absplice_df = absplice_df.rename({
     if k in absplice_df.columns
 })
 absplice_df = absplice_df.with_columns(
-    pl.col("tissue").replace(tissue_mapping, default=pl.col("tissue"), return_dtype=t.Utf8()).cast(t.Utf8())
+    pl.col("tissue").replace_strict(tissue_mapping, default=pl.col("tissue"), return_dtype=t.Utf8()).cast(t.Utf8())
 )
 absplice_df.schema
 

@@ -103,8 +103,10 @@ isoform_proportions_df = (
     .select("gene", "transcript", "tissue", "weight")
 )
 
-ptc_df = ptc_df.join(isoform_proportions_df, on=["gene", "transcript"], how="inner")
-nmd_df = nmd_df.join(isoform_proportions_df, on=["gene", "transcript"], how="inner")
+# Both joins keep the row order of the PTC transcripts and the scores, so that the float sums below
+# add up in a fixed order.
+ptc_df = ptc_df.join(isoform_proportions_df, on=["gene", "transcript"], how="inner", maintain_order="left")
+nmd_df = nmd_df.join(isoform_proportions_df, on=["gene", "transcript"], how="inner", maintain_order="left")
 
 # %% [markdown]
 # # Aggregation
@@ -155,12 +157,14 @@ score_features = [
 ]
 
 # Every scored transcript is a PTC transcript, so the left join keeps the groups of the scores.
+# The streaming engine, the default since polars 2, sums the floats of a group in an order that
+# changes from run to run, which changes the last bits of the sums.
 agg_df = (
     ptc_df.group_by(GROUPBY).agg(ptc_features)
     .join(nmd_df.group_by(GROUPBY).agg(score_features), on=GROUPBY, how="left")
     .select(*GROUPBY, pl.struct(pl.all().exclude(GROUPBY)).alias("features"))
     .sort(GROUPBY)
-    .collect()
+    .collect(engine="in-memory")
 )
 
 # %% [markdown]

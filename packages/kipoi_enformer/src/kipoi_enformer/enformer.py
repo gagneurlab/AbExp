@@ -509,7 +509,9 @@ class EnformerVeff:
                         'log2fc'))
                 veff_ldf = veff_ldf.group_by(['chrom', 'strand', 'gene_id', 'variant_start',
                                               'variant_end', 'ref', 'alt', 'tissue']).agg(pl.col('log2fc').sum())
-            veff_df = veff_ldf.collect()
+            # The streaming engine, the default of polars 2, sums each group in a varying order, so the last bits
+            # of the scores change from run to run. The in-memory engine sums in row order, as polars 1 did.
+            veff_df = veff_ldf.collect(engine='in-memory')
         elif aggregation_mode == 'canonical':
             # Keep only the canonical transcripts
             veff_ldf = veff_ldf.filter(pl.col('transcript_id').is_in(self.canonical_transcripts.to_list()))

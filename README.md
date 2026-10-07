@@ -168,12 +168,23 @@ To add a model, set `model` of an entry in `system.models`, see `workflow/schema
 
 Earlier versions stored the models as joblib pickles (`model.joblib`), which need LightGBM 3.3.
 The predict rule no longer reads them. To keep using a custom joblib model, convert it once to a text model.
-The conversion needs LightGBM 3.3, scikit-learn, joblib, and `packages/abexp_utils` for the AbExp model wrapper.
+The conversion needs LightGBM 3.3, scikit-learn, joblib, and `packages/aberrant_expression` for the AbExp model
+wrapper. The pickles name the module of the wrapper by its old name, `abexp_utils.models.wrappers` or
+`rep.models.wrappers`, so the conversion maps both to `abexp.utils.models.wrappers`.
 Run it in the root of this repository:
 ```bash
 mamba create -n abexp-convert -c conda-forge python=3.11 "lightgbm~=3.3" "scikit-learn<1.8" joblib
-PYTHONPATH=packages/abexp_utils/src mamba run -n abexp-convert python -c '
+PYTHONPATH=packages/aberrant_expression/src mamba run -n abexp-convert python -c '
 import joblib
+import joblib.numpy_pickle
+
+class Unpickler(joblib.numpy_pickle.NumpyUnpickler):
+    def find_class(self, module, name):
+        if module in ("abexp_utils.models.wrappers", "rep.models.wrappers"):
+            module = "abexp.utils.models.wrappers"
+        return super().find_class(module, name)
+
+joblib.numpy_pickle.NumpyUnpickler = Unpickler
 model = joblib.load("my_model/model.joblib")
 # the shipped models wrap an LGBMRegressor; for a bare LGBMRegressor, use model.booster_
 model.model.booster_.save_model("my_model/model.txt")

@@ -254,7 +254,7 @@ snakemake.output
 # %%
 (
     predicted
-    .collect(streaming=True)
+    .collect(engine="streaming")
     .write_parquet(snakemake.output["data_pq"], statistics=True, use_pyarrow=True)
 )
 

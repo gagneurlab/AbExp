@@ -1,16 +1,16 @@
 import pytest
 import logging
-from kipoi_enformer.logger import logger
+from abexp.enformer.logger import logger
 from pathlib import Path
 
 # example files from gagneurlab/AbExp-utils, reduced to what the tests read:
 # the isoform proportions hold only the transcripts that the veff tests reach.
 # git-lfs stores them, and .lfsconfig excludes them from the default fetch.
 DATA_DIR = Path(__file__).resolve().parent / 'data'
-LFS_PULL = 'git lfs pull --include="packages/kipoi_enformer/tests/data/**" --exclude=""'
+LFS_PULL = 'git lfs pull --include="packages/aberrant_expression/tests/enformer/data/**" --exclude=""'
 LFS_POINTER = b'version https://git-lfs.github.com/spec/v1'
 # the tests also read the hg19 chr22 sequence and GENCODE annotation of the example config, outside of the package
-REPO = Path(__file__).resolve().parents[3]
+REPO = Path(__file__).resolve().parents[4]
 FASTA = REPO / 'example' / 'chr22_hg19.fa'
 
 

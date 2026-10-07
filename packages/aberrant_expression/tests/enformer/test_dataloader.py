@@ -4,7 +4,7 @@ from kipoiseq2 import Variant
 from kipoiseq2.extractors import FastaStringExtractor, VariantSeqExtractor
 from kipoiseq2.transforms.functional import one_hot_dna
 
-from kipoi_enformer.dataloader.dataloader import extract_sequences_around_anchor
+from abexp.enformer.dataloader.dataloader import extract_sequences_around_anchor
 
 CHROM_SEQ = 'ACGTTGCAACGGTACCATGATTCAGGCTAA'
 SEQ_LENGTH = 10

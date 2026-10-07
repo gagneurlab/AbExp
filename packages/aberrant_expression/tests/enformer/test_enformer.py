@@ -1,15 +1,15 @@
 import pytest
 
-from kipoi_enformer.dataloader import TSSDataloader, RefTSSDataloader, VCFTSSDataloader
-from kipoi_enformer.enformer import Enformer, EnformerAggregator, EnformerTissueMapper, EnformerVeff
+from abexp.enformer.dataloader import TSSDataloader, RefTSSDataloader, VCFTSSDataloader
+from abexp.enformer.enformer import Enformer, EnformerAggregator, EnformerTissueMapper, EnformerVeff
 from pathlib import Path
 import pyarrow.compute as pc
 import pyarrow.parquet as pq
-from kipoi_enformer.logger import logger
+from abexp.enformer.logger import logger
 import numpy as np
 import polars as pl
 from polars.testing import assert_frame_equal
-from kipoi_enformer.constants import AlleleType
+from abexp.enformer.constants import AlleleType
 from shutil import rmtree
 import sklearn as sk
 from sklearn import linear_model, pipeline, preprocessing, tree

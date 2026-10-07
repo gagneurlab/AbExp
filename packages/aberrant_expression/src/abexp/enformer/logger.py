@@ -3,7 +3,7 @@ import sys
 
 __all__ = ['logger', 'setup_logger']
 
-logger = logging.getLogger('kipoi_enformer')
+logger = logging.getLogger('abexp.enformer')
 
 
 def setup_logger(level=logging.INFO):

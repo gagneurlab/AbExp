@@ -2,9 +2,9 @@ import pathlib
 import numpy as np
 import kagglehub
 import tensorflow as tf
-from kipoi_enformer.dataloader import TSSDataloader
-from kipoi_enformer.utils import RandomModel, genome_annotation_to_polars, renamed_parameter
-from kipoi_enformer.logger import logger
+from abexp.enformer.dataloader import TSSDataloader
+from abexp.enformer.utils import RandomModel, genome_annotation_to_polars, renamed_parameter
+from abexp.enformer.logger import logger
 import pyarrow as pa
 import pyarrow.parquet as pq
 from tqdm.autonotebook import tqdm
@@ -370,7 +370,7 @@ class EnformerVeff:
 
         :param isoforms_path: The path to the file containing the isoform proportions.
         :param genome_annotation: The path to a GFF3 file or a polars or pandas DataFrame containing the genome
-            annotation, see `kipoi_enformer.utils.genome_annotation_to_polars`. The deprecated alias `gtf` still works.
+            annotation, see `abexp.enformer.utils.genome_annotation_to_polars`. The deprecated alias `gtf` still works.
         """
 
         self.isoform_proportion_ldf = None

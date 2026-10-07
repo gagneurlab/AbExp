@@ -1,11 +1,11 @@
 import polars as pl
 import pytest
 
-from kipoi_enformer.constants import AlleleType
-from kipoi_enformer.dataloader import TSSDataloader, VCFTSSDataloader, RefTSSDataloader
-from kipoi_enformer.dataloader.dataloader import get_tss_from_genome_annotation
-from kipoi_enformer.enformer import EnformerVeff
-from kipoi_enformer.utils import read_gff3
+from abexp.enformer.constants import AlleleType
+from abexp.enformer.dataloader import TSSDataloader, VCFTSSDataloader, RefTSSDataloader
+from abexp.enformer.dataloader.dataloader import get_tss_from_genome_annotation
+from abexp.enformer.enformer import EnformerVeff
+from abexp.enformer.utils import read_gff3
 from kipoiseq2.transforms.functional import one_hot2string
 
 UPSTREAM_TSS = 10

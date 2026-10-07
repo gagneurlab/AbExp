@@ -7,7 +7,7 @@ import polars as pl
 import polars_bio as pb
 import tensorflow as tf
 
-# GFF3 attributes that kipoi_enformer uses
+# GFF3 attributes that abexp.enformer uses
 GFF3_ATTRIBUTES = ('gene_id', 'transcript_id', 'gene_type', 'tag')
 
 
@@ -48,7 +48,7 @@ def read_gff3(path: str | pathlib.Path, attributes: tuple[str, ...] = GFF3_ATTRI
         and one column per attribute
     """
     if pathlib.Path(path).name.removesuffix('.gz').endswith('.gtf'):
-        raise ValueError(f'{path} looks like a GTF file, but kipoi_enformer reads the genome annotation from GFF3')
+        raise ValueError(f'{path} looks like a GTF file, but abexp.enformer reads the genome annotation from GFF3')
     df = pb.read_gff(str(path), attr_fields=['ID', *attributes], use_zero_based=True)
     # polars-bio decodes only some escapes, e.g. "%3B" but not "%25", so decode the rest
     for name in ['ID', *attributes]:

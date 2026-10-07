@@ -8,7 +8,7 @@ import polars as pl
 from kipoiseq2.extractors import VariantSeqExtractor, FastaStringExtractor
 from kipoiseq2 import Interval, Variant
 from kipoiseq2.transforms.functional import one_hot_dna
-from kipoi_enformer.utils import genome_annotation_to_polars, renamed_parameter
+from abexp.enformer.utils import genome_annotation_to_polars, renamed_parameter
 
 
 def numpy_collate(samples: list):

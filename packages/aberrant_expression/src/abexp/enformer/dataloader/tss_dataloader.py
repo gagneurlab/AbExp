@@ -4,9 +4,9 @@ from kipoiseq2.extractors import VariantSeqExtractor, SingleVariantMatcher
 import pyarrow as pa
 import numpy as np
 from .dataloader import Dataloader, get_tss_from_genome_annotation, extract_sequences_around_anchor
-from kipoi_enformer.constants import AlleleType
-from kipoi_enformer.logger import logger
-from kipoi_enformer.utils import renamed_parameter
+from abexp.enformer.constants import AlleleType
+from abexp.enformer.logger import logger
+from abexp.enformer.utils import renamed_parameter
 
 __all__ = ['TSSDataloader', 'RefTSSDataloader', 'VCFTSSDataloader']
 
@@ -26,7 +26,7 @@ class TSSDataloader(Dataloader):
 
         :param fasta_file: Fasta file with the reference genome
         :param genome_annotation: GFF3 file or DataFrame with the genome annotation,
-            see `kipoi_enformer.utils.genome_annotation_to_polars`. The deprecated alias `gtf` still works.
+            see `abexp.enformer.utils.genome_annotation_to_polars`. The deprecated alias `gtf` still works.
         :param chromosome: The chromosome to filter for. If None, all chromosomes are used.
         :param seq_length: The length of the sequence to return.
         :param shifts: The shifts in relation to the TSS.

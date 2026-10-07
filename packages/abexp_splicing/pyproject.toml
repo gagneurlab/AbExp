@@ -23,8 +23,7 @@ keywords = ["splicing", "variant effect prediction", "mmsplice", "absplice", "sp
     "computational biology", "bioinformatics", "genomics"]
 dependencies = [
     "numpy>=1.26.4",
-    # kipoiseq2 0.1 needs polars 1.37.1
-    "polars>=1.37.1",
+    "polars>=1.44",
     "kipoiseq2[ranges]>=0.1,<0.2",
     "tensorflow>=2.14.0",
     "onnxruntime",

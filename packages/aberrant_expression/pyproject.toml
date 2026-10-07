@@ -1,0 +1,104 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aberrant-expression"
+version = "0.0.1"
+description = "Utilities, Enformer, MMSplice, AbSplice-DNA and SpliceAI-RocksDB for the AbExp pipeline"
+authors = [
+    { name = "Florian Hölzlwimmer", email = "git.ich@frhoelzlwimmer.de" },
+    { name = "George Tsitsiridis", email = "gtsitsiridis@gmail.com" },
+    # the authors of the ported code of mmsplice, absplice, splicemap and spliceai_rocksdb
+    { name = "Jun Cheng" },
+    { name = "Muhammed Hasan Çelik" },
+    { name = "Nils Wagner" },
+]
+maintainers = [
+    { name = "Florian Hölzlwimmer", email = "git.ich@frhoelzlwimmer.de" },
+]
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+keywords = ["aberrant expression", "variant effect prediction", "splicing", "mmsplice", "absplice", "spliceai",
+    "enformer", "deep learning", "computational biology", "bioinformatics", "genomics"]
+# The base dependencies cover abexp.utils.common and abexp.utils.models. Each extra adds the dependencies of other
+# subpackages.
+dependencies = [
+    "numpy>=1.26.4",
+    # abexp.utils.models
+    "scikit-learn",
+]
+
+[project.optional-dependencies]
+# abexp.utils.polars_functions
+polars = [
+    "polars>=1.44",
+]
+# abexp.utils.spark_functions; displayHead returns a pandas DataFrame
+spark = [
+    "pyspark>=3.4",
+    "pandas",
+]
+# abexp.mmsplice and abexp.absplice
+splicing = [
+    "polars>=1.44",
+    "kipoiseq2[ranges]>=0.1,<0.2",
+    "tensorflow>=2.14.0",
+    "onnxruntime",
+    "tqdm",
+]
+# SpliceAI-RocksDB (abexp.spliceai_rocksdb). SpliceAI predictions of the variants that are not in the database
+# also need spliceai, see the README.
+rocksdb = [
+    "aberrant-expression[splicing]",
+    "python-rocksdb>=0.7",
+]
+# abexp.enformer
+enformer = [
+    "polars>=1.44",
+    "polars-bio>=0.36.1",
+    "kipoiseq2[ranges]>=0.1,<0.2",
+    "tensorflow>=2.14.0",
+    # downloads the Enformer model
+    "kagglehub",
+    "pandas>=2.2.1",
+    "pyarrow",
+    "scikit-learn>=1.4.1.post1",
+    "xarray>=2024.5.0",
+    "zarr>=2.15.0",
+    "pyyaml",
+    "tqdm",
+]
+# all extras but rocksdb, because pip builds python-rocksdb only with the RocksDB library installed
+all = [
+    "aberrant-expression[polars,spark,splicing,enformer]",
+]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "pytest-xdist",
+]
+
+[project.urls]
+Homepage = "https://github.com/gagneurlab/AbExp"
+Source = "https://github.com/gagneurlab/AbExp/tree/main/packages/aberrant_expression"
+Issues = "https://github.com/gagneurlab/AbExp/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["abexp", "abexp.*"]
+
+[tool.setuptools.package-data]
+"abexp.mmsplice" = ["models/*.h5"]
+"abexp.absplice" = ["precomputed/*"]
+
+[tool.pytest.ini_options]
+addopts = [
+    # Pass -n0 to turn this off, which a debugger needs and which restores per-test output order.
+    "-n", "auto",
+    # One worker runs the tests of each xdist_group, one after the other: the Spark tests and the tests that run
+    # Enformer, see tests/utils/test_spark.py and tests/enformer/test_enformer.py.
+    "--dist", "loadgroup",
+]

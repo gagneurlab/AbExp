@@ -1,9 +1,9 @@
 import pathlib
 
-from kipoi_enformer.enformer import Enformer, EnformerAggregator
-from kipoi_enformer.dataloader import TSSDataloader
-from kipoi_enformer.logger import setup_logger
-from kipoi_enformer import constants
+from abexp.enformer.enformer import Enformer, EnformerAggregator
+from abexp.enformer.dataloader import TSSDataloader
+from abexp.enformer.logger import setup_logger
+from abexp.enformer import constants
 import pandas as pd
 
 # SNAKEMAKE SCRIPT

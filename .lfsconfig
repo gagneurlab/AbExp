@@ -1,3 +1,3 @@
-# pip installs of the packages from a git URL skip the test data; see packages/README.md
+# pip installs of aberrant-expression from a git URL skip the test data; see packages/README.md
 [lfs]
-	fetchexclude = packages/kipoi_enformer/tests/data
+	fetchexclude = packages/aberrant_expression/tests/enformer/data

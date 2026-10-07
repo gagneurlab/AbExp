@@ -33,7 +33,7 @@ import lightgbm
 import numpy as np
 import polars as pl
 
-import abexp_utils.polars_functions as plf
+import abexp.utils.polars_functions as plf
 
 # %%
 snakefile_path = os.getcwd() + "/../Snakefile"

@@ -1,4 +1,4 @@
-# Releases the workflow and the Python packages in packages/ with release-please. See packages/README.md.
+# Releases the workflow and the Python package in packages/ with release-please. See packages/README.md.
 # Publishing to PyPI runs only if the repository variable PYPI_PUBLISH is 'true'.
 name: release-please
 
@@ -22,7 +22,7 @@ jobs:
     outputs:
       # the released paths in packages/, as a JSON list
       packages_released: ${{ steps.packages.outputs.paths }}
-      # all outputs, to look up per-path outputs such as packages/kipoi_enformer--tag_name
+      # all outputs, to look up per-path outputs such as packages/aberrant_expression--tag_name
       release: ${{ toJSON(steps.release.outputs) }}
     steps:
       # reads release-please-config.json and .release-please-manifest.json

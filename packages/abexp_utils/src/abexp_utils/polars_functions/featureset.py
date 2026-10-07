@@ -163,12 +163,14 @@ def join_featuresets(
             joint_full_column_sets,
         )
     else:
+        # polars 1.0 renamed how="outer" to "full", and polars 2 removed the old name
+        how = "full" if join in ("outer", "outer_coalesce") else join
         full_df = initial_df
         for other_df in joint_full_column_sets:
             full_df = full_df.join(
                 other_df,
                 on=[c for c in index_cols if c in full_df.columns and c in other_df.columns],
-                how=join, coalesce=True
+                how=how, coalesce=True
             )
 
     if fill_values is not None:

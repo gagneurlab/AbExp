@@ -1,0 +1,48 @@
+MIT License
+
+Copyright (c) 2023-2026 Gagneur lab
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-------------------------------------------------------------------------------
+
+This package contains code and model files ported from the following projects.
+They are under the MIT License with the terms above.
+
+mmsplice 2.4.0, https://github.com/gagneurlab/MMSplice_MTSplice, commit 31513da:
+src/abexp/mmsplice, including the model files in src/abexp/mmsplice/models
+    Copyright (c) 2018, Jun Cheng
+
+kipoi-utils 0.7.7, https://github.com/kipoi/kipoi-utils:
+src/abexp/mmsplice/batching.py
+    Copyright (c) 2019 Kipoi team
+
+absplice, https://github.com/gagneurlab/absplice, commit daad7b6:
+src/abexp/absplice, including the AbSplice-DNA model src/abexp/absplice/precomputed/AbSplice_DNA.onnx
+and the gene table src/abexp/absplice/precomputed/GENE_MAP.tsv.gz
+    Copyright (c) 2023 Muhammed Hasan Çelik and Nils Wagner
+
+splicemap, https://github.com/gagneurlab/splicemap, commit cf922eb:
+src/abexp/absplice/splicemap.py
+    Copyright (c) 2023 Muhammed Hasan Çelik and Nils Wagner
+
+spliceai_rocksdb, https://github.com/gagneurlab/spliceai_rocksdb, commit 3c40d6e:
+src/abexp/spliceai_rocksdb
+    The repository has no license file; its setup.py declares license="MIT license" and the author
+    M. Hasan Çelik.

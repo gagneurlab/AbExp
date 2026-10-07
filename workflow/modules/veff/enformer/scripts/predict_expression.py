@@ -1,10 +1,10 @@
 import os
 import pathlib
 
-from kipoi_enformer.enformer import Enformer, EnformerAggregator
-from kipoi_enformer.dataloader import TSSDataloader
-from kipoi_enformer.logger import setup_logger
-from kipoi_enformer import constants
+from abexp.enformer.enformer import Enformer, EnformerAggregator
+from abexp.enformer.dataloader import TSSDataloader
+from abexp.enformer.logger import setup_logger
+from abexp.enformer import constants
 import pandas as pd
 
 # SNAKEMAKE SCRIPT
@@ -43,7 +43,7 @@ dl_args = dl_args | {'fasta_file': input_['fasta_path'],
                      'protein_coding_only': config['protein_coding_only'],
                      'canonical_only': config['canonical_only'],
                      'size': None,
-                     'gtf': gtf_df}
+                     'genome_annotation': gtf_df}
 logger.info(dl_args)
 
 dl = TSSDataloader.from_allele_type(allele, **dl_args, )

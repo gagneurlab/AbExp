@@ -49,7 +49,7 @@ ENFORMER_REF = config.get("enformer_ref", {}).get(
 # kagglehub cache of the Enformer model. The prediction rules load the model from here, so the
 # compute nodes need no internet access.
 ENFORMER_KAGGLEHUB_CACHE = f"{RESOURCES_DIR}/kagglehub"
-# the handle that kipoi_enformer.enformer.Enformer loads (MODEL_HANDLE), and its path in the cache
+# the handle that abexp.enformer.enformer.Enformer loads (MODEL_HANDLE), and its path in the cache
 ENFORMER_MODEL_HANDLE = "deepmind/enformer/tensorFlow2/enformer/1"
 ENFORMER_MODEL = f"{ENFORMER_KAGGLEHUB_CACHE}/models/{ENFORMER_MODEL_HANDLE}"
 ENFORMER_TISSUE_MAPPER = config.get("tissue_mapper") or workflow.source_path("resources/tissue_mapper.parquet")

@@ -1,0 +1,4 @@
+# The sdist carries the tests, but not the git-lfs test data of abexp.enformer; the tests skip without it.
+graft tests
+prune tests/enformer/data
+global-exclude *.py[cod]

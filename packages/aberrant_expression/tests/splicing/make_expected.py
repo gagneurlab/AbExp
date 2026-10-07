@@ -1,7 +1,8 @@
-"""Write the expected test outputs in tests/data with the upstream packages.
+"""Write the expected test outputs in tests/splicing/data with the upstream packages.
 
-The tests compare abexp-splicing with these files. Run this script only to change the test data. Each command
-needs an environment with the upstream packages, e.g. the AbExp environments before abexp-splicing:
+The tests compare aberrant-expression with these files. Run this script only to change the test data. Each
+command needs an environment with the upstream packages, e.g. the AbExp environments before abexp-splicing, the
+former name of aberrant-expression:
 
 - `python make_expected.py mmsplice`: mmsplice 2.4.0
 - `python make_expected.py spliceai_vcf`: the SpliceAI fork hoeze/SpliceAI a1583bd. It runs the SpliceAI command
@@ -23,7 +24,7 @@ import pandas as pd
 TESTS = Path(__file__).resolve().parent
 DATA = TESTS / 'data'
 EXPECTED = DATA / 'expected'
-FASTA = TESTS.parents[2] / 'example' / 'chr22_hg38.fa'
+FASTA = TESTS.parents[3] / 'example' / 'chr22_hg38.fa'
 VCF = DATA / 'clinvar_chr22.vcf'
 SPLICEAI_VCF = DATA / 'clinvar_chr22.spliceai.vcf'
 SPLICEMAP5 = DATA / 'Whole_Blood_splicemap_psi5.csv.gz'
@@ -90,7 +91,7 @@ def absplice():
     df = df.rename(columns={'acceptor_loss_positiin': 'acceptor_loss_position'})
     df.to_csv(EXPECTED / 'spliceai_vcf.csv', index=False)
 
-    # AbSplice-DNA; abexp-splicing reads the model inputs with onnxruntime instead of onnx
+    # AbSplice-DNA; abexp.absplice reads the model inputs with onnxruntime instead of onnx
     session_inputs = [i.name for i in onnxruntime.InferenceSession(ABSPLICE_DNA).get_inputs()]
     assert session_inputs == _load_features_from_model_file(ABSPLICE_DNA), session_inputs
     df_mmsplice = pd.read_csv(EXPECTED / 'mmsplice_splicemap.csv')

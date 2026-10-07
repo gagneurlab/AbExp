@@ -12,7 +12,7 @@ SPLICEAI_VCF = DATA_DIR / 'clinvar_chr22.spliceai.vcf'
 SPLICEMAP5 = DATA_DIR / 'Whole_Blood_splicemap_psi5.csv.gz'
 SPLICEMAP3 = DATA_DIR / 'Whole_Blood_splicemap_psi3.csv.gz'
 # the tests also read the hg38 chr22 sequence of the example config, outside of the package
-REPO = Path(__file__).resolve().parents[3]
+REPO = Path(__file__).resolve().parents[4]
 FASTA = REPO / 'example' / 'chr22_hg38.fa'
 
 

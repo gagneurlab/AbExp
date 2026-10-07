@@ -3,7 +3,7 @@ requires = ["setuptools>=77", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "abexp-splicing"
+name = "aberrant-expression"
 version = "0.0.1"
 description = "MMSplice, AbSplice-DNA and SpliceAI-RocksDB for the AbExp pipeline, on kipoiseq2"
 # the authors of the ported code of mmsplice, absplice, splicemap and spliceai_rocksdb
@@ -43,7 +43,7 @@ dev = [
 
 [project.urls]
 Homepage = "https://github.com/gagneurlab/AbExp"
-Source = "https://github.com/gagneurlab/AbExp/tree/main/packages/abexp_splicing"
+Source = "https://github.com/gagneurlab/AbExp/tree/main/packages/aberrant_expression"
 Issues = "https://github.com/gagneurlab/AbExp/issues"
 
 [tool.setuptools.packages.find]

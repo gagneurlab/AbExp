@@ -39,11 +39,11 @@ spark = [
     "pyspark>=3.4",
 ]
 polars = [
-    "polars~=1.36",
+    "polars>=1.44",
 ]
 all = [
     "pyspark>=3.4",
-    "polars~=1.36",
+    "polars>=1.44",
 ]
 
 [tool.pytest.ini_options]

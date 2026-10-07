@@ -49,8 +49,8 @@ properties:
     type: string
     description: >-
       GTEx isoform proportions as parquet, e.g. the one of the tissue_specific_vep module, which
-      the veff module passes. The features rule reads the columns `transcript` (Ensembl ID
-      without version), `tissue` (GTEx tissue, e.g. "Adipose - Subcutaneous") and
+      the veff module passes. The features rule reads the columns `gene` and `transcript`
+      (Ensembl IDs without version), `tissue` (GTEx tissue, e.g. "Adipose - Subcutaneous") and
       `median_transcript_proportions`, and ignores the others. Without this key, the module has
       no features rule.
   conda_env:

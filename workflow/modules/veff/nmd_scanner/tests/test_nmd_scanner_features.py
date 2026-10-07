@@ -12,6 +12,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import polars as pl
+import pytest
 
 SCRIPT = Path(__file__).parent.parent / "nmd_scanner_features.py.py"
 
@@ -249,5 +250,108 @@ def test_no_scored_ptc_transcript(tmp_path):
                 "nmd_pred_score.high_expr_max": None,
             },
             **flag_features(None, None),
+        )
+    ]
+
+
+@pytest.mark.parametrize("median", [0.0, None])
+def test_gene_without_weights(tmp_path, median):
+    transcripts = [
+        Transcript("ENST00000000001", "ok", True, nmd_pred_score=2.0),
+        Transcript("ENST00000000002", "no_annotated_stop", True),
+    ]
+    # The medians of the gene add up to 0 in the tissue.
+    proportions = [
+        IsoformProportion("ENST00000000001", median),
+        IsoformProportion("ENST00000000002", median),
+        IsoformProportion("ENST00000000003", median),
+    ]
+
+    assert run_features(tmp_path, transcripts, proportions) == [
+        features_row(
+            **{
+                "alt_has_ptc.proportion": None,
+                "num_ptc": 2,
+                "nmd_pred_score.weighted_sum": None,
+                "nmd_escape.proportion": None,
+                "nmd_pred_score.weighted_mean": None,
+                "nmd_pred_score": 2.0,
+                "nmd_pred_score.median": 2.0,
+                "nmd_pred_score.mean": 2.0,
+                "nmd_pred_score.std": None,
+                "nmd_pred_score.high_proportion_weighted_max": None,
+                "num_escape": 0,
+                "nmd_pred_score.high_expr_max": None,
+            },
+            **flag_features(None, 0.0),
+        )
+    ]
+
+
+def test_medians_that_sum_to_more_than_1(tmp_path):
+    transcripts = [
+        Transcript("ENST00000000001", "ok", True, nmd_pred_score=1.0),
+        Transcript("ENST00000000002", "ok", True, nmd_pred_score=2.0, nmd_escape=True),
+    ]
+    # The medians add up to 2, so the weights are 0.5, 0.125 and 0.375. ENST00000000003 has no PTC,
+    # but counts in the sum.
+    proportions = [
+        IsoformProportion("ENST00000000001", 1.0),
+        IsoformProportion("ENST00000000002", 0.25),
+        IsoformProportion("ENST00000000003", 0.75),
+    ]
+
+    assert run_features(tmp_path, transcripts, proportions) == [
+        features_row(
+            **{
+                "alt_has_ptc.proportion": 0.625,
+                "num_ptc": 2,
+                "nmd_pred_score.weighted_sum": 0.75,
+                "nmd_escape.proportion": 0.125,
+                "nmd_pred_score.weighted_mean": 0.75 / 0.625,
+                "nmd_pred_score": 2.0,
+                "nmd_pred_score.median": 1.5,
+                "nmd_pred_score.mean": 1.5,
+                "nmd_pred_score.std": 0.5**0.5,
+                # no weight above 0.8, though the median of ENST00000000001 is 1
+                "nmd_pred_score.high_proportion_weighted_max": 0.0,
+                "num_escape": 1,
+                # ENST00000000002 has a weight below 0.2, though its median is 0.25
+                "nmd_pred_score.high_expr_max": 1.0,
+            },
+            **flag_features(0.0, 0.0),
+        )
+    ]
+
+
+def test_transcript_of_another_gene_in_isoform_table(tmp_path):
+    transcripts = [
+        Transcript("ENST00000000001", "ok", True, nmd_pred_score=2.0),
+        Transcript("ENST00000000002", "ok", True, nmd_pred_score=1.0),
+    ]
+    # The table puts ENST00000000002 into another gene, so it has no weight in GENE.
+    proportions = [
+        IsoformProportion("ENST00000000001", 0.5),
+        IsoformProportion("ENST00000000003", 0.5),
+        IsoformProportion("ENST00000000002", 1.0, gene="ENSG00000000002"),
+    ]
+
+    assert run_features(tmp_path, transcripts, proportions) == [
+        features_row(
+            **{
+                "alt_has_ptc.proportion": 0.5,
+                "num_ptc": 1,
+                "nmd_pred_score.weighted_sum": 1.0,
+                "nmd_escape.proportion": 0.0,
+                "nmd_pred_score.weighted_mean": 2.0,
+                "nmd_pred_score": 2.0,
+                "nmd_pred_score.median": 2.0,
+                "nmd_pred_score.mean": 2.0,
+                "nmd_pred_score.std": None,
+                "nmd_pred_score.high_proportion_weighted_max": 0.0,
+                "num_escape": 0,
+                "nmd_pred_score.high_expr_max": 2.0,
+            },
+            **flag_features(0.0, 0.0),
         )
     ]

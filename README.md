@@ -251,7 +251,9 @@ sequence columns. Two more rules build the NMD features from this table:
   with the random forest of NMD-Scanner (see [NMD efficiency model](#nmd-efficiency-model)). It scores the
   rows whose `nmd_model_status` is "ok", and its log gives the number of rows per status.
 - `veff__nmd_scanner_features` aggregates the scores per variant, gene and GTEx tissue. The GTEx isoform
-  proportions of the tissue_specific_vep module weight them. The output has the key columns and a struct
+  proportions of the tissue_specific_vep module weight them: the weight of a transcript is its median
+  transcript proportion in the tissue, divided by the sum of these medians over all transcripts of its gene.
+  So the weights of a gene add up to 1 in each tissue. The output has the key columns and a struct
   column `features` with 28 fields: 12 from the scores and the PTC counts, and a weighted proportion and
   a maximum for each of 8 NMD-Scanner flags (start and stop loss, the 5 NMD escape rules and
   `ptc_less_than_150nt_to_start`). `alt_has_ptc.proportion` and `num_ptc` count every transcript in which

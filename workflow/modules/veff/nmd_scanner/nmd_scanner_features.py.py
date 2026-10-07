@@ -16,10 +16,9 @@
 # %% [markdown]
 # # NMD features per variant, gene and tissue
 #
-# Aggregates the PTC transcripts of each variant per gene and GTEx tissue. The median transcript
-# proportion of each transcript in the tissue weights the prediction score and the flags. A
-# transcript without a row in the isoform proportion table has no tissue, so it does not count in
-# any tissue.
+# Aggregates the PTC transcripts of each variant per gene and GTEx tissue. The weight of each
+# transcript in the tissue weights the prediction score and the flags. A transcript without a row
+# of its gene in the isoform proportion table has no tissue, so it does not count in any tissue.
 #
 # NMD-Scanner's table (`nmd_scanner_pq`) gives every PTC transcript, for `alt_has_ptc.proportion`
 # and `num_ptc`. The scores of `nmd_scanner_score.py.py` (`nmd_score_pq`) give the PTC transcripts
@@ -78,54 +77,80 @@ ptc_df = (
 )
 nmd_df = pl.scan_parquet(snakemake.input["nmd_score_pq"])
 
+# %% [markdown]
+# # Transcript weights
+#
+# The weight of a transcript in a tissue is its median transcript proportion, divided by the sum of
+# the median transcript proportions of all transcripts of its gene in the isoform proportion table.
+# So the weights of a gene add up to 1 in each tissue. The medians do not: in GTEx, their sum per
+# gene and tissue ranges from 0 to 1.23. A gene whose sum is 0 has null weights in the tissue, also
+# if its medians are all missing.
+#
+# The weights join on gene and transcript, as in `tissue_specific_vep.py.py`. If the table puts a
+# transcript into another gene than the annotation does, the transcript has no weight. Otherwise the
+# weights of a gene could add up to more than 1. This happens after a change of a gene ID between
+# GENCODE versions.
+
+# %%
+median = pl.col("median_transcript_proportions")
+gene_sum = median.cast(pl.Float64).sum().over("gene", "tissue")
+
 isoform_proportions_df = (
     pl.scan_parquet(snakemake.input["isoform_proportions_pq"])
-    .select("transcript", "tissue", "median_transcript_proportions")
-    .join(ptc_df.select("transcript").unique(), on="transcript", how="semi")
+    .select("gene", "transcript", "tissue", "median_transcript_proportions")
+    .with_columns(pl.when(gene_sum > 0).then(median / gene_sum).alias("weight"))
+    .join(ptc_df.select("gene", "transcript").unique(), on=["gene", "transcript"], how="semi")
+    .select("gene", "transcript", "tissue", "weight")
 )
 
-ptc_df = ptc_df.join(isoform_proportions_df, on="transcript", how="inner")
-nmd_df = nmd_df.join(isoform_proportions_df, on="transcript", how="inner")
+ptc_df = ptc_df.join(isoform_proportions_df, on=["gene", "transcript"], how="inner")
+nmd_df = nmd_df.join(isoform_proportions_df, on=["gene", "transcript"], how="inner")
 
 # %% [markdown]
 # # Aggregation
 #
-# p is the median transcript proportion and s the `nmd_pred_score` of a transcript. The proportions
-# keep the dtype of the table in the comparisons with 0.8 and 0.2. Sums skip a missing p.
+# w is the weight and s the `nmd_pred_score` of a transcript. Sums skip a missing w. A feature that
+# uses w is null if no transcript of the group has a weight, i.e. if the gene has null weights in
+# the tissue.
 #
-# `alt_has_ptc.proportion` is the sum of p over the PTC transcripts, and `num_ptc` is their number.
+# `alt_has_ptc.proportion` is the sum of w over the PTC transcripts, and `num_ptc` is their number.
 # The other features come from the scored transcripts only. They are null for a variant, gene and
 # tissue without a scored transcript.
 #
-# The flags are 0.0 or 1.0. For each flag in FLAGS, `<flag>.proportion` is the sum of p over the
+# The flags are 0.0 or 1.0. For each flag in FLAGS, `<flag>.proportion` is the sum of w over the
 # transcripts with the flag set, and `<flag>` is 1.0 if any transcript has it set.
 
 # %%
-proportion = pl.col("median_transcript_proportions")
+weight = pl.col("weight")
 score = pl.col("nmd_pred_score")
 
+
+def weighted(feature: pl.Expr) -> pl.Expr:
+    """`feature`, or null if no transcript of the group has a weight"""
+    return pl.when(weight.is_not_null().any()).then(feature)
+
+
 ptc_features = [
-    # Float64, like the other proportions
-    proportion.cast(pl.Float64).sum().alias("alt_has_ptc.proportion"),
+    weighted(weight.sum()).alias("alt_has_ptc.proportion"),
     pl.len().cast(pl.Int64).alias("num_ptc"),
 ]
 score_features = [
-    (proportion * score).sum().alias("nmd_pred_score.weighted_sum"),
-    (proportion * pl.col("nmd_escape")).sum().alias("nmd_escape.proportion"),
-    # NaN if all p are 0 or missing
-    ((proportion * score).sum() / proportion.sum()).alias("nmd_pred_score.weighted_mean"),
+    weighted((weight * score).sum()).alias("nmd_pred_score.weighted_sum"),
+    weighted((weight * pl.col("nmd_escape")).sum()).alias("nmd_escape.proportion"),
+    # NaN if all w are 0
+    weighted((weight * score).sum() / weight.sum()).alias("nmd_pred_score.weighted_mean"),
     score.max().alias("nmd_pred_score"),
     score.median().alias("nmd_pred_score.median"),
     score.mean().alias("nmd_pred_score.mean"),
     # missing for a single transcript
     score.std().alias("nmd_pred_score.std"),
-    # maximum s of the transcripts with p above 0.8, and 0 if there is none
-    pl.when(proportion > 0.8).then(score).otherwise(0.0).max().alias("nmd_pred_score.high_proportion_weighted_max"),
+    # maximum s of the transcripts with w above 0.8, and 0 if there is none
+    weighted(pl.when(weight > 0.8).then(score).otherwise(0.0).max()).alias("nmd_pred_score.high_proportion_weighted_max"),
     # number of transcripts that escape NMD
     pl.col("nmd_escape").sum().cast(pl.Int64).alias("num_escape"),
-    # maximum s of the transcripts with p of at least 0.2, missing if there is none
-    pl.when(proportion >= 0.2).then(score).max().alias("nmd_pred_score.high_expr_max"),
-    *[(proportion * pl.col(c)).sum().alias(f"{c}.proportion") for c in FLAGS],
+    # maximum s of the transcripts with w of at least 0.2, missing if there is none
+    pl.when(weight >= 0.2).then(score).max().alias("nmd_pred_score.high_expr_max"),
+    *[weighted((weight * pl.col(c)).sum()).alias(f"{c}.proportion") for c in FLAGS],
     *[pl.col(c).max().alias(c) for c in FLAGS],
 ]
 

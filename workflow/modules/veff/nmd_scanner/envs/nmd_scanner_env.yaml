@@ -11,4 +11,4 @@ dependencies:
 - pip:
   # NMD-Scanner (https://github.com/gagneurlab/NMD-Scanner) is published on PyPI; this pins
   # the release that this module was written and tested against.
-  - nmd-scanner==0.4.0
+  - nmd-scanner==0.5.0

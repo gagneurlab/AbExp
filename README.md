@@ -198,7 +198,7 @@ The rule takes the input names from `nmd_scanner.schema.MODEL_INPUTS`, which `ve
 stores in the parquet metadata of its output, and stops with an error if they differ from `feature_names`.
 It passes the boolean columns as 0.0 and 1.0.
 
-The ONNX file is `nmd_efficiency_rf.onnx` at the root of NMD-Scanner, byte for byte.
+The ONNX file is [`nmd_efficiency_rf.onnx`](https://github.com/gagneurlab/NMD-Scanner/blob/v0.5.0/nmd_efficiency_rf.onnx) of NMD-Scanner 0.5.0, byte for byte.
 NMD-Scanner's `scripts/train_model.py` trains this random forest with scikit-learn 1.9.1 on the NMD-Scanner 0.4.0
 features of the NMDEff TCGA benchmark, and writes it as ONNX.
 The script writes the `TreeEnsembleRegressor` node (`ai.onnx.ml` opset 3) itself, so the split thresholds and leaf
@@ -208,7 +208,7 @@ By the ONNX specification, this node outputs float32.
 The script checks that the output equals `predict()` of the random forest, rounded to float32, on all training rows.
 On the 14342 scored rows of the ClinVar chr22 example, the output also equaled it in every row.
 
-To redo the model, run in the root of a clone of NMD-Scanner:
+To redo the model, run in the root of a clone of NMD-Scanner at tag v0.5.0:
 ```bash
 uv run scripts/train_model.py --gff3 gencode.v42.annotation.gff3.gz --fasta GRCh38.fa --out-dir out/
 sha256sum out/models/nmd_efficiency_rf.onnx

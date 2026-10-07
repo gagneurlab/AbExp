@@ -1,4 +1,4 @@
-import abexp_utils.polars_functions as pl_funcs
+import abexp.utils.polars_functions as pl_funcs
 import polars as pl
 
 

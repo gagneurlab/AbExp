@@ -4,7 +4,7 @@ import logging
 import pyspark.sql.types as t
 import pyspark.sql.functions as f
 import pyspark
-from abexp_utils.common import url_encode
+from abexp.utils.common import url_encode
 
 log = logging.getLogger(__name__)
 

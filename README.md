@@ -254,7 +254,8 @@ sequence columns. Two more rules build the NMD features from this table:
   proportions of the tissue_specific_vep module weight them. The output has the key columns and a struct
   column `features` with 28 fields: 12 from the scores and the PTC counts, and a weighted proportion and
   a maximum for each of 8 NMD-Scanner flags (start and stop loss, the 5 NMD escape rules and
-  `ptc_less_than_150nt_to_start`).
+  `ptc_less_than_150nt_to_start`). `alt_has_ptc.proportion` and `num_ptc` count every transcript in which
+  the variant creates a PTC, also those that the model cannot score.
 
 The module is off by default. Set `system.nmd_scanner.enabled: true` and request
 `<output_dir>/veff/nmd_scanner/features.parquet/<vcf_file>.parquet` as target.

@@ -58,8 +58,8 @@ rule veff__nmd_scanner_score:
 if ISOFORM_PROPORTIONS_PQ:
     rule veff__nmd_scanner_features:
         """
-        Aggregates the NMD efficiency predictions of one VCF per variant, gene and GTEx tissue,
-        weighted by the GTEx isoform proportions.
+        Aggregates the NMD efficiency predictions and the PTC transcripts of one VCF per variant,
+        gene and GTEx tissue, weighted by the GTEx isoform proportions.
         """
         threads: 2
         resources:
@@ -68,6 +68,7 @@ if ISOFORM_PROPORTIONS_PQ:
         output:
             veff_pq=FEATURES_PQ_PATTERN,
         input:
+            nmd_scanner_pq=VEFF_VCF_PQ_PATTERN,
             nmd_score_pq=SCORE_PQ_PATTERN,
             isoform_proportions_pq=ISOFORM_PROPORTIONS_PQ,
         params:

@@ -84,27 +84,31 @@ os.getcwd()
 # The gene id loses its version, as in the SpliceMaps.
 
 # %%
+# the 8 fixed columns of a VCF, by their names in the header line
 VCF_COLUMNS = {
-    "chrom": pl.String,
-    "pos": pl.Int64,
-    "id": pl.String,
-    "ref": pl.String,
-    "alt": pl.String,
-    "qual": pl.String,
-    "filter": pl.String,
-    "info": pl.String,
+    "#CHROM": "chrom",
+    "POS": "pos",
+    "ID": "id",
+    "REF": "ref",
+    "ALT": "alt",
+    "QUAL": "qual",
+    "FILTER": "filter",
+    "INFO": "info",
 }
 
-pangolin_vcf_df = pl.read_csv(
-    snakemake.input["pangolin_vcf"],
-    separator="\t",
-    comment_prefix="#",
-    has_header=False,
-    quote_char=None,
-    schema=VCF_COLUMNS,
-    # drops the FORMAT and sample columns
-    truncate_ragged_lines=True,
-    raise_if_empty=False,
+pangolin_vcf_df = (
+    pl.read_csv(
+        snakemake.input["pangolin_vcf"],
+        separator="\t",
+        # skips the meta-information lines, but not the header line
+        comment_prefix="##",
+        quote_char=None,
+        # drops the FORMAT and sample columns
+        columns=list(VCF_COLUMNS),
+        infer_schema=False,
+    )
+    .rename(VCF_COLUMNS)
+    .with_columns(pl.col("pos").cast(pl.Int64))
 )
 pangolin_vcf_df.shape
 

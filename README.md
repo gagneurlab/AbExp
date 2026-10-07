@@ -189,7 +189,7 @@ exactly the values of `predict()` of the joblib model.
 The rule `veff__nmd_scanner_score` of the nmd_scanner module predicts `nmd_pred_score` with the NMD efficiency random forest of
 [NMD-Scanner](https://github.com/gagneurlab/NMD-Scanner).
 The model is `workflow/modules/veff/nmd_scanner/resources/nmd_efficiency_rf.onnx`
-(sha256 `b196ebd025fa5e04da36937221c3f2450a943f5922f5bab4b7b4c6821c7812c5`).
+(sha256 `e19f3c2b6c55c70b6452f657fea7e06a98ac33295b6128e0de0f2ef8fbd700b8`).
 The rule runs it with onnxruntime and needs neither scikit-learn nor a pickle.
 The model has one input `input` of type double and shape [N, 19].
 It has one output `variable` of type float and shape [N, 1].
@@ -198,55 +198,23 @@ The rule takes the input names from `nmd_scanner.schema.MODEL_INPUTS`, which `ve
 stores in the parquet metadata of its output, and stops with an error if they differ from `feature_names`.
 It passes the boolean columns as 0.0 and 1.0.
 
-The ONNX file is a conversion of `best_model.pkl` at the root of tag v0.3.0 of NMD-Scanner
-(sha256 `de1727b16ee6de383f6280a898c0610f0621f7821053c74ddc081b1eef31a3fa`).
-That file is a `RandomForestRegressor` pickled with scikit-learn 1.3.2, and it needs this version to load.
-The pickle has the feature names of NMD-Scanner 0.3.0. NMD-Scanner 0.4.0 renamed two of these columns without
-changing their values: `ptc_to_intron` is now `ptc_to_exon_end`, and `stop_codon_distance` is now
-`annotated_stop_distance`. The conversion writes the new names into `feature_names` and keeps the trees as they are.
-The conversion keeps the split thresholds and leaf values in double precision.
-skl2onnx computes these double values, but its `RandomForestRegressor` converter stores them as float32.
-So the conversion writes the `TreeEnsembleRegressor` node (`ai.onnx.ml` opset 3) itself.
+The ONNX file is `nmd_efficiency_rf.onnx` at the root of NMD-Scanner, byte for byte.
+NMD-Scanner's `scripts/train_model.py` trains this random forest with scikit-learn 1.9.1 on the NMD-Scanner 0.4.0
+features of the NMDEff TCGA benchmark, and writes it as ONNX.
+The script writes the `TreeEnsembleRegressor` node (`ai.onnx.ml` opset 3) itself, so the split thresholds and leaf
+values stay in double precision.
+The `RandomForestRegressor` converter of skl2onnx would store them as float32.
 By the ONNX specification, this node outputs float32.
-In a test with about 400,000 real and synthetic input rows, the output equaled `predict()` of the pickle,
-rounded to float32, in every row.
-The output did not depend on the number of threads or on the batch size.
+The script checks that the output equals `predict()` of the random forest, rounded to float32, on all training rows.
+On the 14342 scored rows of the ClinVar chr22 example, the output also equaled it in every row.
 
-To redo the conversion, run in the root of this repository:
+To redo the model, run in the root of a clone of NMD-Scanner:
 ```bash
-curl -L -o best_model.pkl https://raw.githubusercontent.com/gagneurlab/NMD-Scanner/v0.3.0/best_model.pkl
-mamba create -n abexp-nmd-onnx -c conda-forge python=3.11.16 scikit-learn=1.3.2 skl2onnx=1.20.0 onnx=1.23.1 onnxruntime=1.30.0 joblib=1.6.0 numpy=1.26.4
-mamba run -n abexp-nmd-onnx python -c '
-import json, joblib, numpy as np, onnx
-from onnx import TensorProto, helper, numpy_helper
-from skl2onnx.common.tree_ensemble import add_tree_to_attribute_pairs, get_default_tree_regressor_attribute_pairs
-model = joblib.load("best_model.pkl")
-attrs = get_default_tree_regressor_attribute_pairs()
-attrs["n_targets"] = 1
-for i, estimator in enumerate(model.estimators_):
-    # as in the RandomForestRegressor converter of skl2onnx, but with float64 thresholds and leaf weights
-    add_tree_to_attribute_pairs(attrs, False, estimator.tree_, i, 1 / len(model.estimators_), 0, False,
-                                adjust_threshold_for_sklearn=True, dtype=np.float64)
-attrs["nodes_values_as_tensor"] = numpy_helper.from_array(np.array(attrs.pop("nodes_values")))
-attrs["target_weights_as_tensor"] = numpy_helper.from_array(np.array(attrs.pop("target_weights")))
-del attrs["nodes_hitrates"]
-node = helper.make_node("TreeEnsembleRegressor", ["input"], ["variable"], domain="ai.onnx.ml", **attrs)
-graph = helper.make_graph(
-    [node], "nmd_efficiency_rf",
-    [helper.make_tensor_value_info("input", TensorProto.DOUBLE, [None, model.n_features_in_])],
-    [helper.make_tensor_value_info("variable", TensorProto.FLOAT, [None, 1])],
-)
-onx = helper.make_model(graph, opset_imports=[helper.make_opsetid("", 15), helper.make_opsetid("ai.onnx.ml", 3)],
-                        ir_version=8)
-# NMD-Scanner 0.4.0 renamed two model inputs; the pickle has the names of 0.3.0
-renames = {"ptc_to_intron": "ptc_to_exon_end", "stop_codon_distance": "annotated_stop_distance"}
-helper.set_model_props(onx, {"feature_names": json.dumps([renames.get(n, n) for n in model.feature_names_in_])})
-onnx.save(onx, "workflow/modules/veff/nmd_scanner/resources/nmd_efficiency_rf.onnx")
-'
-sha256sum workflow/modules/veff/nmd_scanner/resources/nmd_efficiency_rf.onnx
+uv run scripts/train_model.py --gff3 gencode.v42.annotation.gff3.gz --fasta GRCh38.fa --out-dir out/
+sha256sum out/models/nmd_efficiency_rf.onnx
 ```
-With these versions, the conversion reproduces the committed file byte for byte.
-The environment also has onnxruntime, so `predict()` of the pickle and the ONNX model can run side by side.
+Then copy `out/models/nmd_efficiency_rf.onnx` to `workflow/modules/veff/nmd_scanner/resources/`.
+The script pins its dependencies, and two runs gave the same file byte for byte.
 
 ## Using AbExp as Snakemake modules
 

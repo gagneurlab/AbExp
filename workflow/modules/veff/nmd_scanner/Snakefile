@@ -19,7 +19,7 @@ CONDA_ENV_YAML_DIR = workflow.current_basedir.join("envs")
 # "When jobs rerun" in README.md.
 OUTPUT_VERSION = {
     "annotation": 3,
-    "score": 1,
+    "score": 2,
     "features": 1,
 }
 

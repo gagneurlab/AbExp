@@ -9,7 +9,7 @@ dependencies:
 - ipython
 - numpy
 - pyarrow
-- polars~=1.44
+- polars>=1.44
 - pyyaml
 - tqdm
 # downloads

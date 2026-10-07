@@ -17,7 +17,7 @@ dependencies:
 - lightgbm>=4,<5
 - tqdm
 - statsmodels
-- polars~=1.44
+- polars>=1.44
 - bioconda::bcftools
 - bioconda::tabix
 - bioconda::pyfaidx

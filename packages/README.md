@@ -52,7 +52,8 @@ Between releases, main installs the package of the last release.
 
 ## Running the tests
 
-The tests are in one directory per area: `tests/utils`, `tests/enformer`, `tests/splicing` and `tests/pangolin`.
+The tests are in one directory per area: `tests/utils`, `tests/enformer`, `tests/splicing`, `tests/pangolin` and
+`tests/absplice2`.
 Each area needs the extras of its subpackages: `polars`, `spark` and `gff3` for `tests/utils`, and the extra of the
 same name for the other areas. The tests run across all cores by default, through pytest-xdist. Pass `-n0` to run
 them in one process, which a debugger needs and which restores per-test output order.
@@ -92,6 +93,12 @@ directly. They download the published weights (35 MB) once into the pytest cache
 `ABEXP_PANGOLIN_MODELS_DIR` if set. Without network access, the tests with the published weights fail:
 ```bash
 cd packages/aberrant_expression && pytest tests/pangolin
+```
+
+The absplice2 tests run `absplice2_dna` with a stand-in for the AbSplice2 model on made-up inputs, one
+constellation per test. They need no files and no network:
+```bash
+cd packages/aberrant_expression && pytest tests/absplice2
 ```
 
 CI (`.github/workflows/packages.yml`) runs the tests of each area on pull requests and pushes to main that change

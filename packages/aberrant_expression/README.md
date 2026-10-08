@@ -346,6 +346,7 @@ The tests are in one directory per area, and each area needs the extras of its s
 | `tests/enformer` | `enformer`        | the files in `tests/enformer/data/` and the hg19 chr22 sequence `example/chr22_hg19.fa` |
 | `tests/splicing` | `splicing`        | the files in `tests/splicing/data/` and the hg38 chr22 sequence `example/chr22_hg38.fa` |
 | `tests/pangolin` | `pangolin`        | the files in `tests/pangolin/data/` and the published weights of Pangolin (35 MB)       |
+| `tests/absplice2` | `absplice2`      | nothing                                                                                 |
 
 The example sequences are in the AbExp repository, outside of the package. Pytest skips a test if one of its files
 is missing, e.g. in an sdist.
@@ -361,6 +362,7 @@ pytest tests/utils
 pytest tests/enformer
 pytest tests/splicing
 pytest tests/pangolin
+pytest tests/absplice2
 ```
 
 The tests run across all cores by default, through pytest-xdist. Pass `-n0` to run them in one process, which a
@@ -373,6 +375,10 @@ Pangolin on an excerpt of GRCh38 chr22 in `tests/pangolin/data/`. They download 
 pytest cache, or into the folder in `ABEXP_PANGOLIN_MODELS_DIR` if set. Without network access, the download fails,
 and so do the tests with the published weights. Their expected rows come from upstream Pangolin, see
 `tests/pangolin/make_expected.py` and `tests/pangolin/make_expected_published.py`.
+
+The absplice2 tests run `absplice2_dna` with a stand-in for the AbSplice2 model on the made-up inputs of
+`tests/absplice2/constellations.py`, one constellation per test. Their expected rows come from the AbSplice2 scripts
+with the same stand-in, see `tests/absplice2/make_expected.py`.
 
 The expected outputs in `tests/splicing/data/expected/` come from the upstream packages, see
 `tests/splicing/make_expected.py`. The SpliceAI-RocksDB tests also need the extra `rocksdb` and the hg38 chr22

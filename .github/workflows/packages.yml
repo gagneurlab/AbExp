@@ -51,6 +51,9 @@ jobs:
           # abexp.pangolin, with small test models and with the published weights of Pangolin
           - area: pangolin
             extras: pangolin
+          # abexp.absplice2, with a stand-in for the AbSplice2 model
+          - area: absplice2
+            extras: absplice2
     env:
       TEST_DATA: packages/aberrant_expression/tests/enformer/data/**
       # the pangolin tests download the published weights of Pangolin into this folder

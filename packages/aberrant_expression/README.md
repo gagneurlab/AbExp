@@ -60,6 +60,7 @@ pip install -e "packages/aberrant_expression[all,dev]"
 
 `abexp.utils.polars_functions` and `abexp.utils.spark_functions` reshape polars and Spark DataFrames and join the
 feature sets of AbExp. `abexp.utils.models` holds the scikit-learn model wrappers of the AbExp models.
+`abexp.utils.gff3` reads GFF3 files with polars-bio for `abexp.enformer`, and needs the extra `enformer`.
 
 ## abexp.enformer
 

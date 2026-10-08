@@ -1,9 +1,9 @@
 import pathlib
-import urllib.parse
 
 import polars as pl
-import polars_bio as pb
 import tensorflow as tf
+
+from abexp.utils import gff3
 
 # GFF3 attributes that abexp.enformer uses
 GFF3_ATTRIBUTES = ('gene_id', 'transcript_id', 'gene_type', 'tag')
@@ -13,6 +13,7 @@ def read_gff3(path: str | pathlib.Path, attributes: tuple[str, ...] = GFF3_ATTRI
     """
     Read a GFF3 file, such as a GENCODE annotation, into a polars DataFrame with pyranges-style column names.
 
+    This is `abexp.utils.gff3.read_gff3` with other column names and unique chrY PAR IDs.
     Start is 0-based, End is 1-based (0-based, half-open).
     An attribute with several values, such as `tag`, keeps them joined with ",", as in the file.
     Escaped characters, such as "%3B" for ";", are decoded.
@@ -24,15 +25,7 @@ def read_gff3(path: str | pathlib.Path, attributes: tuple[str, ...] = GFF3_ATTRI
     :return: DataFrame with the columns Chromosome, Source, Feature, Start, End, Score, Strand, Frame
         and one column per attribute
     """
-    if pathlib.Path(path).name.removesuffix('.gz').endswith('.gtf'):
-        raise ValueError(f'{path} looks like a GTF file, but abexp.enformer reads the genome annotation from GFF3')
-    df = pb.read_gff(str(path), attr_fields=['ID', *attributes], use_zero_based=True)
-    # polars-bio decodes only some escapes, e.g. "%3B" but not "%25", so decode the rest
-    for name in ['ID', *attributes]:
-        escaped = df[name].drop_nulls().unique()
-        escaped = escaped.filter(escaped.str.contains('%', literal=True))
-        if len(escaped) > 0:
-            df = df.with_columns(pl.col(name).replace(escaped, [urllib.parse.unquote(x) for x in escaped]))
+    df = gff3.read_gff3(path, ('ID', *attributes))
     # ID marks a chrY PAR copy with the suffix "_PAR_Y", e.g. ENST00000381192.10_PAR_Y or
     # exon:ENST00000381192.10_PAR_Y:1, or in some lift37 entries with the prefix "ENSTR" or "ENSGR"
     is_par_y = pl.col('ID').str.contains(r'_PAR_Y|(^|:)ENS[GT]R\d')

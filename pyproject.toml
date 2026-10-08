@@ -1,0 +1,24 @@
+# uv workspace for the development and CI of the Python packages in packages/, see packages/README.md.
+# The workflow does not use it: its conda environments install aberrant-expression with pip from a release tag.
+# The workspace root is virtual: it has no [project] table, so uv neither builds nor installs it.
+[tool.uv.workspace]
+members = ["packages/aberrant_expression"]
+
+[tool.uv]
+# CI reads this through astral-sh/setup-uv (version-file), and uv checks it on each call.
+required-version = ">=0.12.15"
+# The version ranges of the test tools. The dependency groups of the packages list the bare names, and uv applies
+# these ranges in `uv lock` and `uv sync`.
+constraint-dependencies = [
+    "pytest>=9,<10",
+    "pytest-cov>=7,<8",
+    "pytest-xdist>=3.6,<4",
+]
+
+# python-rocksdb 0.7.0 (extra rocksdb) has only an sdist, and uv cannot use its PKG-INFO (metadata version 2.1).
+# Without this entry, `uv lock` installs setuptools and Cython and runs the setup.py of python-rocksdb to get its
+# metadata. The entry repeats that metadata.
+[[tool.uv.dependency-metadata]]
+name = "python-rocksdb"
+version = "0.7.0"
+requires-dist = ["setuptools>=25"]

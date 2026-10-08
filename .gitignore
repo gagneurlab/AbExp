@@ -72,6 +72,8 @@ target/
 
 # pyenv
 .python-version
+# but not the Python version of the uv workspace, see packages/README.md
+!/.python-version
 
 # celery beat schedule file
 celerybeat-schedule

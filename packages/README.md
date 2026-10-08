@@ -50,6 +50,29 @@ has no copy of `packages/`.
 
 Between releases, main installs the package of the last release.
 
+## Development with uv
+
+The repository root holds a uv workspace for the development and CI of the packages in `packages/`. The root
+`pyproject.toml` lists them as workspace members, and `uv.lock` pins the versions of all their requirements. The
+workflow does not use uv: its conda environments install aberrant-expression with pip from a release tag.
+
+The workspace uses Python 3.12. The file `.python-version` in the repository root sets it, and uv reads that file
+in `uv sync`, `uv run` and `uv build`, also in CI. uv downloads Python 3.12 if it finds none. Without the file, uv
+may take a newer installed Python, for which some locked requirements, e.g. tensorflow, have no wheels.
+
+`uv sync` in the repository root creates the virtual environment `.venv`. It installs aberrant-expression in
+editable mode, with the extras you choose, and removes the packages that these extras do not need:
+```bash
+uv sync --extra all --extra dev
+```
+`uv run <command>` runs a command in `.venv`. Add the extra `rocksdb` only with the RocksDB library installed,
+because uv builds python-rocksdb from its sdist.
+
+The root `pyproject.toml` sets the uv version in `required-version`. It also holds the version ranges of the test
+tools in `constraint-dependencies`, and the package lists only their names. After a change of the requirements in
+a `pyproject.toml`, run `uv lock` and commit `uv.lock`. `uv lock --check` fails if `uv.lock` does not match the
+`pyproject.toml` files.
+
 ## Running the tests
 
 The tests are in one directory per area: `tests/utils`, `tests/enformer`, `tests/splicing`, `tests/pangolin` and

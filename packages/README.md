@@ -166,6 +166,9 @@ proposes 0.1.0.
 
 The release PR bumps:
 - the version in `pyproject.toml` and the `CHANGELOG.md` of the package
+- the version of the package in `uv.lock`, so that `uv sync --locked` passes after the release. A `toml` entry of
+  `extra-files` in `release-please-config.json` finds it with a JSONPath. release-please wraps each TOML value in
+  an object with its position in the file, so the JSONPath compares `name.value`.
 - the tag pins in the conda environments and in the package README. These are the lines marked
   `x-release-please-version` and the lines between `x-release-please-start-version` and `x-release-please-end`.
 
@@ -178,8 +181,9 @@ The release PR moves the pins but does not change the workflow scripts. So a bre
 keep the workflow working with both the old and the new release: keep the old name as a deprecated alias, and
 update the workflow after the pin has moved.
 
-After a release, the workflow builds the sdist and wheel of the package. PyPI rejects direct URL dependencies.
-If the package has one, the build emits a warning. If the upload to PyPI is on, the build fails instead.
+After a release, the workflow builds the sdist and wheel of the package with `uv build`. PyPI rejects direct URL
+dependencies. If the package has one, the build emits a warning. If the upload to PyPI is on, the build fails
+instead.
 The extras `splicing`, `enformer` and `pangolin` depend on kipoiseq2 0.1 from PyPI. kipoiseq2 requires Python
 3.12 or later, so aberrant-expression does too.
 

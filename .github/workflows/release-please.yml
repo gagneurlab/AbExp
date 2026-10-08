@@ -53,12 +53,12 @@ jobs:
         with:
           ref: ${{ env.TAG }}
           persist-credentials: false
-      - uses: actions/setup-python@v7
+      # reads the uv version from required-version
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
-          python-version: "3.12"
-      - run: pip install build twine
-      - run: python -m build "$PACKAGE_PATH" --outdir dist
-      - run: twine check --strict dist/*
+          version-file: pyproject.toml
+      - run: uv build "$PACKAGE_PATH" --out-dir dist
+      - run: uvx twine check --strict dist/*
       - name: Check for direct URL dependencies
         env:
           PYPI_PUBLISH: ${{ vars.PYPI_PUBLISH }}

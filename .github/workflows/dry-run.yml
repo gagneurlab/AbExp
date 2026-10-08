@@ -75,13 +75,13 @@ jobs:
       PLACEHOLDERS: ${{ matrix.placeholders }}
       EXPECT_ERROR: ${{ matrix.expect_error }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       # To parse the workflow, Snakemake needs only itself and PyYAML. It also needs conda, because
       # workflow/profiles/default sets `software-deployment-method: conda` and Snakemake runs
       # `conda info` also in a dry-run.
-      - uses: mamba-org/setup-micromamba@v3
+      - uses: mamba-org/setup-micromamba@f457c30a868e4760d3a6fcea5f25dc655b8edf39 # v3.2.1
         with:
           environment-name: snakemake
           create-args: >-

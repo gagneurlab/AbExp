@@ -38,7 +38,7 @@ jobs:
       # the pangolin tests download the published weights of Pangolin into this folder
       ABEXP_PANGOLIN_MODELS_DIR: ${{ github.workspace }}/pangolin_models
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           lfs: false
@@ -46,7 +46,7 @@ jobs:
         if: matrix.area == 'enformer'
         id: lfs
         run: echo "hash=$(git lfs ls-files --long --include="$TEST_DATA" | sha256sum | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
-      - uses: actions/cache@v6
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         if: matrix.area == 'enformer'
         with:
           path: .git/lfs
@@ -56,7 +56,7 @@ jobs:
         if: matrix.area == 'enformer'
         run: git lfs pull --include="$TEST_DATA" --exclude=""
       # weights.py holds the SHA-256 sums of the weights, so a new list of weights gets a new key
-      - uses: actions/cache@v6
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         if: matrix.area == 'pangolin'
         with:
           path: pangolin_models
@@ -66,7 +66,7 @@ jobs:
         with:
           version-file: pyproject.toml
       # the spark tests need Java; pyspark 3.4 and later support Java 17
-      - uses: actions/setup-java@v6
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         if: matrix.area == 'utils'
         with:
           distribution: temurin
@@ -110,7 +110,7 @@ jobs:
           - extra: absplice2
             modules: abexp.absplice2
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           lfs: false
@@ -143,7 +143,7 @@ jobs:
     name: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       # reads the uv version from required-version
@@ -159,7 +159,7 @@ jobs:
           while IFS= read -r line; do
             echo "::warning title=Direct URL dependency::PyPI rejects ${line#Requires-Dist: }"
           done < direct-urls.txt
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: dist
           path: dist/

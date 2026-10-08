@@ -36,7 +36,7 @@ properties:
     type: string
     description: >-
       Mapping of the SpliceMap tissue names to the AbExp tissue names (columns tissue and
-      renamed_tissue), e.g. resources/AbSplice_tissue_mapping.csv of the absplice module.
+      renamed_tissue). Default is resources/AbSplice_tissue_mapping.csv of the absplice module.
   output_dir:
     type: string
     description: >-
@@ -101,7 +101,6 @@ required:
   - mmsplice_splicemap
   - splicemap_5
   - splicemap_3
-  - tissue_mapping_csv
   - output_dir
   - human_genome_version
   - fasta_file

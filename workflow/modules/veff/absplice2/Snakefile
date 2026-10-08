@@ -36,7 +36,9 @@ VALID_VCF_FILE_PATTERN = config["valid_vcf"]
 MMSPLICE_SPLICEMAP_CSV_PATTERN = config["mmsplice_splicemap"]
 SPLICEMAP5 = config["splicemap_5"]
 SPLICEMAP3 = config["splicemap_3"]
-TISSUE_MAPPING_CSV = config["tissue_mapping_csv"]
+TISSUE_MAPPING_CSV = config.get("tissue_mapping_csv") or workflow.source_path(
+    "../absplice/resources/AbSplice_tissue_mapping.csv"
+)
 
 MODEL_PKL = os.path.abspath(config.get("model_pkl", f"{RESOURCES_DIR}/absplice2/AbSplice_2_DNA.pkl"))
 

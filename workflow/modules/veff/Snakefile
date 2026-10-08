@@ -165,11 +165,15 @@ if config["absplice2"].get("enabled"):
         "mmsplice_splicemap": str(rules.veff__mmsplice_splicemap.output.result),
         "splicemap_5": [str(f) for f in rules.veff__mmsplice_splicemap.input.splicemap_5],
         "splicemap_3": [str(f) for f in rules.veff__mmsplice_splicemap.input.splicemap_3],
-        "tissue_mapping_csv": rules.veff__absplice.input.tissue_mapping,
         "output_dir": VEFF_DIR,
         "resources_dir": RESOURCES_DIR,
         **GENOME,
     }
+    # Snakemake pickles the module config for the scripts, so the config holds plain strings only.
+    # By default, the absplice2 module gets the tissue mapping of the absplice module from
+    # workflow.source_path itself.
+    if config["absplice"].get("tissue_mapping_csv"):
+        ABSPLICE2_CONFIG["tissue_mapping_csv"] = config["absplice"]["tissue_mapping_csv"]
 
     module absplice2:
         snakefile: "absplice2/Snakefile"

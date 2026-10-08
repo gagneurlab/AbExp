@@ -13,7 +13,7 @@ def read_gff3(path: str | pathlib.Path, attributes: tuple[str, ...] = GFF3_ATTRI
     """
     Read a GFF3 file, such as a GENCODE annotation, into a polars DataFrame with pyranges-style column names.
 
-    This is `abexp.utils.gff3.read_gff3` with other column names and unique chrY PAR IDs.
+    This is `abexp.utils.gff3.read_gff3` with `par_y_suffix=True` and other column names.
     Start is 0-based, End is 1-based (0-based, half-open).
     An attribute with several values, such as `tag`, keeps them joined with ",", as in the file.
     Escaped characters, such as "%3B" for ";", are decoded.
@@ -25,16 +25,7 @@ def read_gff3(path: str | pathlib.Path, attributes: tuple[str, ...] = GFF3_ATTRI
     :return: DataFrame with the columns Chromosome, Source, Feature, Start, End, Score, Strand, Frame
         and one column per attribute
     """
-    df = gff3.read_gff3(path, ('ID', *attributes))
-    # ID marks a chrY PAR copy with the suffix "_PAR_Y", e.g. ENST00000381192.10_PAR_Y or
-    # exon:ENST00000381192.10_PAR_Y:1, or in some lift37 entries with the prefix "ENSTR" or "ENSGR"
-    is_par_y = pl.col('ID').str.contains(r'_PAR_Y|(^|:)ENS[GT]R\d')
-    df = df.with_columns(
-        pl.when(is_par_y & ~pl.col(c).str.ends_with('_PAR_Y')).then(pl.col(c) + '_PAR_Y').otherwise(pl.col(c)).alias(c)
-        for c in ('gene_id', 'transcript_id') if c in df.columns
-    )
-    if 'ID' not in attributes:
-        df = df.drop('ID')
+    df = gff3.read_gff3(path, attributes, par_y_suffix=True)
     return genome_annotation_to_polars(df.rename({
         'chrom': 'Chromosome', 'source': 'Source', 'type': 'Feature', 'start': 'Start', 'end': 'End',
         'score': 'Score', 'strand': 'Strand', 'phase': 'Frame',

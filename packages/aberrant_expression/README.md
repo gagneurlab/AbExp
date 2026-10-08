@@ -64,6 +64,8 @@ pip install -e "packages/aberrant_expression[all,dev]"
 `abexp.utils.polars_functions` and `abexp.utils.spark_functions` reshape polars and Spark DataFrames and join the
 feature sets of AbExp. `abexp.utils.models` holds the scikit-learn model wrappers of the AbExp models, and needs the
 extra `models`. `abexp.utils.gff3` reads GFF3 files with polars-bio for `abexp.enformer`, and needs the extra `gff3`.
+With `par_y_suffix=True`, it adds the suffix `_PAR_Y` to `gene_id` and `transcript_id` of the chrY PAR copies, as
+`abexp.enformer` does.
 
 ## abexp.enformer
 
@@ -241,7 +243,7 @@ The tests are in one directory per area, and each area needs the extras of its s
 
 | directory        | extras            | reads                                                                                   |
 | ---------------- | ----------------- | --------------------------------------------------------------------------------------- |
-| `tests/utils`    | `polars`, `spark` | nothing; the Spark tests need a Java runtime                                            |
+| `tests/utils`    | `polars`, `spark`, `gff3` | nothing; the Spark tests need a Java runtime                                    |
 | `tests/enformer` | `enformer`        | the files in `tests/enformer/data/` and the hg19 chr22 sequence `example/chr22_hg19.fa` |
 | `tests/splicing` | `splicing`        | the files in `tests/splicing/data/` and the hg38 chr22 sequence `example/chr22_hg38.fa` |
 

@@ -16,4 +16,4 @@ dependencies:
   - pyBigWig
   - pyarrow
   - "biopython>=1.87"
-  - "polars-bio>=0.36.1"
+  - "polars-bio>=0.36.0"

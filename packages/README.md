@@ -151,7 +151,7 @@ The recipe would build one noarch package from the archive of the release tag on
   extras, `-rocksdb` depends on `-splicing`, and `-enformer` and `-pangolin` depend on `-gff3`.
 - `aberrant-expression` depends on all of them.
 
-Before that, kipoiseq2 needs a bioconda recipe, and bioconda needs polars-bio 0.36.1.
+Before that, kipoiseq2 needs a bioconda recipe.
 
 ## Enabling PyPI
 

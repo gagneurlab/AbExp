@@ -81,14 +81,10 @@ def test_read_junction():
     assert df.select('Start', 'End').rows() == [(41276032 - 50, 41276032 + 100), (41279042 - 100, 41279042 + 50)]
 
 
-@pytest.mark.parametrize('event_type, cls, splicemap', [
-    ('psi5', JunctionPSI5VCFDataloader, SPLICEMAP5),
-    ('psi3', JunctionPSI3VCFDataloader, SPLICEMAP3),
-])
-def test_junction_vcf_dataloader(fasta_file, event_type, cls, splicemap):
-    # the sequences and metadata of each variant-junction pair, as in mmsplice 2.4.0
+def junction_samples(event_type, dl):
+    """The sequences and metadata of each variant-junction pair of `dl`, as make_expected.py writes them."""
     samples = []
-    for row in cls(read_junctions(splicemap), fasta_file, str(VCF), encode=False):
+    for row in dl:
         meta = row['metadata']
         samples.append({
             'event_type': event_type,
@@ -101,12 +97,38 @@ def test_junction_vcf_dataloader(fasta_file, event_type, cls, splicemap):
             'seq': row['inputs']['seq'],
             'mut_seq': row['inputs']['mut_seq'],
         })
-    with open(EXPECTED_DIR / 'junction_samples.jsonl') as f:
-        expected = [s for s in map(json.loads, f) if s['event_type'] == event_type]
+    return samples
 
-    def key(s):
-        return s['variant'], s['junction']
+
+def expected_junction_samples(event_type):
+    with open(EXPECTED_DIR / 'junction_samples.jsonl') as f:
+        return [s for s in map(json.loads, f) if s['event_type'] == event_type]
+
+
+def sample_key(s):
+    return s['variant'], s['junction']
+
+
+@pytest.mark.parametrize('event_type, cls, splicemap', [
+    ('psi5', JunctionPSI5VCFDataloader, SPLICEMAP5),
+    ('psi3', JunctionPSI3VCFDataloader, SPLICEMAP3),
+])
+def test_junction_vcf_dataloader(fasta_file, event_type, cls, splicemap):
+    # the sequences and metadata of each variant-junction pair, as in mmsplice 2.4.0
+    samples = junction_samples(event_type, cls(read_junctions(splicemap), fasta_file, str(VCF), encode=False))
+    expected = expected_junction_samples(event_type)
 
     # kipoiseq2 yields the pairs in the order of the VCF file, kipoiseq in the order of pyranges
     assert len(samples) == len(expected)
-    assert sorted(samples, key=key) == sorted(expected, key=key)
+    assert sorted(samples, key=sample_key) == sorted(expected, key=sample_key)
+
+
+def test_junction_vcf_dataloader_adds_chr(fasta_file):
+    # junctions on chromosome '22' and variants on 'chr22'
+    junctions = read_junctions(SPLICEMAP5).with_columns(pl.col('Chromosome').str.replace('chr', '', literal=True))
+    samples = junction_samples('psi5', JunctionPSI5VCFDataloader(junctions, fasta_file, str(VCF), encode=False))
+    # The exons take the chromosome names of the variants, and the junction IDs keep those of the junctions. mmsplice
+    # 2.4.0 does the same: it builds the junction IDs before it renames the chromosomes of the exons.
+    expected = [{**s, 'junction': s['junction'].removeprefix('chr')} for s in expected_junction_samples('psi5')]
+    assert len(samples) == len(expected)
+    assert sorted(samples, key=sample_key) == sorted(expected, key=sample_key)

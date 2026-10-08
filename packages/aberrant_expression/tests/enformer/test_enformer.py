@@ -13,6 +13,7 @@ from abexp.enformer.constants import AlleleType
 from shutil import rmtree
 import sklearn as sk
 from sklearn import linear_model, pipeline, preprocessing, tree
+import tensorflow as tf
 
 # The tests that run Enformer, or that read the outputs of one that did, share the outputs through the
 # session-scoped fixture output_dir. With --dist loadgroup, pytest-xdist runs this group on one worker, one test after
@@ -125,6 +126,58 @@ def test_enformer_alt(chr22_example_files, output_dir: Path, size, batch_size, n
     enformer_filepath = get_enformer_path(output_dir, size, AlleleType.ALT, rm=True)
     dl = VCFTSSDataloader(**args)
     run_enformer(dl, enformer_filepath, size, batch_size=batch_size, num_output_bins=num_output_bins)
+
+
+class BinIndexModel:
+    """
+    A fake Enformer model whose tracks hold the index of their bin.
+    """
+
+    def predict_on_batch(self, input_tensor):
+        bins = np.arange(Enformer.NUM_PREDICTION_BINS, dtype=np.float32)[:, None]
+        tracks = np.broadcast_to(bins, (input_tensor.shape[0], Enformer.NUM_PREDICTION_BINS,
+                                        Enformer.NUM_HUMAN_TRACKS))
+        return {'human': tf.constant(tracks)}
+
+
+# Without a shift, the TSS lies in bin 448 of the 896 prediction bins. On the minus strand, it lies at the last base
+# of bin 447. A shift of +43 moves the input window 43 bp downstream, so the TSS moves into bin 447 on both strands.
+# The aggregator ignores the strand and takes the middle of the saved bins as the TSS. With 21 output bins, Enformer
+# saves the bins 438 to 458. Their middle lies 64 bp downstream of the TSS.
+# With 21 output bins, the workflow default, shift +43 averages the bins around bin 448 instead of bin 447. This
+# offset is documented and kept on purpose, see the comment in EnformerAggregator._aggregate_batch in enformer.py and
+# "Known issues" in the package README. This test pins it.
+@pytest.mark.parametrize("shift, num_output_bins, averaged_bins", [
+    (-43, 21, [447, 448, 449]),
+    (0, 21, [447, 448, 449]),
+    (43, 21, [447, 448, 449]),
+    (-43, 896, [447, 448, 449]),
+    (0, 896, [447, 448, 449]),
+    (43, 896, [446, 447, 448]),
+])
+def test_aggregated_bins(chr22_example_files, tmp_path: Path, shift, num_output_bins, averaged_bins):
+    genome_annotation = pl.DataFrame({
+        'Chromosome': ['chr22', 'chr22'],
+        'Feature': ['transcript', 'transcript'],
+        'Start': [20_000_000, 30_000_000],
+        'End': [20_001_000, 30_001_000],
+        'Strand': ['+', '-'],
+        'gene_id': ['ENSG01.1', 'ENSG02.1'],
+        'transcript_id': ['ENST01.1', 'ENST02.1'],
+    })
+    dl = RefTSSDataloader(fasta_file=chr22_example_files['fasta'], genome_annotation=genome_annotation,
+                          chromosome='chr22', shifts=[shift])
+    enformer = Enformer(is_random=True)
+    enformer._model = BinIndexModel()
+    enformer.predict(dl, batch_size=2, filepath=tmp_path / 'raw.parquet', num_output_bins=num_output_bins)
+
+    EnformerAggregator().aggregate(tmp_path / 'raw.parquet', tmp_path / 'aggregated.parquet', num_bins=3)
+
+    aggregated = pl.read_parquet(tmp_path / 'aggregated.parquet')
+    assert aggregated['transcript_id'].to_list() == ['ENST01.1', 'ENST02.1']
+    # each track holds the mean index of the averaged bins, on both strands
+    np.testing.assert_array_equal(aggregated['tracks'].to_numpy(),
+                                  np.full((2, Enformer.NUM_HUMAN_TRACKS), np.mean(averaged_bins)))
 
 
 @enformer_group

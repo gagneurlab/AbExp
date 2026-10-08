@@ -1,6 +1,8 @@
 import os
 import re
 
+import yaml
+
 from snakemake.utils import min_version, validate
 
 min_version("9.0")
@@ -51,6 +53,14 @@ def resolve_abexp_dir(data):
 # Rules use `conda: CONDA_ENV_YAML_DIR.join("<env>.yaml")`, which does not depend on the folder
 # of the rule file. `workflow.current_basedir` is also correct if AbExp is a module.
 CONDA_ENV_YAML_DIR = workflow.current_basedir.join("envs")
+
+# One version per step, for the feature sets and predictions; the modules have their own
+# OUTPUT_VERSION. Bump the key of the earliest step whose outputs change, see
+# "When jobs rerun" in README.md.
+OUTPUT_VERSION = {
+    "fset": 1,
+    "predict": 1,
+}
 
 VCF_INPUT_DIR = os.path.abspath(config["vcf_input_dir"])
 RESULTS_DIR = os.path.abspath(config["output_dir"])
@@ -133,6 +143,7 @@ VEFF_CONFIG = {
     "gff3_file": GFF3_FILE,
     "chrom_alias_tsv": CHROM_ALIAS_TSV,
     "annotator": config["veff"]["annotator"],
+    "use_gpu": config["use_gpu"],
     "vep": config["system"]["vep"],
     "mehari": {
         **config["system"]["mehari"],
@@ -167,6 +178,27 @@ rule all:
         ),
     localrule: True
     default_target: True
+
+
+def fset_features(feature_set):
+    """
+    The feature tables of the feature set template scripts/fset@<feature_set>.yaml, by name
+    """
+    with open(workflow.source_path(f"scripts/fset@{feature_set}.yaml")) as fd:
+        return yaml.safe_load(fd)["features"]
+
+
+# only some models use the Enformer features
+USES_ENFORMER = any("enformer" in fset_features(m) for m in config["predict_abexp_models"])
+
+# Downloads the resources that the configured models need and that do not exist yet, e.g.
+# before a run on compute nodes without internet access
+rule setup:
+    input:
+        config["system"]["expected_expression_pq"],
+        rules.veff__setup.input,
+        rules.enformer__setup.input if USES_ENFORMER else [],
+    localrule: True
 
 
 include: "scripts/__init__.smk"

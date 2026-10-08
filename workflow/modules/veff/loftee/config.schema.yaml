@@ -3,6 +3,7 @@ title: loftee module
 description: >-
   Annotates loss-of-function variants with reloftee (not published yet),
   a VEP-free reimplementation of LOFTEE, and writes its per-transcript table unchanged.
+  Downloads the LOFTEE data that it reads, unless the paths below point at existing files.
 type: object
 additionalProperties: false
 
@@ -19,8 +20,8 @@ properties:
   resources_dir:
     type: string
     description: >-
-      Accepted for consistency with the other veff modules; this module does not use it.
-      Default is <output_dir>/resources.
+      Base of the default LOFTEE data paths, <resources_dir>/loftee/<assembly>. Default is
+      <output_dir>/resources.
   human_genome_version:
     type: string
     enum: ["hg19", "hg38"]
@@ -42,21 +43,24 @@ properties:
       transcript models from it.
   gerp_bigwig:
     type: ["string", "null"]
-    default: null
     description: >-
-      GERP conservation bigWig. Enables the END_TRUNC filter; omitted, reloftee skips it.
+      GERP conservation bigWig; enables the END_TRUNC filter. Default for GRCh38 is
+      <resources_dir>/loftee/GRCh38/gerp_conservation_scores.homo_sapiens.GRCh38.bw, downloaded
+      if missing (12.6 GB). null skips the filter, and is the default for GRCh37: LOFTEE has no
+      GERP bigWig for GRCh37.
   human_ancestor_fa:
     type: ["string", "null"]
-    default: null
     description: >-
-      Human-ancestor FASTA, samtools/pyfaidx-indexed. Enables the ANC_ALLELE flag; omitted,
-      reloftee skips it.
+      Human ancestor FASTA with its samtools indexes (.fai, .gzi); enables the ANC_ALLELE flag.
+      Default is <resources_dir>/loftee/<assembly>/human_ancestor.fa.gz, downloaded if missing
+      (0.9 GB). null skips the flag.
   phylocsf_sqlite:
     type: ["string", "null"]
-    default: null
     description: >-
-      PhyloCSF SQLite database (table phylocsf_summary). Enables the PHYLOCSF_* flags and
-      the SINGLE_EXON filter; omitted, reloftee skips them.
+      PhyloCSF SQLite database with the table phylocsf_summary; enables the PHYLOCSF_* flags
+      and the SINGLE_EXON filter. Default for GRCh38 is <resources_dir>/loftee/GRCh38/loftee.sql,
+      downloaded if missing (0.15 GB). null skips them, and is the default for GRCh37: LOFTEE's
+      phylocsf_gerp.sql for GRCh37 lacks the table phylocsf_summary.
   min_intron_size:
     type: integer
     default: 15

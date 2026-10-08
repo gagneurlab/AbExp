@@ -16,13 +16,15 @@ dependencies:
 - lightgbm~=3.3
 - tqdm
 - statsmodels
-- polars~=1.0
+- polars~=1.44
 - bioconda::bcftools
 - bioconda::tabix
 - bioconda::pyfaidx
 - bioconda::pyranges
 - bioconda::vcf2parquet>=0.4
 - wget
+# aria2c for the download rules, which have no conda environment (see README)
+- aria2
 # Snakemake and snakemk_util allow to run the scripts as notebooks (see README)
 - bioconda::snakemake>=9
 - bioconda::snakemk_util>=3

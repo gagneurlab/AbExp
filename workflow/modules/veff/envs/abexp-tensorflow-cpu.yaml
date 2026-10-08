@@ -1,0 +1,36 @@
+# TensorFlow environment of the modules enformer and absplice (SpliceAI and SpliceAI-RocksDB).
+# abexp-tensorflow-cuda.yaml is the same with the CUDA build of TensorFlow.
+name: abexp-tensorflow-cpu
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.12 # the newest Python with tensorflow 2.21 builds on conda-forge
+  - tensorflow-cpu=2.21 # the CPU build of tensorflow 2.21, also on hosts with a CUDA driver
+  - tensorflow-hub
+  - setuptools<82 # tensorflow-hub 0.16.1 and spliceai import pkg_resources, which setuptools 82 removed
+  - numpy<2.3 # spliceai calls np.fromstring in binary mode, which fails from numpy 2.3 on
+  - pandas
+  - pyarrow
+  - polars~=1.44
+  # enformer/resources/tissue_mapper.pkl was written with 1.5.1; from 1.8 on, its predictions differ by up to 2.4e-7
+  - scikit-learn<1.8
+  - xarray
+  - cyvcf2
+  # not imported by the rules, but dependencies of kipoi-enformer and kipoiseq2: conda installs them instead of pip
+  - lightgbm
+  - zarr
+  - polars-bio
+  - pyfaidx
+  # dependencies of spliceai and spliceai_rocksdb
+  - pysam
+  - python-rocksdb>=0.7
+  - tqdm
+  - click
+  - kipoiseq # spliceai_rocksdb imports kipoiseq, not kipoiseq2
+  - pip
+  - pip:
+    - "kipoi-enformer @ git+https://github.com/gagneurlab/AbExp-utils.git@d6cc89de5934ca1f768fac1750a5c595633c75ea#subdirectory=packages/kipoi_enformer"
+    # SpliceAI of the branch mnp, which predicts multi-nucleotide variants
+    - "spliceai @ git+https://github.com/hoeze/SpliceAI.git@a1583bd46e76d94dfb6b95e631d877bd615cf5d4"
+    - "spliceai_rocksdb @ git+https://github.com/gagneurlab/spliceai_rocksdb.git@3c40d6e61b19e907e802c979c76d52ea5c41c1d5"

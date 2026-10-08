@@ -15,8 +15,10 @@ rule veff__absplice:
         absplice_denovo_pred_pq=ABSPLICE_DENOVO_PRED_PQ,
         chrom_alias=ancient(CHROM_ALIAS_TSV),
         tissue_mapping=ancient(ABSPLICE["tissue_mapping_csv"]),
+    params:
+        output_version=OUTPUT_VERSION["absplice"],
     conda:
-        CONDA_ENV_YAML_DIR.join("veff-py.yaml")
+        SHARED_CONDA_ENV_YAML_DIR.join("veff-py.yaml")
     script:
         "absplice.py.py"
 

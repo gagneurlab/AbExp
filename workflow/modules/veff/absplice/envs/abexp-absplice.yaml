@@ -2,16 +2,16 @@ name: abexp-absplice
 channels:
   - conda-forge
 dependencies:
-  - python==3.10
+  - python=3.12 # the newest Python with tensorflow 2.21 builds on conda-forge
   - cython
   - pytest
-  - setuptools
+  - setuptools<82 # absplice, mmsplice and spliceai import pkg_resources, which setuptools 82 removed
   - scipy
   - pandas
   - tqdm
   - click
   - pyarrow
-  - tensorflow
+  - tensorflow-cpu=2.21 # the CPU build of tensorflow 2.21, also on hosts with a CUDA driver
   - onnx
   - onnxruntime
   - pandas
@@ -26,6 +26,5 @@ dependencies:
   - bioconda::spliceai
   - bioconda::kipoiseq>=0.7
   - deepdiff
+  # post-deploy.sh installs the pip packages. An empty "pip:" section breaks the YAML parser of micromamba.
   - pip
-  - pip:
-#    - mmsplice

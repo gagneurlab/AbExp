@@ -14,10 +14,10 @@ rule veff__tissue_specific_vep:
         isoform_proportions_pq=ISOFORM_PROPORTIONS_PQ,
         gtf_transcripts=GTF_TRANSCRIPTS_PQ,
         chrom_alias=ancient(CHROM_ALIAS_TSV),
-    wildcard_constraints:
-        ds_dir="[^/]+",
+    params:
+        output_version=OUTPUT_VERSION["tissue_specific_vep"],
     conda:
-        CONDA_ENV_YAML_DIR.join("veff-py.yaml")
+        SHARED_CONDA_ENV_YAML_DIR.join("veff-py.yaml")
     script:
         "tissue_specific_vep.py.py"
 
@@ -26,13 +26,14 @@ rule download_isoform_proportions_tsv:
     threads: 1
     resources:
         ntasks=1,
-        mem_mb=lambda wildcards, attempt, threads: (1000 * threads) * attempt
+        mem_mb=lambda wildcards, attempt, threads: (1000 * threads) * attempt,
+        runtime=lambda wildcards, attempt: 30 * attempt,
     output:
         file=ISOFORM_PROPORTIONS_TSV,
     params:
         url=ISOFORM_PROPORTIONS_URL,
     conda:
-        CONDA_ENV_YAML_DIR.join("veff-py.yaml")
+        SHARED_CONDA_ENV_YAML_DIR.join("veff-py.yaml")
     shell:
         """
         set -x
@@ -60,9 +61,18 @@ rule isoform_proportions_tsv_to_parquet:
             'sd_transcript_proportions': "Float32",
         },
     conda:
-        CONDA_ENV_YAML_DIR.join("veff-py.yaml")
+        SHARED_CONDA_ENV_YAML_DIR.join("veff-py.yaml")
     script:
         "tsv_to_parquet.py"
+
+
+rule veff__tissue_specific_vep_setup:
+    """
+    Downloads the GTEx isoform proportions if they do not exist yet.
+    """
+    input:
+        ISOFORM_PROPORTIONS_PQ,
+    localrule: True
 
 
 del OUTPUT_BASEDIR

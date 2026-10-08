@@ -12,6 +12,16 @@ validate(config, "config.schema.yaml")
 # Rules use `conda: CONDA_ENV_YAML_DIR.join("<env>.yaml")`, which does not depend on the folder
 # of the rule file. `workflow.current_basedir` is also correct if this is a module.
 CONDA_ENV_YAML_DIR = workflow.current_basedir.join("envs")
+# conda environments that several veff modules use, in workflow/modules/veff/envs
+SHARED_CONDA_ENV_YAML_DIR = workflow.current_basedir.join("../envs")
+
+# One version per step. Bump the key of the earliest step whose outputs change, see
+# "When jobs rerun" in README.md.
+OUTPUT_VERSION = {
+    # The step includes the parsing of the VEP output: the VEP output is temporary, so the
+    # parsing cannot rerun alone.
+    "annotation": 1,
+}
 
 OUTPUT_DIR = os.path.abspath(config["output_dir"])
 RESOURCES_DIR = os.path.abspath(config.get("resources_dir", f"{OUTPUT_DIR}/resources"))
@@ -23,16 +33,64 @@ FASTA_FILE = os.path.abspath(config["fasta_file"])
 CHROM_ALIAS_TSV = config["chrom_alias_tsv"]
 VCF_FILE_PATTERN = config["vcf"]
 
-# VEP settings; `{vep_version}` and `{human_genome_assembly}` are filled in by the rules
+# VEP settings
+VEP_VERSION = int(config["version"])
 VEP = {
-    "version": config["version"],
+    "version": VEP_VERSION,
     "vep_bin": config["vep_bin"],
     "perl_bin": config["perl_bin"],
-    "vep_cache_dir": config.get("vep_cache_dir", f"{RESOURCES_DIR}/{{vep_version}}"),
-    "cadd_dir": config.get("cadd_dir", f"{RESOURCES_DIR}/{{human_genome_assembly}}"),
-    "loftee_data_dir": config.get("loftee_data_dir", f"{RESOURCES_DIR}/{{human_genome_assembly}}"),
-    "loftee_src_path": config.get("loftee_src_path", f"{RESOURCES_DIR}/{{human_genome_assembly}}_src"),
 }
 
 
+def data_path(key, default):
+    """
+    The path `config[key]`, or `default` if unset, with `{vep_version}` and
+    `{human_genome_assembly}` filled in
+    """
+    path = config.get(key, default)
+    return os.path.abspath(path.format(vep_version=VEP_VERSION, human_genome_assembly=ASSEMBLY))
+
+
+# VEP cache, CADD and LOFTEE. download.smk downloads the files that do not exist yet.
+VEP_CACHE_DIR = data_path("vep_cache_dir", f"{RESOURCES_DIR}/vep/{{vep_version}}")
+CADD_DIR = data_path("cadd_dir", f"{RESOURCES_DIR}/cadd/v1.6/{{human_genome_assembly}}")
+LOFTEE_DATA_DIR = data_path("loftee_data_dir", f"{RESOURCES_DIR}/loftee/{{human_genome_assembly}}")
+LOFTEE_SRC_PATH = data_path("loftee_src_path", f"{RESOURCES_DIR}/loftee/{{human_genome_assembly}}_src")
+
+# the part of the VEP cache that `--merged` reads
+VEP_CACHE = f"{VEP_CACHE_DIR}/homo_sapiens_merged/{VEP_VERSION}_{ASSEMBLY}"
+CADD_SNV_TSV = f"{CADD_DIR}/whole_genome_SNVs.tsv.gz"
+CADD_INDEL_TSV = {
+    "GRCh37": f"{CADD_DIR}/InDels.tsv.gz",
+    "GRCh38": f"{CADD_DIR}/gnomad.genomes.r3.0.indel.tsv.gz",
+}[ASSEMBLY]
+LOFTEE_HUMAN_ANCESTOR_FA = f"{LOFTEE_DATA_DIR}/human_ancestor.fa.gz"
+# PhyloCSF scores; for GRCh37 also GERP scores per exon
+LOFTEE_CONSERVATION_FILE = {
+    "GRCh37": f"{LOFTEE_DATA_DIR}/phylocsf_gerp.sql",
+    "GRCh38": f"{LOFTEE_DATA_DIR}/loftee.sql",
+}[ASSEMBLY]
+# only LOFTEE for GRCh38 reads a GERP bigWig
+LOFTEE_GERP_BIGWIG = (
+    f"{LOFTEE_DATA_DIR}/gerp_conservation_scores.homo_sapiens.GRCh38.bw" if ASSEMBLY == "GRCh38" else None
+)
+
+# the files that VEP reads, by name
+VEP_DATA = {
+    "vep_cache": VEP_CACHE,
+    "cadd_snv": CADD_SNV_TSV,
+    "cadd_snv_tbi": f"{CADD_SNV_TSV}.tbi",
+    "cadd_indel": CADD_INDEL_TSV,
+    "cadd_indel_tbi": f"{CADD_INDEL_TSV}.tbi",
+    "loftee_src": LOFTEE_SRC_PATH,
+    "human_ancestor_fa": LOFTEE_HUMAN_ANCESTOR_FA,
+    "human_ancestor_fai": f"{LOFTEE_HUMAN_ANCESTOR_FA}.fai",
+    "human_ancestor_gzi": f"{LOFTEE_HUMAN_ANCESTOR_FA}.gzi",
+    "conservation_file": LOFTEE_CONSERVATION_FILE,
+}
+if LOFTEE_GERP_BIGWIG:
+    VEP_DATA["gerp_bigwig"] = LOFTEE_GERP_BIGWIG
+
+
+include: "download.smk"
 include: "vep.smk"

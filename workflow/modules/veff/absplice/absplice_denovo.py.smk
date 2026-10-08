@@ -28,6 +28,7 @@ rule veff__absplice_download_splicemaps:
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt, threads: (1000 * threads) * attempt,
+        runtime=lambda wildcards, attempt: 30 * attempt,
     output:
         splicemap_psi5 = ABSPLICE["splicemap"]["psi5"],
         splicemap_psi3 = ABSPLICE["splicemap"]["psi3"],
@@ -35,7 +36,7 @@ rule veff__absplice_download_splicemaps:
         splicemap_psi5_url = lambda wildcards: ABSPLICE["splicemap_urls"][wildcards.genome]['psi5'].format(tissue=wildcards.tissue),
         splicemap_psi3_url = lambda wildcards: ABSPLICE["splicemap_urls"][wildcards.genome]['psi3'].format(tissue=wildcards.tissue),
     conda:
-        CONDA_ENV_YAML_DIR.join("veff-py.yaml")
+        SHARED_CONDA_ENV_YAML_DIR.join("veff-py.yaml")
     shell:
         """
         set -x
@@ -55,7 +56,10 @@ rule veff__mmsplice_splicemap:
         splicemap_5 = SPLICEMAP5,
         splicemap_3 = SPLICEMAP3,
     output:
-        result = temp(MMSPLICE_SPLICEMAP_VEFF_CSV_PATTERN),
+        # not temp: a new absplice_dna version would rerun MMSplice otherwise
+        result = MMSPLICE_SPLICEMAP_VEFF_CSV_PATTERN,
+    params:
+        output_version=OUTPUT_VERSION["mmsplice_splicemap"],
     conda:
         CONDA_ENV_YAML_DIR.join("abexp-absplice.yaml")
     script:
@@ -63,37 +67,25 @@ rule veff__mmsplice_splicemap:
 
 
 if ABSPLICE['use_spliceai_rocksdb'] == True:
-    rule veff__spliceai_download_rocksdb:
-        threads: 1
-        resources:
-            mem_mb=lambda wildcards, attempt, threads: (1000 * threads) * attempt,
-        params:
-            version = ASSEMBLY.lower()
-        conda:
-            CONDA_ENV_YAML_DIR.join("abexp-spliceai-rocksdb.yaml")
-        output:
-            spliceai_rocksdb = directory(ABSPLICE["spliceai_rocksdb_path"][HUMAN_GENOME_VERSION])
-        shell:
-            "spliceai_rocksdb_download --version {params.version} --db_path {output.spliceai_rocksdb} --chromosome {wildcards.chromosome}"
-
-
     rule veff__spliceai:
         resources:
             mem_mb = lambda wildcards, attempt: attempt * 16000,
             threads = 1,
-            gpu = 1,
+            gpu = 1 if config["use_gpu"] else 0,
         output:
-            result = temp(SPLICEAI_VEFF_CSV_PATTERN),
+            # not temp: a new absplice_dna version would rerun SpliceAI otherwise
+            result = SPLICEAI_VEFF_CSV_PATTERN,
         input:
             vcf = VALID_VARIANTS_VCF_FILE_PATTERN,
             fasta = FASTA_FILE,
             spliceai_rocksdb_paths = list(SPLICEAI_ROCKSDB_PATHS.values()),
         params:
+            output_version=OUTPUT_VERSION["spliceai"],
             spliceai_rocksdb_path_keys = list(SPLICEAI_ROCKSDB_PATHS.keys()),
             lookup_only = False,
             genome = ASSEMBLY.lower()
         conda:
-            CONDA_ENV_YAML_DIR.join("abexp-spliceai-rocksdb.yaml")
+            TENSORFLOW_CONDA_ENV_YAML
         script:
             "absplice_spliceai.py"
 else:
@@ -101,16 +93,18 @@ else:
         resources:
             mem_mb=lambda wildcards, attempt, threads: (8000 * threads) * attempt,
             threads = 4,
-            gpu = 1,
+            gpu = 1 if config["use_gpu"] else 0,
         output:
-            result = temp(SPLICEAI_VEFF_VCF_PATTERN),
+            # not temp: a new spliceai_vcf_to_csv version would rerun SpliceAI otherwise
+            result = SPLICEAI_VEFF_VCF_PATTERN,
         input:
             vcf = VALID_VARIANTS_VCF_FILE_PATTERN,
             fasta = FASTA_FILE,
         params:
+            output_version=OUTPUT_VERSION["spliceai"],
             genome = ASSEMBLY.lower()
         conda:
-            CONDA_ENV_YAML_DIR.join("abexp-spliceai.yaml")
+            TENSORFLOW_CONDA_ENV_YAML
         shell:
             'spliceai -I {input.vcf} -O {output.result} -R {input.fasta} -A {params.genome}'
     
@@ -122,7 +116,10 @@ else:
         input:
             spliceai_vcf = SPLICEAI_VEFF_VCF_PATTERN,
         output:
-            spliceai_csv = temp(SPLICEAI_VEFF_CSV_PATTERN),
+            # not temp, like the SpliceAI CSV of SpliceAI-RocksDB
+            spliceai_csv = SPLICEAI_VEFF_CSV_PATTERN,
+        params:
+            output_version=OUTPUT_VERSION["spliceai_vcf_to_csv"],
         conda:
             CONDA_ENV_YAML_DIR.join("abexp-absplice.yaml")
         script: "spliceai_vcf_to_csv.py"
@@ -140,11 +137,24 @@ rule absplice_dna:
     output:
         absplice_dna = VEFF_VCF_PQ_PATTERN,
     params:
+        output_version=OUTPUT_VERSION["absplice_dna"],
         variants_per_batch=5000,
     conda:
         CONDA_ENV_YAML_DIR.join("abexp-absplice.yaml")
     script:
         "absplice_dna.py.py"
+
+
+rule veff__absplice_setup:
+    """
+    Downloads the SpliceMaps and, with use_spliceai_rocksdb, SpliceAI-RocksDB, if they do not
+    exist yet.
+    """
+    input:
+        SPLICEMAP5,
+        SPLICEMAP3,
+        list(SPLICEAI_ROCKSDB_PATHS.values()) if ABSPLICE["use_spliceai_rocksdb"] else [],
+    localrule: True
 
 
 del (

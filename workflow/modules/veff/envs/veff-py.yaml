@@ -1,4 +1,4 @@
-# Same file in the modules vep, tissue_specific_vep and absplice; Snakemake builds it once.
+# Python environment of the modules vep, tissue_specific_vep and absplice.
 name: abexp-veff-py-small
 
 channels:
@@ -9,7 +9,7 @@ dependencies:
 - ipython
 - numpy
 - pyarrow
-- polars~=1.0
+- polars~=1.44
 - pyyaml
 - tqdm
 # downloads

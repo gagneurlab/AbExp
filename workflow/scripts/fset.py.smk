@@ -59,6 +59,7 @@ rule veff__fset:
         expressed_genes_pq=config["system"]["expected_expression_pq"],
         featureset_config=FSET_CONFIG,
     params:
+        output_version=OUTPUT_VERSION["fset"],
         index_cols=['chrom', 'start', 'end', 'ref', 'alt', "gene", "transcript", "tissue"],
         output_basedir=f"{OUTPUT_BASEDIR}",
     wildcard_constraints:
@@ -75,6 +76,7 @@ rule veff__fset_config:
     output:
         config=f"{FSET_CONFIG}"
     params:
+        output_version=OUTPUT_VERSION["fset"],
         output_basedir=f"{OUTPUT_BASEDIR}",
         veff_dir=f"{VEFF_BASEDIR}",
         gtex_expected_expr=config["system"]["expected_expression_pq"],

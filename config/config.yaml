@@ -37,33 +37,41 @@ veff:
   # README.
   # mehari_gencode_transcripts_fasta: "data/gencode/release_40/gencode.v40.transcripts.fa.gz"
 
+# Run Enformer and SpliceAI in the CUDA variant of their TensorFlow environment. It also runs
+# on hosts without a GPU. See "GPU" in the README.
+use_gpu: False
+
 # mapping of chromosome names. By default, maps them to "chr" prefix
 # (workflow/modules/vcf_prep/resources/chromAlias.tsv).
 # chrom_alias_tsv: "my_chromAlias.tsv"
 
 # Settings of the local installation. All options and their defaults are in
-# workflow/schemas/config.schema.yaml; the options of vep, mehari, absplice and enformer
-# are in workflow/modules/veff/<module>/config.schema.yaml.
+# workflow/schemas/config.schema.yaml; the options of each veff module, e.g. vep, are in
+# workflow/modules/veff/<module>/config.schema.yaml.
 system:
-  # canonical_transcript_pq: "/s/project/rep/processed/training_results_v14/general/gtex_canonical_transcript.parquet"
-  # subtissue_level_isoform_contribution_scores_pq: "/s/project/rep/processed/training_results_v14/general/gtex_subtissue_level_pext_scores.parquet"
-  # expressed_genes_pq: "/s/project/rep/processed/training_results_v14/gtex_v8/gene_is_expressed_per_subtissue.parquet"
-  # gtex_expected_expr: "/s/project/rep/processed/training_results_v14/gtex_v8/feature_sets/expected_expr.py/data.parquet"
+  # Downloaded resources, e.g. the VEP cache, CADD and LOFTEE: more than 100 GB. The default
+  # <output_dir>/resources gives each output folder its own copy. Set a shared folder instead,
+  # so that all output folders use one copy.
+  # dirs:
+  #   resources_dir: "/data/abexp-resources"
 
   vep:
     version: 108
     vep_bin: "vep"
     perl_bin: "perl"
-    vep_cache_dir: "/s/raw/vep/{vep_version}"
-    cadd_dir: "/s/raw/cadd/v1.6/{human_genome_assembly}"
-    loftee_data_dir: "/s/raw/loftee/{human_genome_assembly}"
-    loftee_src_path: "/s/raw/loftee/{human_genome_assembly}_src"
+    # By default, the pipeline downloads the VEP cache, CADD and LOFTEE into resources_dir.
+    # Set these to reuse existing caches instead:
+    # vep_cache_dir: "/path/to/vep_cache/{vep_version}"
+    # cadd_dir: "/path/to/cadd/v1.6/{human_genome_assembly}"
+    # loftee_data_dir: "/path/to/loftee/{human_genome_assembly}"
+    # loftee_src_path: "/path/to/loftee/{human_genome_assembly}_src"
 
   # mehari:
-  #   transcripts_db: "/s/raw/mehari/{human_genome_assembly}.txs.bin.zst"
   #   conda_env: "abexp-mehari"
 
-  # reloftee on `gff3_file`; needs an existing conda environment with reloftee
+  # reloftee on `gff3_file`; needs an existing conda environment with reloftee. It reads the
+  # LOFTEE data files of the vep settings above. Its output
+  # <output_dir>/veff/loftee/veff.parquet/<vcf_file>.parquet is built only as a target.
   # loftee:
   #   enabled: True
   #   conda_env: "reloftee"
@@ -76,7 +84,6 @@ system:
 
   #enformer:
   #  download_reference: True
-  #  use_gpu: True
   #  batch_size: 2
   # variant_upstream_tss: 50
   # variant_downstream_tss: 200

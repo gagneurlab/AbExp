@@ -13,6 +13,12 @@ validate(config, "config.schema.yaml")
 # of the rule file. `workflow.current_basedir` is also correct if this is a module.
 CONDA_ENV_YAML_DIR = workflow.current_basedir.join("envs")
 
+# One version per step. Bump the key of the earliest step whose outputs change, see
+# "When jobs rerun" in README.md.
+OUTPUT_VERSION = {
+    "annotation": 1,
+}
+
 OUTPUT_DIR = os.path.abspath(config["output_dir"])
 RESOURCES_DIR = os.path.abspath(config.get("resources_dir", f"{OUTPUT_DIR}/resources"))
 
@@ -24,11 +30,46 @@ FASTA_INDEX_FILE = os.path.abspath(config.get("fasta_file_idx", config["fasta_fi
 VCF_FILE_PATTERN = config["vcf"]
 
 LOFTEE_GENOME_ANNOTATION = os.path.abspath(config["genome_annotation"])
-# optional LOFTEE data layers; None skips the corresponding filter/flag, same as reloftee's
-# own CLI and PipelineConfig defaults
-LOFTEE_GERP_BIGWIG = os.path.abspath(config["gerp_bigwig"]) if config.get("gerp_bigwig") else None
-LOFTEE_HUMAN_ANCESTOR_FA = os.path.abspath(config["human_ancestor_fa"]) if config.get("human_ancestor_fa") else None
-LOFTEE_PHYLOCSF_SQLITE = os.path.abspath(config["phylocsf_sqlite"]) if config.get("phylocsf_sqlite") else None
+# LOFTEE data layers. The defaults are the LOFTEE data files in <resources_dir>/loftee/<assembly>,
+# which download.smk downloads if they are missing. A layer set to null is skipped: reloftee
+# then skips its filter or flag. For GRCh37, LOFTEE has no GERP bigWig, and its
+# phylocsf_gerp.sql lacks the table phylocsf_summary that reloftee reads, so these two layers
+# default to null.
+LOFTEE_DATA_DIR = f"{RESOURCES_DIR}/loftee/{ASSEMBLY}"
+LOFTEE_DATA_DEFAULTS = {
+    "GRCh37": {
+        "gerp_bigwig": None,
+        "human_ancestor_fa": f"{LOFTEE_DATA_DIR}/human_ancestor.fa.gz",
+        "phylocsf_sqlite": None,
+    },
+    "GRCh38": {
+        "gerp_bigwig": f"{LOFTEE_DATA_DIR}/gerp_conservation_scores.homo_sapiens.GRCh38.bw",
+        "human_ancestor_fa": f"{LOFTEE_DATA_DIR}/human_ancestor.fa.gz",
+        "phylocsf_sqlite": f"{LOFTEE_DATA_DIR}/loftee.sql",
+    },
+}[ASSEMBLY]
+
+
+def data_path(key):
+    path = config.get(key, LOFTEE_DATA_DEFAULTS[key])
+    return os.path.abspath(path) if path else None
+
+
+LOFTEE_GERP_BIGWIG = data_path("gerp_bigwig")
+LOFTEE_HUMAN_ANCESTOR_FA = data_path("human_ancestor_fa")
+LOFTEE_PHYLOCSF_SQLITE = data_path("phylocsf_sqlite")
+
+# the data files that reloftee reads, by name
+LOFTEE_DATA = {}
+if LOFTEE_GERP_BIGWIG:
+    LOFTEE_DATA["gerp_bigwig"] = LOFTEE_GERP_BIGWIG
+if LOFTEE_HUMAN_ANCESTOR_FA:
+    LOFTEE_DATA["human_ancestor_fa"] = LOFTEE_HUMAN_ANCESTOR_FA
+    LOFTEE_DATA["human_ancestor_fai"] = f"{LOFTEE_HUMAN_ANCESTOR_FA}.fai"
+    LOFTEE_DATA["human_ancestor_gzi"] = f"{LOFTEE_HUMAN_ANCESTOR_FA}.gzi"
+if LOFTEE_PHYLOCSF_SQLITE:
+    LOFTEE_DATA["phylocsf_sqlite"] = LOFTEE_PHYLOCSF_SQLITE
+
 LOFTEE_MIN_INTRON_SIZE = config.get("min_intron_size", 15)
 # conda environment of the loftee rule: envs/loftee_env.yaml (reloftee's other dependencies
 # only, see there), or the name of an existing environment with the reloftee Python package
@@ -36,4 +77,5 @@ LOFTEE_MIN_INTRON_SIZE = config.get("min_intron_size", 15)
 LOFTEE_CONDA_ENV = config.get("conda_env") or CONDA_ENV_YAML_DIR.join("loftee_env.yaml")
 
 
+include: "download.smk"
 include: "loftee.smk"

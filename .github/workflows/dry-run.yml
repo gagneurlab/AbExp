@@ -31,8 +31,8 @@ jobs:
           - case: GPU
             config: |
               use_gpu: true
-          # All models need the CADD and LOFTEE features of VEP. So the next two cases predict nothing
-          # and build the output of tissue_specific_vep instead.
+          # All models need the CADD and LOFTEE features of VEP 108. So the next three cases predict
+          # nothing and build the output of tissue_specific_vep instead.
           - case: mehari
             config: |
               predict_abexp_models: []
@@ -50,6 +50,15 @@ jobs:
                 vep:
                   cadd_plugin: false
                   loftee_plugin: false
+            targets: >-
+              example/output_hg38/veff/tissue_specific_vep.py/veff.parquet/clinvar_chr22_benign.vcf.gz.parquet
+              example/output_hg38/veff/tissue_specific_vep.py/veff.parquet/clinvar_chr22_pathogenic.vcf.gz.parquet
+          - case: VEP 116
+            config: |
+              predict_abexp_models: []
+              system:
+                vep:
+                  version: 116
             targets: >-
               example/output_hg38/veff/tissue_specific_vep.py/veff.parquet/clinvar_chr22_benign.vcf.gz.parquet
               example/output_hg38/veff/tissue_specific_vep.py/veff.parquet/clinvar_chr22_pathogenic.vcf.gz.parquet

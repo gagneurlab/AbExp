@@ -32,8 +32,11 @@ properties:
     description: Mapping of chromosome names, the same as for the vcf_prep module, e.g. its resources/chromAlias.tsv.
   version:
     type: integer
+    enum: [108, 116]
     default: 108
-    description: VEP version; selects envs/vep_env.v<version>.yaml.
+    description: >-
+      VEP version; selects envs/vep_env.v<version>.yaml and the VEP cache of the same Ensembl
+      release. The shipped AbExp models were trained on VEP 108.
   vep_bin:
     type: string
     default: "vep"
@@ -60,8 +63,8 @@ properties:
     description: >-
       VEP cache, the folder passed to `vep --dir`; `{vep_version}` is filled in. VEP reads
       homo_sapiens_merged/<version>_<assembly> in it. If that folder is missing, the module
-      downloads the indexed cache from Ensembl (26.0 GB for GRCh38, 16.2 GB for GRCh37). Default
-      is <resources_dir>/vep/{vep_version}.
+      downloads the indexed cache from Ensembl (VEP 108: 26.0 GB for GRCh38, 16.2 GB for GRCh37;
+      VEP 116: 30.3 GB and 26.5 GB). Default is <resources_dir>/vep/{vep_version}.
   cadd_dir:
     type: string
     description: >-

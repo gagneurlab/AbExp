@@ -56,6 +56,7 @@ system:
   #   resources_dir: "/data/abexp-resources"
 
   vep:
+    # 108 or 116, see "VEP version" in README.md; the shipped models need 108
     version: 108
     vep_bin: "vep"
     perl_bin: "perl"

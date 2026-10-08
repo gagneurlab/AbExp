@@ -43,8 +43,8 @@ LOFTEE_COMMIT = {
 rule veff__vep_download_cache:
     """
     Downloads the indexed VEP cache of `--merged` (Ensembl and RefSeq transcripts) into
-    VEP_CACHE_DIR: 26.0 GB for GRCh38, 16.2 GB for GRCh37. The download is checked against the
-    CHECKSUMS file of Ensembl.
+    VEP_CACHE_DIR: 26.0 GB for GRCh38 and 16.2 GB for GRCh37 with VEP 108, 30.3 GB and 26.5 GB
+    with VEP 116. The download is checked against the CHECKSUMS file of Ensembl.
     """
     threads: 1
     resources:

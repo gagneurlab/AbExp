@@ -114,9 +114,10 @@ properties:
     type: boolean
     default: false
     description: >-
-      Run SpliceAI in the CUDA variant of the TensorFlow environment
-      (workflow/modules/veff/envs/abexp-tensorflow-cuda.yaml) instead of the CPU variant. The
-      CUDA variant also runs on hosts without a GPU. The veff module sets this from its own use_gpu.
+      Run MMSplice, SpliceAI and AbSplice-DNA in the CUDA variant of the TensorFlow environment
+      (workflow/modules/veff/envs/abexp-tensorflow-cuda.yaml) instead of the CPU variant. MMSplice
+      and SpliceAI request a GPU. The CUDA variant also runs on hosts without a GPU. The veff module
+      sets this from its own use_gpu.
   use_spliceai_rocksdb:
     type: boolean
     default: true

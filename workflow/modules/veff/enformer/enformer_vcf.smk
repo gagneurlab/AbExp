@@ -11,10 +11,12 @@ rule enformer__predict_alt:
         gtf_path=GTF_TRANSCRIPTS_PQ,
         fasta_path=FASTA_FILE,
         vcf_path=VCF_FILE_PATTERN,
+        model=ENFORMER_MODEL,
     params:
         output_version=OUTPUT_VERSION["predict"],
         type='alternative',
         enformer=ENFORMER,
+        kagglehub_cache=ENFORMER_KAGGLEHUB_CACHE,
     conda:
         TENSORFLOW_CONDA_ENV_YAML
     script:
@@ -47,7 +49,7 @@ rule enformer__tissue_alt:
     input:
         rules.enformer__aggregate_alt.output[0],
         tracks_yml=ENFORMER_TRACKS_YML,
-        tissue_mapper_pkl=ENFORMER_TISSUE_MAPPER_PKL,
+        tissue_mapper=ENFORMER_TISSUE_MAPPER,
     params:
         output_version=OUTPUT_VERSION["tissue"],
         enformer=ENFORMER,

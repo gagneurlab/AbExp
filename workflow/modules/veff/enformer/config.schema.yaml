@@ -19,7 +19,9 @@ properties:
       <output_dir>/enformer/<human_genome_version>.
   resources_dir:
     type: string
-    description: Base of the default reference score paths. Default is <output_dir>/resources.
+    description: >-
+      Base of the default paths of the Enformer model and the reference scores. Default is
+      <output_dir>/resources.
   human_genome_version:
     type: string
     enum: ["hg19", "hg38"]
@@ -46,9 +48,9 @@ properties:
     default:
       hg19: "https://zenodo.org/records/14900896/files/enformer_hg19.tar?download=1"
       hg38: "https://zenodo.org/records/14900896/files/enformer_hg38.tar?download=1"
-  tissue_mapper_pkl:
+  tissue_mapper:
     type: string
-    description: Default is resources/tissue_mapper.pkl of this module.
+    description: Default is resources/tissue_mapper.parquet of this module.
   tracks_yml:
     type: string
     description: Default is resources/tracks.yaml of this module.

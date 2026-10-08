@@ -1,0 +1,22 @@
+##fileformat=VCFv4.2
+##contig=<ID=chr22,length=50818468>
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+chr22	17108966	.	G	C	.	.	.
+chr22	17182776	.	ATGGTCTTCCATGGGGGATGGATGGGTC	A	.	.	.
+chr22	18918093	.	G	C	.	.	.
+chr22	19973199	.	G	A	.	.	.
+chr22	20990466	.	T	TG	.	.	.
+chr22	20994889	.	TG	T	.	.	.
+chr22	23096349	.	C	T	.	.	.
+chr22	23253947	.	G	A	.	.	.
+chr22	28703486	.	T	TA	.	.	.
+chr22	28710005	.	C	A,G	.	.	.
+chr22	29231588	.	C	G	.	.	.
+chr22	31809555	.	G	A	.	.	.
+chr22	36285795	.	G	A	.	.	.
+chr22	36767308	.	CA	C	.	.	.
+chr22	41170653	.	C	CTT	.	.	.
+chr22	42627681	.	G	A	.	.	.
+chr22	50528550	.	A	G	.	.	.
+chr22	50529483	.	C	T	.	.	.
+chr22	50626900	.	G	GA	.	.	.

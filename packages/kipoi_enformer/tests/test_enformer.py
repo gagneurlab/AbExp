@@ -3,15 +3,20 @@ import pytest
 from kipoi_enformer.dataloader import TSSDataloader, RefTSSDataloader, VCFTSSDataloader
 from kipoi_enformer.enformer import Enformer, EnformerAggregator, EnformerTissueMapper, EnformerVeff
 from pathlib import Path
+import pyarrow.compute as pc
 import pyarrow.parquet as pq
 from kipoi_enformer.logger import logger
 import numpy as np
-import pickle
 import polars as pl
 from kipoi_enformer.constants import AlleleType
 from shutil import rmtree
-from sklearn import linear_model
-import lightgbm as lgb
+import sklearn as sk
+from sklearn import linear_model, pipeline, preprocessing, tree
+
+# The tests that run Enformer, or that read the outputs of one that did, share the outputs through the
+# session-scoped fixture output_dir. With --dist loadgroup, pytest-xdist runs this group on one worker, one test after
+# the other.
+enformer_group = pytest.mark.xdist_group('enformer')
 
 
 def run_enformer(dl: TSSDataloader, output_path, size, batch_size, num_output_bins):
@@ -23,8 +28,11 @@ def run_enformer(dl: TSSDataloader, output_path, size, batch_size, num_output_bi
 
     assert table.shape == (size, 1 + len(dl.pyarrow_metadata_schema.names))
 
-    x = table['tracks'].to_pylist()
-    x = np.array(x)
+    # flatten the nested lists into the float32 values, without Python lists
+    tracks = table['tracks']
+    for _ in range(3):
+        tracks = pc.list_flatten(tracks)
+    x = tracks.to_numpy().reshape(size, 3, num_output_bins, -1)
     assert x.shape == (size, 3, num_output_bins, 5313)
 
 
@@ -72,6 +80,7 @@ def get_veff_path(output_dir: Path, size: int, rm=False):
     return path
 
 
+@enformer_group
 @pytest.mark.parametrize("size, batch_size, num_output_bins", [
     (3, 1, 896), (5, 3, 896), (10, 5, 896),
     (3, 1, 21), (5, 3, 21), (10, 5, 21), (100, 5, 21),
@@ -93,6 +102,7 @@ def test_enformer_ref(chr22_example_files, output_dir: Path, size, batch_size, n
     run_enformer(dl, enformer_filepath, size, batch_size=batch_size, num_output_bins=num_output_bins)
 
 
+@enformer_group
 @pytest.mark.parametrize("size, batch_size, num_output_bins", [
     (3, 1, 896), (5, 3, 896), (10, 5, 896),
     (3, 1, 21), (5, 3, 21), (10, 5, 21),
@@ -116,6 +126,7 @@ def test_enformer_alt(chr22_example_files, output_dir: Path, size, batch_size, n
     run_enformer(dl, enformer_filepath, size, batch_size=batch_size, num_output_bins=num_output_bins)
 
 
+@enformer_group
 @pytest.mark.parametrize("allele_type", [
     'REF', 'ALT'
 ])
@@ -141,8 +152,7 @@ def test_predict_tissue_mapper(allele_type: str, chr22_example_files, output_dir
     enformer_tissue_filepath = get_tissue_path(output_dir, size, AlleleType[allele_type])
     tissue_mapper.predict(agg_path, output_path=enformer_tissue_filepath)
 
-    with open(gtex_tissue_mapper_path, 'rb') as f:
-        num_tissues = len(pickle.load(f))
+    num_tissues = len(pl.read_parquet(gtex_tissue_mapper_path))
 
     tbl = pl.read_parquet(enformer_tissue_filepath, hive_partitioning=True)
 
@@ -152,6 +162,7 @@ def test_predict_tissue_mapper(allele_type: str, chr22_example_files, output_dir
         assert tbl.shape == (num_tissues * size, 13 + 2)
 
 
+@enformer_group
 @pytest.mark.parametrize("aggregation_mode, upstream_tss, downstream_tss", [
     ('logsumexp', 100, 50), ('canonical', 100, 50), ('median', 100, 50), ('weighted_sum', 100, 50),
     ('logsumexp', 200, 50), ('canonical', 200, 50), ('median', 200, 50), ('weighted_sum', 200, 50),
@@ -227,9 +238,10 @@ def test_veff_with_the_published_seq_end(tmp_path: Path, start_col, end_col, seq
     np.testing.assert_allclose(veff_df['veff_score'].to_list(), [1.0 / np.log10(2), -0.5 / np.log10(2)])
 
 
+@enformer_group
 @pytest.mark.parametrize("model", [
     linear_model.ElasticNetCV(cv=2),
-    lgb.LGBMRegressor()
+    linear_model.RidgeCV()
 ])
 def test_train_tissue_mapper(chr22_example_files, gtex_tissue_mapper_path, enformer_tracks_path, output_dir,
                              model, size=100, batch_size=5, num_output_bins=21):
@@ -246,9 +258,46 @@ def test_train_tissue_mapper(chr22_example_files, gtex_tissue_mapper_path, enfor
 
     tissue_mapper = EnformerTissueMapper(tracks_path=enformer_tracks_path,
                                          tissue_mapper_path=gtex_tissue_mapper_path)
-    tissue_mapper.train([agg_path], output_path=output_dir / 'tissue_mapper',
+    tissue_mapper.train([agg_path], output_path=output_dir / 'tissue_mapper.parquet',
                         expression_path=chr22_example_files['gtex_expression'],
                         model=model)
+    tissue_mapper_df = pl.read_parquet(output_dir / 'tissue_mapper.parquet')
+    assert tissue_mapper_df.columns == ['tissue', 'mean', 'scale', 'coef', 'intercept']
+
+
+@pytest.mark.parametrize("model", [linear_model.ElasticNetCV(cv=2), linear_model.RidgeCV()])
+def test_tissue_mapper_predict(tmp_path: Path, model, num_records=50):
+    rng = np.random.default_rng(0)
+    tracks_path = tmp_path / 'tracks.yaml'
+    tracks_path.write_text('a: 4\nb: 0\nc: 2\n')
+    tracks = rng.lognormal(sigma=2, size=(num_records, 5)).astype(np.float32)
+    agg_path = tmp_path / 'aggregated.parquet'
+    pl.DataFrame({'transcript_id': [f'ENST{i}' for i in range(num_records)], 'tracks': tracks}).write_parquet(agg_path)
+    # the features of predict(): the tracks in the order of the yaml file
+    X = np.log10(tracks[:, [4, 0, 2]] + 1)
+
+    # the pipelines of train(): a StandardScaler and a linear model per tissue
+    pipelines = {}
+    for tissue in ['Lung', 'Whole Blood']:
+        y = X @ rng.normal(size=3) + rng.normal(scale=0.1, size=num_records)
+        lm_pipe = pipeline.Pipeline([('scaler', preprocessing.StandardScaler()), ('model', sk.clone(model))])
+        pipelines[tissue] = lm_pipe.fit(X, y)
+    EnformerTissueMapper._pipelines_to_polars(pipelines).write_parquet(tmp_path / 'tissue_mapper.parquet')
+
+    EnformerTissueMapper(tracks_path=tracks_path, tissue_mapper_path=tmp_path / 'tissue_mapper.parquet'). \
+        predict(agg_path, tmp_path / 'tissue.parquet')
+    tissue_df = pl.read_parquet(tmp_path / 'tissue.parquet')
+    # predict() follows scikit-learn 1.5. From 1.8 on, scikit-learn rounds the mean and scale to float32 first, so
+    # its scores differ slightly.
+    for tissue, lm_pipe in pipelines.items():
+        np.testing.assert_allclose(tissue_df.filter(pl.col('tissue') == tissue)['score'].to_numpy(),
+                                   lm_pipe.predict(X), rtol=1e-6, atol=1e-6)
+
+
+def test_tissue_mapper_needs_a_linear_model():
+    lm_pipe = pipeline.Pipeline([('scaler', preprocessing.StandardScaler()), ('model', tree.DecisionTreeRegressor())])
+    with pytest.raises(TypeError, match='DecisionTreeRegressor'):
+        EnformerTissueMapper._pipelines_to_polars({'Lung': lm_pipe.fit(np.eye(3), np.arange(3))})
 
 
 def test_aggregate_logsumexp():

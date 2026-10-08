@@ -17,19 +17,17 @@ license-files = ["LICENSE"]
 keywords = ["model zoo", "deep learning", "enformer", "aparent2",
     "computational biology", "bioinformatics", "genomics"]
 dependencies = [
-    "cyvcf2>=0.30.28",
     "numpy>=1.26.4",
     "pandas>=2.2.1",
     "pyarrow",
-    "kipoiseq2[vcf,ranges] @ git+https://github.com/kipoi/kipoiseq2.git@9f69c90a6d059fabcb6192ccb62acc6d0c79fddc",
-    "tensorflow-hub>=0.16.1",
-    # tensorflow-hub imports pkg_resources, which setuptools 82 removed
-    "setuptools<82",
+    "kipoiseq2[ranges]>=0.1,<0.2",
+    # downloads the Enformer model
+    "kagglehub",
     "tensorflow>=2.14.0",
-    "polars>=1.5.0",
+    # kipoiseq2 0.1 needs polars 1.37.1
+    "polars>=1.37.1",
     "polars-bio>=0.31",
     "scikit-learn>=1.4.1.post1",
-    "lightgbm>=4.3.0",
     "zarr>=2.15.0",
     "xarray>=2024.5.0",
     "pyyaml",
@@ -46,4 +44,12 @@ dev = [
     "pytest-cov",
     "pytest-xdist",
     "cython"
+]
+
+[tool.pytest.ini_options]
+addopts = [
+    # Pass -n0 to turn this off, which a debugger needs and which restores per-test output order.
+    "-n", "auto",
+    # one worker runs the tests of the xdist_group "enformer", see tests/test_enformer.py
+    "--dist", "loadgroup",
 ]

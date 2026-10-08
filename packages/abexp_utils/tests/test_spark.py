@@ -3,11 +3,19 @@ from pyspark.sql import SparkSession, Row
 from pyspark.sql.types import StructType, StructField, IntegerType, MapType, StringType
 import pyspark.sql.functions as f
 import pandas as pd
+import pytest
 
-spark = SparkSession.builder.master("local").appName("example").getOrCreate()
+# Each Spark session starts a JVM. With --dist loadgroup, one pytest-xdist worker runs the tests of this group, so
+# only that worker starts one.
+pytestmark = pytest.mark.xdist_group('spark')
 
 
-def test_displayHead():
+@pytest.fixture(scope='session')
+def spark():
+    return SparkSession.builder.master("local").appName("example").getOrCreate()
+
+
+def test_displayHead(spark):
     # Create Sample DataFrame
     data = [("Alice", 1), ("Bob", 2), ("Cathy", 3)]
     df = spark.createDataFrame(data, ["name", "id"])
@@ -22,7 +30,7 @@ def test_displayHead():
     pd.testing.assert_frame_equal(result_df, expected_df)
 
 
-def test_flatten():
+def test_flatten(spark):
     # Create Sample DataFrame
     df = spark.createDataFrame(
         data=[
@@ -62,7 +70,7 @@ def test_flatten():
     assert result_df.collect() == expected_df.collect(), f"Expected:\n{expected_df}\nGot:\n{result_df}"
 
 
-def test_zip_explode_cols():
+def test_zip_explode_cols(spark):
     # Create Sample DataFrame
     data = [(1, [4, 5], [7, 8]), (2, [6, 7], [9, 10])]
     df = spark.createDataFrame(data, ["A", "B", "C"])
@@ -83,7 +91,7 @@ def test_zip_explode_cols():
     assert result_df.collect() == expected_df.collect(), f"Expected:\n{expected_df.collect()}\nGot:\n{result_df.collect()}"
 
 
-def test_normalise_field_names():
+def test_normalise_field_names(spark):
     # Define df
     df = spark.createDataFrame(data=[
         (1, {"C D": 3, "E&F": 4}, {"H I": 7, "J&K": 8}),
@@ -122,7 +130,7 @@ def test_normalise_field_names():
     assert result_df.collect() == expected_df.collect(), f"Expected:\n{expected_df}\nGot:\n{result_df}"
 
 
-def test_rename_values():
+def test_rename_values(spark):
     # Create Sample DataFrame
     df = spark.createDataFrame(
         data=[("Alice", 1), ("Bob", 2), ("Cathy", 3)],
@@ -149,7 +157,7 @@ def test_rename_values():
     assert result_df.collect() == expected_df.collect(), f"Expected:\n{expected_df}\nGot:\n{result_df}"
 
 
-def test_select_nested_fields():
+def test_select_nested_fields(spark):
     # Create Sample DataFrame
     df = spark.createDataFrame(
         data=[
@@ -190,7 +198,7 @@ def test_select_nested_fields():
         assert df.select(result[i][1]).collect() == df.select(x[1]).collect()
 
 
-def test_melt():
+def test_melt(spark):
     # Create Sample DataFrame
     df = spark.createDataFrame(
         data=[
@@ -226,7 +234,7 @@ def test_melt():
     assert result_df.collect() == expected_df.collect(), f"Expected:\n{expected_df.collect()}\nGot:\n{result_df.collect()}"
 
 
-def test_transform_featureset():
+def test_transform_featureset(spark):
     # Create Sample DataFrame
     df = spark.createDataFrame(
         data=[
@@ -272,7 +280,7 @@ def test_transform_featureset():
     assert result_df.collect() == expected_df.collect(), f"Expected:\n{expected_df}\nGot:\n{result_df}"
 
 
-def test_join_featuresets():
+def test_join_featuresets(spark):
     # Create Sample DataFrames
     df1 = spark.createDataFrame(
         data=[

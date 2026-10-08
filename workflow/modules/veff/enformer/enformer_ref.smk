@@ -9,11 +9,13 @@ if not config['download_reference']:
             temp(f"{OUTPUT_BASEDIR}/raw.parquet/chrom={{chromosome}}/data.parquet")
         input:
             gtf_path=GTF_TRANSCRIPTS_PQ,
-            fasta_path=FASTA_FILE
+            fasta_path=FASTA_FILE,
+            model=ENFORMER_MODEL,
         params:
             output_version=OUTPUT_VERSION["predict"],
             type='reference',
             enformer=ENFORMER,
+            kagglehub_cache=ENFORMER_KAGGLEHUB_CACHE,
         conda:
             TENSORFLOW_CONDA_ENV_YAML
         script:
@@ -45,7 +47,7 @@ if not config['download_reference']:
         input:
             rules.enformer__aggregate_ref.output[0],
             tracks_yml=ENFORMER_TRACKS_YML,
-            tissue_mapper_pkl=ENFORMER_TISSUE_MAPPER_PKL,
+            tissue_mapper=ENFORMER_TISSUE_MAPPER,
         params:
             output_version=OUTPUT_VERSION["tissue"],
             enformer=ENFORMER,
@@ -72,9 +74,11 @@ else:
 
 rule enformer__setup:
     """
-    Downloads the reference scores with download_reference if they do not exist yet.
+    Downloads the Enformer model, and the reference scores with download_reference, if they do
+    not exist yet.
     """
     input:
+        ENFORMER_MODEL,
         expand(ENFORMER_REF, chromosome=CHROMOSOMES) if config["download_reference"] else [],
     localrule: True
 

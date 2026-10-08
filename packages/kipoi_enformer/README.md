@@ -19,6 +19,15 @@ pip install -e "packages/kipoi_enformer[dev]"
 
 For GPU support on Linux, also install `tensorflow[and-cuda]`.
 
+## Enformer model
+
+`Enformer()` loads the Enformer model from Kaggle Models with kagglehub, under the handle
+`deepmind/enformer/tensorFlow2/enformer/1`. These are the same files that TF Hub served at
+`https://tfhub.dev/deepmind/enformer/1`. On first use, kagglehub downloads the model, about 1 GB, and caches it in
+`~/.cache/kagglehub`. Set `KAGGLEHUB_CACHE` to use another directory. Once the model is cached, kagglehub loads it
+without contacting Kaggle. Version 0.0.1 downloaded the model with tensorflow-hub instead and cached it in
+`TFHUB_CACHE_DIR`.
+
 ## Tests
 
 Most tests read example files: the files in `tests/data/` of this package and the chr22 sequence in
@@ -33,7 +42,11 @@ pytest packages/kipoi_enformer/tests
 
 Pytest skips a test if one of its files is missing or not fetched, e.g. in an sdist.
 
-The tests with 896 output bins and a size of 10 need about 10 GB of memory. `-k "not 10-5-896"` deselects them.
+The tests run across all cores by default, through pytest-xdist. Pass `-n0` to run them in one process, which a
+debugger needs and which restores per-test output order.
+The tests that run Enformer share their outputs, so one worker runs them, one after the other.
+
+With `-n0`, the tests need about 3 GB of memory.
 
 ## Genome annotation
 
@@ -41,6 +54,16 @@ The dataloaders and `EnformerVeff` take the genome annotation as `genome_annotat
 as a GENCODE annotation, or a polars or pandas DataFrame with pyranges-style columns, see
 `kipoi_enformer.utils.genome_annotation_to_polars`. Version 0.0.1 read a GTF file instead, and the parameter was
 `gtf`.
+
+## Tissue mapper
+
+`EnformerTissueMapper` maps the Enformer CAGE tracks to an expression score per GTEx tissue, with one linear model per
+tissue. `train` fits a scikit-learn pipeline of a `StandardScaler` and a linear model for each tissue. The model must
+be linear, e.g. from `sklearn.linear_model`; other models raise a `TypeError`. `train` writes the parameters of the
+pipelines to a parquet file with one row per tissue: `tissue`, the `mean` and `scale` of the `StandardScaler`, and
+the `coef` and `intercept` of the linear model. The features are the tracks in the order of the tracks yaml file.
+`predict` computes the scores from this file with numpy and gives the same scores as the pipelines with scikit-learn
+1.5 to 1.7.
 
 ## Usage
 
@@ -86,7 +109,7 @@ enformer_aggregator.aggregate(output_dir / 'raw/ref.parquet/chrom=chr22/data.par
                               output_dir / 'aggregated/ref.parquet/chrom=chr22/data.parquet')
 # train tissue mapper using reference genome
 enformer_tissue_mapper.train([output_dir / 'aggregated/ref.parquet/chrom=chr22/data.parquet'],
-                             output_path=output_dir / 'tissue_mapper.pkl',
+                             output_path=output_dir / 'tissue_mapper.parquet',
                              expression_path=data_dir / 'transcripts_tpms.zarr',
                              model=linear_model.ElasticNetCV(cv=2))
 # map reference to tissues

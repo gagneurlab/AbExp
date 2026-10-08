@@ -16,12 +16,13 @@ The publication to this method can be found in [Nature Communications](https://w
   - LOFTEE: 14GB (hg38), 1.3GB (hg19)
   - GTEx and SpliceMap tables: 2GB
   - SpliceAI-RocksDB: about 175GB per genome assembly, 349GB for hg19 + hg38
+  - Enformer model, for models with Enformer features: 1GB
 - RAM: 64GB
 - (optional) a GPU with CUDA for Enformer, SpliceAI and Pangolin, see [GPU](#gpu)
 
 ## Setup
 
-1) Install conda and mamba on your system, and create the environment with Snakemake 9 and aria2c:
+1) Install conda and mamba on your system, and create the environment with Snakemake 9, aria2c and kagglehub:
    ```bash
    mamba env create -f workflow/envs/abexp-veff-py.yaml
    conda activate abexp-veff-py
@@ -37,7 +38,8 @@ The publication to this method can be found in [Nature Communications](https://w
      The schema also lists the defaults. The options of each veff module, e.g. `vep` or `absplice`, are in
      `workflow/modules/veff/<module>/config.schema.yaml`.
 3) (optional) Download the resources before the first run: `snakemake setup -c 4`.
-   Otherwise, the first run downloads them.
+   Otherwise, the first run downloads them. For models with Enformer features, the resources include the
+   Enformer model in `<resources_dir>/kagglehub`, and the Enformer jobs load it from there.
    With a cluster executor, the downloads run as cluster jobs. If the compute nodes have no internet access,
    run `snakemake setup -c 4` without the executor on a host with internet access.
    If several runs share `resources_dir`, run `setup` once before them. Snakemake locks files only within one
@@ -95,12 +97,12 @@ The publication to this method can be found in [Nature Communications](https://w
 
 ## GPU
 
-`use_gpu: True` in the config makes Enformer and SpliceAI use the CUDA variant of their TensorFlow
-environment (`workflow/modules/veff/envs/abexp-tensorflow-cuda.yaml`) instead of the CPU variant. Pangolin
-of the absplice2 module likewise uses the CUDA variant of its PyTorch environment
+`use_gpu: True` in the config makes Enformer, MMSplice, SpliceAI and AbSplice-DNA use the CUDA variant of their
+TensorFlow environment (`workflow/modules/veff/envs/abexp-tensorflow-cuda.yaml`) instead of the CPU variant.
+Pangolin of the absplice2 module likewise uses the CUDA variant of its PyTorch environment
 (`workflow/modules/veff/absplice2/envs/absplice2-pangolin-cuda.yaml`). The CUDA variants also run on hosts
-without a GPU, on the CPU. Only with `use_gpu: True`, these rules request one GPU (resource `gpu`), e.g.
-from SLURM.
+without a GPU, on the CPU. Only with `use_gpu: True`, the rules of Enformer, MMSplice, SpliceAI and Pangolin request
+one GPU (resource `gpu`), e.g. from SLURM. AbSplice-DNA requests none.
 
 Conda creates the CUDA variants only on a host with a CUDA driver. To create them on a host without one, e.g.
 a login node, set `CONDA_OVERRIDE_CUDA` to a CUDA version that the driver of the GPU nodes supports, e.g. 12.9:
@@ -268,9 +270,9 @@ The dict has one key per step. A step is one rule or several rules that must cha
 predictions of the reference and the alternative sequences. A new value reruns the rules of the step, and the
 rules downstream of them rerun because their input changed.
 - In a commit that changes outputs, bump the key of the earliest step whose outputs change, e.g. after a new tool
-  version in a conda environment or a changed script. For example, a scikit-learn update changes the results of
-  the Enformer tissue mapper: bump `"tissue"` in `workflow/modules/veff/enformer/Snakefile`. The tissue rules and
-  all rules downstream of them rerun, but not the Enformer predictions.
+  version in a conda environment or a changed script. For example, if a new kipoi-enformer release changes the
+  scores of the Enformer tissue mapper, bump `"tissue"` in `workflow/modules/veff/enformer/Snakefile`. The tissue
+  rules and all rules downstream of them rerun, but not the Enformer predictions.
 - A conda environment can serve several steps, e.g. the TensorFlow environment of Enformer and SpliceAI. After a
   change of such an environment, bump each step whose outputs change.
 - Do not bump a key for changes that keep the outputs, e.g. a comment.
@@ -297,10 +299,11 @@ because `--touch` also marks outputs as up to date that need a rerun. Alternativ
 
 ## Python packages
 
-`packages/` contains the Python packages `abexp-utils` and `kipoi-enformer`, which the workflow uses. The conda
-environments install them from this repository, pinned to their release tags. So a change of a package takes
-effect in the workflow only with its next release. [packages/README.md](packages/README.md) describes how to test,
-release and publish them.
+`packages/` contains the Python packages `abexp-utils`, `kipoi-enformer` and `abexp-splicing`, which the workflow
+uses. abexp-splicing holds the parts of MMSplice, AbSplice and SpliceAI-RocksDB that the absplice module runs,
+ported to kipoiseq2. The conda environments install the packages from this repository, pinned to their release
+tags. So a change of a package takes effect in the workflow only with its next release.
+[packages/README.md](packages/README.md) describes how to test, release and publish them.
 
 ## License
 All source code and model weights in this repository are licensed under the [MIT license](./LICENSE).

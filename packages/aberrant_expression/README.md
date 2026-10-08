@@ -12,6 +12,7 @@ installs it as `aberrant-expression`, and Python imports it as `abexp`. The base
 | `abexp.absplice`         | AbSplice-DNA from MMSplice with SpliceMaps and from SpliceAI                              | `splicing` |
 | `abexp.spliceai_rocksdb` | SpliceAI scores from SpliceAI-RocksDB                                                     | `rocksdb`  |
 | `abexp.pangolin`         | Pangolin's splice scores per variant and gene, with the published weights of Pangolin     | `pangolin` |
+| `abexp.absplice2`        | AbSplice2-DNA from Pangolin and from MMSplice with SpliceMaps                             | `absplice2` |
 
 `abexp.utils` and `abexp.enformer` were the distributions abexp-utils (`abexp_utils`) and kipoi-enformer
 (`kipoi_enformer`). `abexp.mmsplice`, `abexp.absplice` and `abexp.spliceai_rocksdb` were the distribution
@@ -40,6 +41,7 @@ pip install "aberrant-expression[polars] @ git+https://github.com/gagneurlab/AbE
 | `splicing` | `abexp.mmsplice` and `abexp.absplice`                                     |
 | `rocksdb`  | `abexp.spliceai_rocksdb`, with `splicing`                                 |
 | `pangolin` | `abexp.pangolin`. conda-forge has PyTorch as `pytorch-cpu` and `pytorch-gpu`. |
+| `absplice2` | `abexp.absplice2`                                                        |
 | `enformer` | `abexp.enformer`. For GPU support on Linux, also install `tensorflow[and-cuda]`. |
 | `all`      | all extras but `rocksdb`                                                  |
 | `numpy`, `kipoiseq2`, `tensorflow`, `tqdm` | one requirement each, which several extras share |
@@ -297,6 +299,42 @@ The scores match Pangolin (fork neverov-am/Pangolin 232cba0) up to the last floa
   arrays of a strand in place. So there, each gene starts from the arrays that the genes before it on the same
   strand have masked (`pangolin/pangolin.py`, lines 133 to 153). The fork copies the arrays for each gene (lines 144
   and 145 of 232cba0).
+
+## abexp.absplice2
+
+AbSplice2-DNA per variant, gene and GTEx tissue, from Pangolin, MMSplice with SpliceMaps, and the SpliceMaps. The
+code is our own, in polars, for the steps of the [AbSplice2](https://github.com/gagneurlab/absplice2) example
+workflow after MMSplice and Pangolin, at commit a30120f. `absplice2_dna` matches Pangolin's gain and loss sites
+with the SpliceMap sites within 2 bp, joins them with MMSplice, scores each row with the model, and keeps the row
+with the largest score per variant, gene and tissue.
+
+The AbSplice2 model is not part of this package. It is an ExplainableBoostingClassifier of interpret 0.2.7, which
+the caller loads and passes as a function:
+
+```python
+import pickle
+
+import polars as pl
+from abexp.absplice2 import absplice2_dna, read_mmsplice_splicemap
+
+with open('AbSplice_2_DNA.pkl', 'rb') as fd:
+    model = pickle.load(fd)
+df = absplice2_dna(
+    pangolin=pl.read_parquet('pangolin.parquet'),  # the output of abexp.pangolin
+    splicemap5=['Whole_Blood_splicemap_psi5.csv.gz'],
+    splicemap3=['Whole_Blood_splicemap_psi3.csv.gz'],
+    mmsplice_splicemap=read_mmsplice_splicemap('mmsplice_splicemap.csv'),
+    predict=lambda features: model.predict_proba(features.to_pandas())[:, 1],
+)
+```
+
+The output matches the AbSplice2 scripts, except here:
+
+- The variant is split into `chrom`, `start` (0-based), `end`, `ref` and `alt`, and `gene_id` is named `gene`.
+- Pangolin's scores are rounded to 2 decimals in float64, Pangolin rounds them in float32. The two differ by 0.01
+  only for scores within float32 precision of a rounding boundary.
+- Of the rows with the same largest score, AbSplice2 keeps any one. `absplice2_dna` keeps the first in the order
+  of the output columns, so its MMSplice columns can differ from AbSplice2.
 
 ## Tests
 

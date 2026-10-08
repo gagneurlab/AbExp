@@ -124,6 +124,8 @@ jobs:
             modules: abexp.enformer
           - extra: pangolin
             modules: abexp.pangolin
+          - extra: absplice2
+            modules: abexp.absplice2
     steps:
       - uses: actions/checkout@v7
         with:

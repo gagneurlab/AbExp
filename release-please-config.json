@@ -22,6 +22,7 @@
         { "type": "generic", "path": "/workflow/envs/abexp-veff-py.yaml" },
         { "type": "generic", "path": "/workflow/modules/veff/envs/abexp-tensorflow-cpu.yaml" },
         { "type": "generic", "path": "/workflow/modules/veff/envs/abexp-tensorflow-cuda.yaml" },
+        { "type": "generic", "path": "/workflow/modules/veff/absplice2/envs/absplice2.yaml" },
         { "type": "generic", "path": "/workflow/modules/veff/absplice2/envs/absplice2-pangolin-cpu.yaml" },
         { "type": "generic", "path": "/workflow/modules/veff/absplice2/envs/absplice2-pangolin-cuda.yaml" }
       ]

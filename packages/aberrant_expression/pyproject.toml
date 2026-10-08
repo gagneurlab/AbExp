@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "aberrant-expression"
 version = "0.0.1"
-description = "Utilities, Enformer, MMSplice, AbSplice-DNA, SpliceAI-RocksDB and Pangolin for the AbExp pipeline"
+description = "Utilities, Enformer, MMSplice, AbSplice-DNA, SpliceAI-RocksDB, Pangolin and AbSplice2-DNA for the AbExp pipeline"
 authors = [
     { name = "Florian Hölzlwimmer", email = "git.ich@frhoelzlwimmer.de" },
     { name = "George Tsitsiridis", email = "gtsitsiridis@gmail.com" },
@@ -76,9 +76,13 @@ pangolin = [
     "aberrant-expression[gff3,numpy,kipoiseq2]",
     "torch>=2.4",
 ]
+# abexp.absplice2
+absplice2 = [
+    "aberrant-expression[polars]",
+]
 # all extras but rocksdb, because pip builds python-rocksdb only with the RocksDB library installed
 all = [
-    "aberrant-expression[models,polars,spark,gff3,splicing,enformer,pangolin]",
+    "aberrant-expression[models,polars,spark,gff3,splicing,enformer,pangolin,absplice2]",
 ]
 # Requirements of several extras. Each of these extras holds one requirement and has its name.
 numpy = [

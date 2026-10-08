@@ -299,6 +299,9 @@ which downloads the file from the Pangolin repository at a pinned commit and che
 Pangolin runs as `abexp.pangolin` of the aberrant-expression package: our own code with the published weights
 of Pangolin. It gives the scores of `pangolin -m True -d 50`, with the differences listed in
 [packages/aberrant_expression/README.md](packages/aberrant_expression/README.md#differences-from-upstream-pangolin).
+The scoring with the AbSplice2 model runs as `abexp.absplice2`: our own code in polars for the steps of the
+AbSplice2 example workflow, with the differences listed in
+[packages/aberrant_expression/README.md](packages/aberrant_expression/README.md#abexpabsplice2).
 
 Pangolin needs a GPU for large VCFs (`use_gpu: True`, see [GPU](#gpu)). On a CPU with 4 threads, it takes
 about 0.7 s per variant, i.e. about 2 hours for 10,000 variants. A whole-genome VCF with millions of variants

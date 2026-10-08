@@ -4,23 +4,24 @@ tl;dr: `aberrant_expression/` holds the Python distribution aberrant-expression,
 `abexp`. The workflow installs it from this repository, pinned to its release tag. release-please releases it. A
 change of the package reaches the workflow only with its next release.
 
-| directory             | distribution          | import                                                                                                          | tag                              |
-| --------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------- | -------------------------------- |
-| `aberrant_expression` | `aberrant-expression` | `abexp.utils`, `abexp.enformer`, `abexp.mmsplice`, `abexp.absplice`, `abexp.spliceai_rocksdb`, `abexp.pangolin` | `aberrant-expression-v<version>` |
+| directory             | distribution          | import                                                                                                                             | tag                              |
+| --------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| `aberrant_expression` | `aberrant-expression` | `abexp.utils`, `abexp.enformer`, `abexp.mmsplice`, `abexp.absplice`, `abexp.spliceai_rocksdb`, `abexp.pangolin`, `abexp.absplice2` | `aberrant-expression-v<version>` |
 
 The base of aberrant-expression has no dependencies. Each extra adds the requirements of some subpackages:
 
-| extra      | subpackages                        | requirements, and the extras it refers to                                                     |
-| ---------- | ---------------------------------- | --------------------------------------------------------------------------------------------- |
-| `models`   | `abexp.utils.models`               | scikit-learn, `numpy`                                                                         |
-| `polars`   | `abexp.utils.polars_functions`     | polars                                                                                        |
-| `spark`    | `abexp.utils.spark_functions`      | pyspark, pandas                                                                               |
-| `gff3`     | `abexp.utils.gff3`                 | polars-bio, `polars`                                                                          |
-| `splicing` | `abexp.mmsplice`, `abexp.absplice` | onnxruntime, `polars`, `numpy`, `kipoiseq2`, `tensorflow`, `tqdm`                             |
-| `rocksdb`  | `abexp.spliceai_rocksdb`           | python-rocksdb, `splicing`                                                                    |
-| `enformer` | `abexp.enformer`                   | kagglehub, pyarrow, xarray, zarr, pyyaml, `gff3`, `models`, `kipoiseq2`, `tensorflow`, `tqdm` |
-| `pangolin` | `abexp.pangolin`                   | torch, `gff3`, `numpy`, `kipoiseq2`                                                           |
-| `all`      | all but `abexp.spliceai_rocksdb`   | all extras but `rocksdb`                                                                      |
+| extra       | subpackages                        | requirements, and the extras it refers to                                                     |
+| ----------- | ---------------------------------- | --------------------------------------------------------------------------------------------- |
+| `models`    | `abexp.utils.models`               | scikit-learn, `numpy`                                                                         |
+| `polars`    | `abexp.utils.polars_functions`     | polars                                                                                        |
+| `spark`     | `abexp.utils.spark_functions`      | pyspark, pandas                                                                               |
+| `gff3`      | `abexp.utils.gff3`                 | polars-bio, `polars`                                                                          |
+| `splicing`  | `abexp.mmsplice`, `abexp.absplice` | onnxruntime, `polars`, `numpy`, `kipoiseq2`, `tensorflow`, `tqdm`                             |
+| `rocksdb`   | `abexp.spliceai_rocksdb`           | python-rocksdb, `splicing`                                                                    |
+| `enformer`  | `abexp.enformer`                   | kagglehub, pyarrow, xarray, zarr, pyyaml, `gff3`, `models`, `kipoiseq2`, `tensorflow`, `tqdm` |
+| `pangolin`  | `abexp.pangolin`                   | torch, `gff3`, `numpy`, `kipoiseq2`                                                           |
+| `absplice2` | `abexp.absplice2`                  | `polars`                                                                                      |
+| `all`       | all but `abexp.spliceai_rocksdb`   | all extras but `rocksdb`                                                                      |
 
 `pyproject.toml` names each third-party requirement once, with its version range. An extra that needs a requirement
 refers to the extra that holds it, e.g. `pangolin` lists `aberrant-expression[gff3]` for polars-bio. The extras
@@ -39,6 +40,7 @@ tag, e.g. `...@aberrant-expression-v0.0.1#subdirectory=packages/aberrant_express
 - the extra `polars` in `workflow/envs/abexp-veff-py.yaml`
 - the extra `pangolin` in `workflow/modules/veff/absplice2/envs/absplice2-pangolin-cpu.yaml` and
   `absplice2-pangolin-cuda.yaml`
+- the extra `absplice2` in `workflow/modules/veff/absplice2/envs/absplice2.yaml`
 - the extras `enformer`, `splicing` and `rocksdb` in `workflow/modules/veff/envs/abexp-tensorflow-cpu.yaml` and
   `abexp-tensorflow-cuda.yaml`
 

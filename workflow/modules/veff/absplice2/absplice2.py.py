@@ -21,7 +21,8 @@
 # after MMSplice and Pangolin (`pangolin_postprocess.py`, `pangolin_splicemap.py` and
 # `absplice_dna.py` in `example/workflow/splicing_pred/DNA`, commit a30120f):
 #
-# 1. Pangolin: the largest splice site gain and loss per variant and gene.
+# 1. Pangolin: the largest splice site gain and loss per variant and gene, from the rule
+#    veff__absplice2_pangolin.
 # 2. The SpliceMap sites of the same gene within 2 bp of Pangolin's gain or loss site, per
 #    tissue. Their coverage `median_n` is the model input `median_n_pangolin`.
 # 3. The model inputs: MMSplice with SpliceMaps and the Pangolin table, joined on variant, gene
@@ -79,63 +80,26 @@ os.getcwd()
 # %% [markdown]
 # # Pangolin
 #
-# The INFO field `Pangolin` has one entry per gene, `gene_id|gain_pos:gain_score|loss_pos:loss_score|Warnings:...`,
-# with the positions relative to the variant. Variants that Pangolin skipped have no such field.
-# The gene id loses its version, as in the SpliceMaps.
+# The output of `abexp.pangolin` has one row per variant and gene, with the positions relative to
+# the variant. The gene id loses its version, as in the SpliceMaps. The scores are rounded to 2
+# decimals like the VCF text of Pangolin, which AbSplice2 was trained with. Rounding also turns
+# scores near 0 into 0, which the matching of SpliceMap sites below tests for. Pangolin rounds in
+# float32, polars in float64. The two differ by 0.01 only for scores within float32 precision of a
+# rounding boundary.
 
 # %%
-# the 8 fixed columns of a VCF, by their names in the header line
-VCF_COLUMNS = {
-    "#CHROM": "chrom",
-    "POS": "pos",
-    "ID": "id",
-    "REF": "ref",
-    "ALT": "alt",
-    "QUAL": "qual",
-    "FILTER": "filter",
-    "INFO": "info",
-}
-
-pangolin_vcf_df = (
-    pl.read_csv(
-        snakemake.input["pangolin_vcf"],
-        separator="\t",
-        # skips the meta-information lines, but not the header line
-        comment_prefix="##",
-        quote_char=None,
-        # drops the FORMAT and sample columns
-        columns=list(VCF_COLUMNS),
-        infer_schema=False,
-    )
-    .rename(VCF_COLUMNS)
-    .with_columns(pl.col("pos").cast(pl.Int64))
-)
-pangolin_vcf_df.shape
-
-# %%
-gain = pl.col("gene_scores").list.get(1).str.split(":")
-loss = pl.col("gene_scores").list.get(2).str.split(":")
-
+variant = pl.col("variant").str.split(":")
 pangolin_df = (
-    pangolin_vcf_df
-    .select(
-        pl.format("{}:{}:{}>{}", "chrom", "pos", "ref", pl.col("alt").str.split(",").list.first()).alias("variant"),
-        "chrom",
-        "pos",
-        pl.col("info").str.extract(r"(?:^|;)Pangolin=([^;]*)").str.split(",").alias("gene_scores"),
-    )
-    .drop_nulls("gene_scores")
-    .explode("gene_scores")
-    .with_columns(pl.col("gene_scores").str.split("|"))
+    pl.read_parquet(snakemake.input["pangolin_pq"])
     .select(
         "variant",
-        "chrom",
-        "pos",
-        pl.col("gene_scores").list.get(0).str.split(".").list.first().alias("gene_id"),
-        gain.list.get(1).cast(pl.Float64).alias("gain_score"),
-        gain.list.get(0).cast(pl.Int64).alias("gain_pos"),
-        loss.list.get(1).cast(pl.Float64).alias("loss_score"),
-        loss.list.get(0).cast(pl.Int64).alias("loss_pos"),
+        variant.list.get(0).alias("chrom"),
+        variant.list.get(1).cast(pl.Int64).alias("pos"),
+        pl.col("gene_id").str.split(".").list.first(),
+        pl.col("gain_score").cast(pl.Float64).round(2),
+        "gain_pos",
+        pl.col("loss_score").cast(pl.Float64).round(2),
+        "loss_pos",
     )
     .unique(maintain_order=True)
 )

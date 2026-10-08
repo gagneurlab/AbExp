@@ -2,9 +2,10 @@ $schema: "https://json-schema.org/draft/2020-12/schema"
 title: absplice2 module
 description: >-
   AbSplice2-DNA (https://github.com/gagneurlab/absplice2): aberrant splicing per GTEx tissue from
-  MMSplice with SpliceMaps and from Pangolin. The module runs Pangolin and the AbSplice2-DNA
-  model; the MMSplice table, the SpliceMaps and the tissue mapping come from the absplice module.
-  Downloads the AbSplice2 model, unless `model_pkl` points at an existing file.
+  MMSplice with SpliceMaps and from Pangolin. The module runs Pangolin (abexp.pangolin) and the
+  AbSplice2-DNA model; the MMSplice table, the SpliceMaps and the tissue mapping come from the
+  absplice module. Downloads the AbSplice2 model, unless `model_pkl` points at an existing file,
+  and the Pangolin weights.
 type: object
 additionalProperties: false
 
@@ -44,7 +45,9 @@ properties:
       results are in <output_dir>/absplice2.
   resources_dir:
     type: string
-    description: Base of the default `model_pkl` path. Default is <output_dir>/resources.
+    description: >-
+      Base of the default `model_pkl` path and of the Pangolin weights,
+      <resources_dir>/absplice2/pangolin_models. Default is <output_dir>/resources.
   human_genome_version:
     type: string
     enum: ["hg19", "hg38"]
@@ -53,28 +56,23 @@ properties:
     description: >-
       Genome FASTA. Pangolin adds or removes the "chr" prefix of the VCF chromosome to match the
       FASTA, and looks up the genes under the FASTA name. So the FASTA must name the chromosomes
-      like the annotation database: "chr1" for GENCODE.
+      like gff3_file: "chr1" for GENCODE.
+  fasta_file_idx:
+    type: string
+    description: Index of `fasta_file`. Default is `fasta_file` + ".fai".
   gff3_file:
     type: string
     description: >-
-      GENCODE genome annotation (GFF3, gzip allowed) of the same assembly as fasta_file. The
-      module builds the Pangolin annotation database from it. Not needed if
-      `pangolin_annotation_db` is set.
-  pangolin_annotation_db:
-    type: string
-    description: >-
-      An existing gffutils database for Pangolin, e.g. gencode.v38.annotation.db from
-      https://github.com/tkzeng/Pangolin, which AbSplice2 was trained with. If set, the module
-      does not build one from gff3_file. Default is <output_dir>/absplice2/pangolin_annotation.db,
-      built from gff3_file.
+      GENCODE genome annotation (GFF3, gzip allowed) of the same assembly as fasta_file. Pangolin
+      scores the genes in it, and takes the annotated splice sites from its exons with one of
+      `pangolin_transcript_tags`.
   pangolin_transcript_tags:
     type: array
     items:
       type: string
     description: >-
-      The Pangolin annotation database built from gff3_file keeps all genes, and the transcripts
-      and exons with one of these tags. Pangolin takes the annotated splice sites from these
-      exons. Default are the tags of the databases published with Pangolin: Ensembl_canonical for
+      Pangolin takes the annotated splice sites of a gene from its exons with one of these tags.
+      Default are the tags of the databases published with Pangolin: Ensembl_canonical for
       hg38; Ensembl_canonical, appris_principal, appris_candidate and appris_candidate_longest
       for hg19.
   model_pkl:
@@ -86,14 +84,14 @@ properties:
     type: boolean
     default: false
     description: >-
-      Run the Pangolin rules in the CUDA variant of the PyTorch environment
+      Run the Pangolin rule in the CUDA variant of the PyTorch environment
       (envs/absplice2-pangolin-cuda.yaml of this module) instead of the CPU variant. The CUDA
       variant also runs on hosts without a GPU. The veff module sets this from its own use_gpu.
   enabled:
     type: boolean
     default: false
     description: >-
-      Runs this module. Off by default: Pangolin is slow without a GPU, about 3 s per variant
+      Runs this module. Off by default: Pangolin is slow without a GPU, about 0.7 s per variant
       with 4 CPU threads, and the output is not read by tissue_specific_vep, fset or predict.
 
 required:
@@ -104,9 +102,4 @@ required:
   - output_dir
   - human_genome_version
   - fasta_file
-
-if:
-  not:
-    required: ["pangolin_annotation_db"]
-then:
-  required: ["gff3_file"]
+  - gff3_file

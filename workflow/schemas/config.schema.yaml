@@ -8,8 +8,8 @@ description: |
     Double braces, e.g. {{vcf_file}}: Snakemake wildcards or values filled in by the rules.
   The workflow combines the modules workflow/modules/vcf_prep, gtf_transcripts and veff
   (variant annotation). The sections system.vep, system.mehari, system.loftee,
-  system.absplice, system.enformer and system.nmd_scanner go to the submodules of veff; the
-  config.schema.yaml of each submodule lists their options.
+  system.absplice, system.absplice2, system.enformer and system.nmd_scanner go to the submodules
+  of veff; the config.schema.yaml of each submodule lists their options.
 type: object
 
 properties:
@@ -52,9 +52,10 @@ properties:
     type: boolean
     default: false
     description: >-
-      Run Enformer and SpliceAI in the CUDA variant of their TensorFlow environment instead of
-      the CPU variant. The CUDA variant also runs on hosts without a GPU. Creating it on a host
-      without a CUDA driver needs CONDA_OVERRIDE_CUDA (see the README).
+      Run Enformer and SpliceAI in the CUDA variant of their TensorFlow environment, and Pangolin
+      in the CUDA variant of its PyTorch environment, instead of the CPU variants. The CUDA
+      variants also run on hosts without a GPU. Creating them on a host without a CUDA driver
+      needs CONDA_OVERRIDE_CUDA (see the README).
   veff:
     type: object
     default: {}
@@ -139,6 +140,10 @@ properties:
         type: object
         default: {}
         description: Options of the absplice module (workflow/modules/veff/absplice/config.schema.yaml).
+      absplice2:
+        type: object
+        default: {}
+        description: Options of the absplice2 module (workflow/modules/veff/absplice2/config.schema.yaml).
       enformer:
         type: object
         default: {}

@@ -37,7 +37,7 @@ veff:
   # README.
   # mehari_gencode_transcripts_fasta: "data/gencode/release_40/gencode.v40.transcripts.fa.gz"
 
-# Run Enformer and SpliceAI in the CUDA variant of their TensorFlow environment. It also runs
+# Run Enformer, SpliceAI and Pangolin in the CUDA variant of their environment. It also runs
 # on hosts without a GPU. See "GPU" in the README.
 use_gpu: False
 
@@ -96,3 +96,8 @@ system:
   #   spliceai_rocksdb_path:
   #     hg19: '/path/to/spliceai_rocksdb/spliceAI_hg19_chr{chromosome}.db'
   #     hg38: '/path/to/spliceai_rocksdb/spliceAI_hg38_chr{chromosome}.db'
+
+  # AbSplice2-DNA: Pangolin with the MMSplice and SpliceMap results of absplice. Its output
+  # <output_dir>/veff/absplice2/veff.parquet/<vcf_file>.parquet is built only as a target.
+  # absplice2:
+  #   enabled: True

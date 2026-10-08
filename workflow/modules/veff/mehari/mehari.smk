@@ -48,9 +48,6 @@ rule veff__mehari_annotation:
         fasta_index=FASTA_INDEX_FILE,
     params:
         output_version=OUTPUT_VERSION["annotation"],
-    wildcard_constraints:
-        ds_dir="[^/]+",
-        feature_set="[^/]+",
     conda:
         MEHARI_CONDA_ENV
     script:

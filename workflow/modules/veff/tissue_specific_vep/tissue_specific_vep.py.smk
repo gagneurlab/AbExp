@@ -16,8 +16,6 @@ rule veff__tissue_specific_vep:
         chrom_alias=ancient(CHROM_ALIAS_TSV),
     params:
         output_version=OUTPUT_VERSION["tissue_specific_vep"],
-    wildcard_constraints:
-        ds_dir="[^/]+",
     conda:
         SHARED_CONDA_ENV_YAML_DIR.join("veff-py.yaml")
     script:

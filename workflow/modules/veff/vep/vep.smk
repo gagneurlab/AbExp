@@ -210,9 +210,6 @@ rule veff__vep_parse:
         veff_done=VEFF_VCF_TSV_PATTERN_DONE,
     params:
         output_version=OUTPUT_VERSION["annotation"],
-    wildcard_constraints:
-        ds_dir="[^/]+",
-        feature_set="[^/]+",
     conda:
         SHARED_CONDA_ENV_YAML_DIR.join("veff-py.yaml")
     script:

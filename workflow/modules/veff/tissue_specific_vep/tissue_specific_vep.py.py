@@ -81,8 +81,13 @@ os.getcwd()
 # chrom_mapping = dict(pl.read_csv(snakemake.input["chrom_alias"], separator="\t").rename({"#alias": "alias"})[["alias", "chrom"]].rows())
 
 # %%
+# GENCODE annotates each transcript of the pseudoautosomal regions (PAR) on chrX and on chrY. The
+# IDs of the chrY copy end in "_PAR_Y". VEP and mehari report PAR transcripts with the IDs of the
+# chrX copy, also for variants on chrY. Without the version, both copies have the same gene and
+# transcript, and the join below would count each PAR transcript twice. So only the chrX copy stays.
 gtf_transcript_df = (
     pl.scan_parquet(snakemake.input["gtf_transcripts"])
+    .filter(~pl.col("transcript_id").str.ends_with("_PAR_Y"))
     .with_columns([
         pl.col("gene_id").str.split(".").list.get(0).alias("gene"),
         pl.col("transcript_id").str.split(".").list.get(0).alias("transcript"),

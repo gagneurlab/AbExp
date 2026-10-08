@@ -24,9 +24,6 @@ rule veff__nmd_scanner_annotation:
     params:
         output_version=OUTPUT_VERSION["annotation"],
         reassign_exons=REASSIGN_EXONS,
-    wildcard_constraints:
-        ds_dir="[^/]+",
-        feature_set="[^/]+",
     conda:
         NMD_SCANNER_CONDA_ENV
     script:

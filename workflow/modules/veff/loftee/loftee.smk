@@ -23,9 +23,6 @@ rule veff__loftee_annotation:
     params:
         output_version=OUTPUT_VERSION["annotation"],
         min_intron_size=LOFTEE_MIN_INTRON_SIZE,
-    wildcard_constraints:
-        ds_dir="[^/]+",
-        feature_set="[^/]+",
     conda:
         LOFTEE_CONDA_ENV
     script:

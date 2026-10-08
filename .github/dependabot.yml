@@ -1,0 +1,34 @@
+version: 2
+
+updates:
+  # The workflows pin the actions to commit SHAs, so Dependabot keeps them current.
+  # `include: scope` gives titles like "ci(deps): bump ...".
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: ci
+      include: scope
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+  # lockfile-only: Dependabot moves only uv.lock, never the ranges in pyproject.toml. Those ranges are what the
+  # published package claims to support, so changing them is a decision for a person.
+  # The type chore keeps the lock updates out of the changelogs of release-please.
+  # Dependabot does not update [tool.uv], so required-version and constraint-dependencies stay manual. Its own uv
+  # checks required-version too: keep the floor at or below the uv in uv/helpers/requirements.txt of dependabot-core.
+  - package-ecosystem: uv
+    directory: /
+    schedule:
+      interval: monthly
+    versioning-strategy: lockfile-only
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      python:
+        patterns:
+          - "*"

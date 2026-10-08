@@ -65,41 +65,75 @@ def variants():
             # complement: CTGCAATGAGGGTCTGCATGT
             'alt_seq': 'ACATGCAGACCCTCATTGCAG',
         },
+        # Positive strand
+        # Deletion
+        # ===|TSS|===|Var|=======================
+        'chr22:28315413:CG>C:ENST00000453632.6_2': {
+            'chrom': 'chr22',
+            'strand': '+',
+            'tss': 28315410,  # 0-based
+            'ref_start': 28315400,  # 0-based
+            'ref_end': 28315421,  # 1-based
+            'var_start': 28315412,  # 0-based
+            'var_end': 28315414,  # 1-based
+            'ref': 'CG',
+            'alt': 'C',
+            'ref_seq': 'TGCGCAGCCTGCCGAAGAGCG',
+            # the G is gone, and the window takes one more base at its end
+            'alt_seq': 'TGCGCAGCCTGCCAAGAGCGT',
+        },
+        # Positive strand
+        # Insertion right before the TSS
+        # ===|Var|TSS|===========================
+        'chr22:17602475:C>CGCCTGGAGGAAGCGGGAGGAGGAA:ENST00000428078.4_1': {
+            'chrom': 'chr22',
+            'strand': '+',
+            'tss': 17602475,  # 0-based
+            'ref_start': 17602465,  # 0-based
+            'ref_end': 17602486,  # 1-based
+            'var_start': 17602474,  # 0-based
+            'var_end': 17602475,  # 1-based
+            'ref': 'C',
+            'alt': 'CGCCTGGAGGAAGCGGGAGGAGGAA',
+            'ref_seq': 'GGGAGGAGGCGCGGGCAGCCG',
+            # the 10 bases before the TSS are the end of the inserted bases
+            'alt_seq': 'GGAGGAGGAAGCGGGCAGCCG',
+        },
         # Negative strand
         # Deletion
         # ===|Var|===|TSS|=======================
-        'chr22:29130718:CAAA>C:ENST00000403642.5_3': {
+        'chr22:24096615:GCA>G:ENST00000248948.4_6': {
             'chrom': 'chr22',
             'strand': '-',
-            'tss': 29130708,  # 0-based
-            'ref_start': 29130698,  # 0-based
-            'ref_end': 29130719,  # 1-based
-            'var_start': 29130717,  # 0-based
-            'var_end': 29130721,  # 1-based
-            'ref': 'CAAA',
-            'alt': 'C',
-            # complement: TCCCGAGACATCACGACCTCA
-            'ref_seq': 'TGAGGTCGTGATGTCTCGGGA',
-            # complement: TCCCGAGACATCACGACCTCA
-            'alt_seq': 'TGAGGTCGTGATGTCTCGGGA',
+            'tss': 24096611,  # 0-based
+            'ref_start': 24096601,  # 0-based
+            'ref_end': 24096622,  # 1-based
+            'var_start': 24096614,  # 0-based
+            'var_end': 24096617,  # 1-based
+            'ref': 'GCA',
+            'alt': 'G',
+            # complement: CAGGTGCTTTGGGGCACAGGG
+            'ref_seq': 'CCCTGTGCCCCAAAGCACCTG',
+            # complement: CAGGTGCTTTGGGGCAGGGCT
+            'alt_seq': 'AGCCCTGCCCCAAAGCACCTG',
         },
         # Negative strand
         # Insertion
-        # ===|Var|===|TSS|=======================
-        'chr22:19109971:T>TCCCGCCC:ENST00000545799.5_4': {
+        # ===|TSS|===|Var|=======================
+        'chr22:50968459:G>GGCGCCCCAGGACGGCA:ENST00000395678.7_6': {
             'chrom': 'chr22',
             'strand': '-',
-            'tss': 19109966,  # 0-based
-            'ref_start': 19109956,  # 0-based
-            'ref_end': 19109977,  # 1-based
-            'var_start': 19109970,  # 0-based
-            'var_end': 19109971,  # 1-based
-            'ref': 'T',
-            'alt': 'TCCCGCCC',
-            # complement: CGCCCCGCCCCGCCTCCCGCC
-            'ref_seq': 'GGCGGGAGGCGGGGCGGGGCG',
-            # complement: CGCCCCGCCCCGCCTCCCGCC
-            'alt_seq': 'GGCGGGAGGCGGGGCGGGGCG',
+            'tss': 50968460,  # 0-based
+            'ref_start': 50968450,  # 0-based
+            'ref_end': 50968471,  # 1-based
+            'var_start': 50968458,  # 0-based
+            'var_end': 50968459,  # 1-based
+            'ref': 'G',
+            'alt': 'GGCGCCCCAGGACGGCA',
+            # complement: GGGGCGGCGGCGCCCCAGGAC
+            'ref_seq': 'GTCCTGGGGCGCCGCCGCCCC',
+            # complement: AGGACGGCAGCGCCCCAGGAC
+            'alt_seq': 'GTCCTGGGGCGCTGCCGTCCT',
         },
         # special case: the TSS is within the variant's interval; we take the downstream TSS
         # Negative strand
@@ -443,7 +477,8 @@ def test_vcf_dataloader(chr22_example_files, variants):
                   f'{metadata["transcript_id"]}')
         variant = variants.get(var_id, None)
         if variant is not None:
-            # assert one_hot2string(i['sequences']['shift:0'][None, :, :])[0] == variant['ref_seq']
+            # a case whose variant leaves the sequence as it is cannot fail
+            assert variant['alt_seq'] != variant['ref_seq']
             assert one_hot2string(i['sequences'])[0] == variant['alt_seq']
             checked_variants[var_id] = 2
 

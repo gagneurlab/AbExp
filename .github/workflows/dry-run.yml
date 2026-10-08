@@ -1,30 +1,13 @@
 # Dry-runs the workflow on config/config.yaml and the example files, in several variants of the config.
+# ci.yml calls it when a change touches the files that its job `changes` lists for this workflow.
 name: dry-run
 
 on:
-  pull_request:
-    paths:
-      - "workflow/**"
-      - "config/**"
-      - "example/**"
-      - "resources/**"
-      - ".github/workflows/dry-run.yml"
-  push:
-    branches: [main]
-    paths:
-      - "workflow/**"
-      - "config/**"
-      - "example/**"
-      - "resources/**"
-      - ".github/workflows/dry-run.yml"
+  workflow_call:
   workflow_dispatch:
 
 permissions:
   contents: read
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   dry-run:
@@ -92,13 +75,13 @@ jobs:
       PLACEHOLDERS: ${{ matrix.placeholders }}
       EXPECT_ERROR: ${{ matrix.expect_error }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       # To parse the workflow, Snakemake needs only itself and PyYAML. It also needs conda, because
       # workflow/profiles/default sets `software-deployment-method: conda` and Snakemake runs
       # `conda info` also in a dry-run.
-      - uses: mamba-org/setup-micromamba@v3
+      - uses: mamba-org/setup-micromamba@f457c30a868e4760d3a6fcea5f25dc655b8edf39 # v3.2.1
         with:
           environment-name: snakemake
           create-args: >-

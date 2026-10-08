@@ -50,26 +50,53 @@ has no copy of `packages/`.
 
 Between releases, main installs the package of the last release.
 
+## Development with uv
+
+The repository root holds a uv workspace for the development and CI of the packages in `packages/`. The root
+`pyproject.toml` lists them as workspace members, and `uv.lock` pins the versions of all their requirements. The
+workflow does not use uv: its conda environments install aberrant-expression with pip from a release tag.
+
+The workspace uses Python 3.12. The file `.python-version` in the repository root sets it, and uv reads that file
+in `uv sync`, `uv run` and `uv build`, also in CI. uv downloads Python 3.12 if it finds none. Without the file, uv
+may take a newer installed Python, for which some locked requirements, e.g. tensorflow, have no wheels.
+
+`uv sync` in the repository root creates the virtual environment `.venv`. It installs aberrant-expression in
+editable mode, with the extras and dependency groups you choose. It removes the packages that these do not need.
+The dependency group `test` holds pytest and its plugins:
+```bash
+uv sync --extra all --group test
+```
+`uv run <command>` runs a command in `.venv`. Add the extra `rocksdb` only with the RocksDB library installed,
+because uv builds python-rocksdb from its sdist.
+
+The root `pyproject.toml` sets the uv version in `required-version`. It also holds the version ranges of the test
+tools in `constraint-dependencies`, and the dependency group `test` of the package lists only their names. After a
+change of the requirements in a `pyproject.toml`, run `uv lock` and commit `uv.lock`. `uv lock --check` fails if
+`uv.lock` does not match the `pyproject.toml` files, and so does `uv sync --locked` in CI.
+
 ## Running the tests
 
 The tests are in one directory per area: `tests/utils`, `tests/enformer`, `tests/splicing`, `tests/pangolin` and
 `tests/absplice2`.
 Each area needs the extras of its subpackages: `polars`, `spark` and `gff3` for `tests/utils`, and the extra of the
-same name for the other areas. The tests run across all cores by default, through pytest-xdist. Pass `-n0` to run
-them in one process, which a debugger needs and which restores per-test output order.
+same name for the other areas. Install them with the dependency group `test`, and run pytest through `uv run`.
+`uv sync --extra all --group test` covers all areas at once. The tests run across all cores by default, through
+pytest-xdist. Pass `-n0` to run them in one process, which a debugger needs and which restores per-test output
+order.
 
 ```bash
-pip install -e "./packages/aberrant_expression[all,dev]"
-cd packages/aberrant_expression && pytest tests/utils
+uv sync --extra polars,spark,gff3 --group test
+cd packages/aberrant_expression && uv run pytest tests/utils
 ```
-The spark tests need Java.
+The spark tests need Java 17.
 
 The enformer tests read example files from `packages/aberrant_expression/tests/enformer/data/` and the chr22
 sequence from `example/chr22_hg19.fa`. git-lfs stores the files in `tests/enformer/data/`, and a clone fetches them
 only on request. Install git-lfs and fetch them once:
 ```bash
 git lfs pull --include="packages/aberrant_expression/tests/enformer/data/**" --exclude=""
-cd packages/aberrant_expression && pytest tests/enformer
+uv sync --extra enformer --group test
+cd packages/aberrant_expression && uv run pytest tests/enformer
 ```
 Without the files, pytest skips the tests that need them.
 
@@ -81,32 +108,43 @@ runs out, the download fails, and so does the pip install. `--exclude=""` in the
 The splicing tests read the files in `packages/aberrant_expression/tests/splicing/data/`, which git stores directly,
 and the chr22 sequence from `example/chr22_hg38.fa`:
 ```bash
-cd packages/aberrant_expression && pytest tests/splicing
+uv sync --extra splicing --group test
+cd packages/aberrant_expression && uv run pytest tests/splicing
 ```
 The SpliceAI-RocksDB test also needs the extra `rocksdb` and the hg38 chr22 database. Set
-`ABEXP_SPLICEAI_ROCKSDB_HG38_CHR22` to the path of `spliceAI_hg38_chr22.db`, otherwise pytest skips it. pip
-builds python-rocksdb only with the RocksDB library installed; conda-forge has a build of it.
+`ABEXP_SPLICEAI_ROCKSDB_HG38_CHR22` to the path of `spliceAI_hg38_chr22.db`, otherwise pytest skips it. uv and
+pip build python-rocksdb only with the RocksDB library installed; conda-forge has a build of it.
 
 The pangolin tests run small networks with fixed random weights on a synthetic genome, and the published weights of
 Pangolin on an excerpt of GRCh38 chr22 in `packages/aberrant_expression/tests/pangolin/data/`, which git stores
 directly. They download the published weights (35 MB) once into the pytest cache, or into the folder in
 `ABEXP_PANGOLIN_MODELS_DIR` if set. Without network access, the tests with the published weights fail:
 ```bash
-cd packages/aberrant_expression && pytest tests/pangolin
+uv sync --extra pangolin --group test
+cd packages/aberrant_expression && uv run pytest tests/pangolin
 ```
 
 The absplice2 tests run `absplice2_dna` with a stand-in for the AbSplice2 model on made-up inputs, one
 constellation per test. They need no files and no network:
 ```bash
-cd packages/aberrant_expression && pytest tests/absplice2
+uv sync --extra absplice2 --group test
+cd packages/aberrant_expression && uv run pytest tests/absplice2
 ```
 
-CI (`.github/workflows/packages.yml`) runs the tests of each area on pull requests and pushes to main that change
-`packages/`. It installs only the extras of the area. For the enformer tests, it fetches the test data with the same
-command and caches it. For the pangolin tests, it caches the published weights of Pangolin, with a key from
-`abexp/pangolin/weights.py`, which holds their SHA-256 sums. A second job installs each extra alone and imports all
-modules of its subpackages, so that a missing requirement fails. It skips the extra `rocksdb`, because pip cannot build
-python-rocksdb there.
+CI (`.github/workflows/ci.yml`) calls `.github/workflows/packages.yml` on pull requests and pushes to main that
+change `packages/`, `example/`, the root `pyproject.toml`, `.python-version`, `uv.lock` or `packages.yml`.
+The same run calls `.github/workflows/dry-run.yml` when a change touches `workflow/`, `config/`, `example/`,
+`resources/` or `dry-run.yml`. A change of `ci.yml` calls both. The job `CI` of `ci.yml` always reports, so it is
+the required status check of the ruleset for main. It fails if the job `changes` or a called workflow failed or was
+cancelled, and passes if they passed or were skipped. A path filter on the called workflows themselves would
+report nothing for an unrelated change and block the pull request. `check-pr.yml` adds the required check
+"PR Title Lint", which runs from the base branch, so it reports only once it is on main.
+
+`packages.yml` installs only the extras of the area, with `uv sync --locked`. For the enformer tests, it fetches
+the test data with the same command and caches it. For the pangolin tests, it caches the published weights of
+Pangolin, with a key from `abexp/pangolin/weights.py`, which holds their SHA-256 sums. A second job installs each
+extra alone and imports all modules of its subpackages, so that a missing requirement fails. It skips the extra
+`rocksdb`, because uv cannot build python-rocksdb there. A third job builds the sdist and wheel with `uv build`.
 
 A push of new test data needs git-lfs in the pushing clone, so that its pre-push hook uploads the LFS objects.
 
@@ -136,6 +174,9 @@ proposes 0.1.0.
 
 The release PR bumps:
 - the version in `pyproject.toml` and the `CHANGELOG.md` of the package
+- the version of the package in `uv.lock`, so that `uv sync --locked` passes after the release. A `toml` entry of
+  `extra-files` in `release-please-config.json` finds it with a JSONPath. release-please wraps each TOML value in
+  an object with its position in the file, so the JSONPath compares `name.value`.
 - the tag pins in the conda environments and in the package README. These are the lines marked
   `x-release-please-version` and the lines between `x-release-please-start-version` and `x-release-please-end`.
 
@@ -148,13 +189,16 @@ The release PR moves the pins but does not change the workflow scripts. So a bre
 keep the workflow working with both the old and the new release: keep the old name as a deprecated alias, and
 update the workflow after the pin has moved.
 
-After a release, the workflow builds the sdist and wheel of the package. PyPI rejects direct URL dependencies.
-If the package has one, the build emits a warning. If the upload to PyPI is on, the build fails instead.
+After a release, the workflow builds the sdist and wheel of the package with `uv build`. PyPI rejects direct URL
+dependencies. If the package has one, the build emits a warning. If the upload to PyPI is on, the build fails
+instead.
 The extras `splicing`, `enformer` and `pangolin` depend on kipoiseq2 0.1 from PyPI. kipoiseq2 requires Python
 3.12 or later, so aberrant-expression does too.
 
 Notes:
-- GitHub starts no workflows for pull requests that the `GITHUB_TOKEN` opens, so the tests do not run on release PRs.
+- GitHub starts no workflows for pull requests that the `GITHUB_TOKEN` opens, so the required checks "CI" and
+  "PR Title Lint" do not run on release PRs. release-please updates the release PR after each push to main, and
+  the new head again has no checks. Close and reopen the release PR right before merging, then enable auto-merge.
 - release-please needs the repository setting "Allow GitHub Actions to create and approve pull requests".
 
 ## Bioconda

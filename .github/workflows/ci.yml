@@ -1,0 +1,95 @@
+# Runs the workflows packages.yml and dry-run.yml for the areas that a pull request or push changes. The job `CI`
+# always reports, so that it can be a required status check: a workflow-level `paths:` filter reports nothing when
+# no path matches, and that would block the pull request.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  changes:
+    name: changes
+    runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.areas.outputs.packages }}
+      workflow: ${{ steps.areas.outputs.workflow }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          lfs: false
+          fetch-depth: 0
+      - name: Decide which areas changed
+        id: areas
+        env:
+          EVENT: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          PUSH_AFTER: ${{ github.sha }}
+        run: |
+          packages=false
+          workflow=false
+          # --no-renames lists a moved file under its old path too. core.quotePath=false prints non-ASCII paths
+          # unquoted, so that the patterns below match them.
+          case "$EVENT" in
+            pull_request) files=$(git -c core.quotePath=false diff --no-renames --name-only "$PR_BASE...$PR_HEAD") ;;
+            push) files=$(git -c core.quotePath=false diff --no-renames --name-only "$PUSH_BEFORE" "$PUSH_AFTER") ;;
+            *) files= ; packages=true; workflow=true ;;
+          esac
+          while IFS= read -r file; do
+            case "$file" in
+              packages/* | pyproject.toml | .python-version | uv.lock | .github/workflows/packages.yml) packages=true ;;
+              # a change of ci.yml can change the patterns here, so it runs both areas
+              .github/workflows/ci.yml) packages=true ;;
+              # the package tests read example files, and so do the scripts that make their test data
+              example/*) packages=true ;;
+            esac
+            case "$file" in
+              workflow/* | config/* | example/* | resources/* | .github/workflows/dry-run.yml) workflow=true ;;
+              .github/workflows/ci.yml) workflow=true ;;
+            esac
+          done <<< "$files"
+          echo "packages=$packages" >> "$GITHUB_OUTPUT"
+          echo "workflow=$workflow" >> "$GITHUB_OUTPUT"
+          echo "packages=$packages workflow=$workflow"
+
+  packages:
+    needs: [changes]
+    if: needs.changes.outputs.packages == 'true'
+    uses: ./.github/workflows/packages.yml
+
+  dry-run:
+    needs: [changes]
+    if: needs.changes.outputs.workflow == 'true'
+    uses: ./.github/workflows/dry-run.yml
+
+  # Aggregator job: a single, stable check-run name to use as the required status check in the ruleset,
+  # independent of the jobs in the called workflows.
+  ci:
+    name: CI
+    needs: [changes, packages, dry-run]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Verify no job failed
+        env:
+          RESULTS: ${{ needs.changes.result }} ${{ needs.packages.result }} ${{ needs.dry-run.result }}
+        run: |
+          # Fail only on failure/cancelled. A skipped workflow is allowed
+          echo "changes packages dry-run: $RESULTS"
+          for result in $RESULTS; do
+            if [ "$result" = "failure" ] || [ "$result" = "cancelled" ]; then
+              exit 1
+            fi
+          done

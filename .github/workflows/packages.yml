@@ -1,34 +1,13 @@
 # Tests and builds the Python package aberrant-expression in packages/. See packages/README.md.
+# ci.yml calls it when a change touches the files that its job `changes` lists for this workflow.
 name: packages
 
 on:
-  pull_request:
-    paths:
-      - "packages/**"
-      # the abexp.enformer tests read these example files
-      - "example/chr22_hg19.fa*"
-      - "example/chr22.gencode.v40lift37.annotation.gff3.gz"
-      # the splicing tests read this example file
-      - "example/chr22_hg38.fa*"
-      - ".github/workflows/packages.yml"
-  push:
-    branches: [main]
-    paths:
-      - "packages/**"
-      # the abexp.enformer tests read these example files
-      - "example/chr22_hg19.fa*"
-      - "example/chr22.gencode.v40lift37.annotation.gff3.gz"
-      # the splicing tests read this example file
-      - "example/chr22_hg38.fa*"
-      - ".github/workflows/packages.yml"
+  workflow_call:
   workflow_dispatch:
 
 permissions:
   contents: read
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   test:
@@ -59,7 +38,7 @@ jobs:
       # the pangolin tests download the published weights of Pangolin into this folder
       ABEXP_PANGOLIN_MODELS_DIR: ${{ github.workspace }}/pangolin_models
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           lfs: false
@@ -67,7 +46,7 @@ jobs:
         if: matrix.area == 'enformer'
         id: lfs
         run: echo "hash=$(git lfs ls-files --long --include="$TEST_DATA" | sha256sum | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
-      - uses: actions/cache@v6
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         if: matrix.area == 'enformer'
         with:
           path: .git/lfs
@@ -77,24 +56,25 @@ jobs:
         if: matrix.area == 'enformer'
         run: git lfs pull --include="$TEST_DATA" --exclude=""
       # weights.py holds the SHA-256 sums of the weights, so a new list of weights gets a new key
-      - uses: actions/cache@v6
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         if: matrix.area == 'pangolin'
         with:
           path: pangolin_models
           key: pangolin-weights-${{ hashFiles('packages/aberrant_expression/src/abexp/pangolin/weights.py') }}
-      - uses: actions/setup-python@v7
+      # reads the uv version from required-version
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
-          python-version: "3.12"
-          cache: pip
-          cache-dependency-path: packages/aberrant_expression/pyproject.toml
+          version-file: pyproject.toml
       # the spark tests need Java; pyspark 3.4 and later support Java 17
-      - uses: actions/setup-java@v6
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         if: matrix.area == 'utils'
         with:
           distribution: temurin
           java-version: "17"
-      - run: pip install "./packages/aberrant_expression[${{ matrix.extras }},dev]"
-      - run: pytest "tests/${{ matrix.area }}"
+      - env:
+          EXTRAS: ${{ matrix.extras }}
+        run: uv sync --locked --extra "$EXTRAS" --group test
+      - run: uv run pytest "tests/${{ matrix.area }}"
         working-directory: packages/aberrant_expression
 
   # A fresh install of one extra imports all modules of its subpackages, so that a missing requirement fails.
@@ -116,7 +96,7 @@ jobs:
             modules: abexp.utils.spark_functions
           - extra: gff3
             modules: abexp.utils.gff3
-          # Without the extra rocksdb, because pip builds python-rocksdb only with the RocksDB library installed.
+          # Without the extra rocksdb, because uv builds python-rocksdb only with the RocksDB library installed.
           # abexp.spliceai_rocksdb imports python-rocksdb only when it opens a database.
           # MMSplice imports TensorFlow only when it loads its models, but abexp.mmsplice.layers imports it at the
           # top, so this job still checks it. abexp.absplice imports onnxruntime only to run AbSplice-DNA, so this
@@ -130,23 +110,23 @@ jobs:
           - extra: absplice2
             modules: abexp.absplice2
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           lfs: false
-      - uses: actions/setup-python@v7
+      # reads the uv version from required-version
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
-          python-version: "3.12"
-          cache: pip
-          cache-dependency-path: packages/aberrant_expression/pyproject.toml
+          version-file: pyproject.toml
+      # --no-editable: install the package as a wheel, as pip does from the git tag
       - env:
           EXTRA: ${{ matrix.extra }}
-        run: pip install "./packages/aberrant_expression${EXTRA:+[$EXTRA]}"
+        run: uv sync --locked --no-editable ${EXTRA:+--extra "$EXTRA"}
       # -I: import the installed package, not the checkout
       - env:
           MODULES: ${{ matrix.modules }}
         run: |
-          python -I - $MODULES <<'EOF'
+          uv run --no-sync python -I - $MODULES <<'EOF'
           import importlib
           import pkgutil
           import sys
@@ -163,15 +143,15 @@ jobs:
     name: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v7
+      # reads the uv version from required-version
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
-          python-version: "3.12"
-      - run: pip install build twine
-      - run: python -m build packages/aberrant_expression --outdir dist
-      - run: twine check --strict dist/*
+          version-file: pyproject.toml
+      - run: uv build packages/aberrant_expression --out-dir dist
+      - run: uvx twine check --strict dist/*
       - name: Warn about direct URL dependencies
         run: |
           # PyPI rejects a Requires-Dist with a direct URL ("name @ url")
@@ -179,7 +159,7 @@ jobs:
           while IFS= read -r line; do
             echo "::warning title=Direct URL dependency::PyPI rejects ${line#Requires-Dist: }"
           done < direct-urls.txt
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: dist
           path: dist/

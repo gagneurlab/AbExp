@@ -56,18 +56,23 @@ def genome_annotation_to_polars(genome_annotation) -> pl.DataFrame:
 class RandomModel(tf.keras.Model):
     """
     A random model for testing purposes.
+    It draws the same tracks for the same seed and the same sequence of batch sizes.
     """
 
-    def __init__(self, lamda=10):
+    def __init__(self, lamda=10, seed: int = 0):
         super().__init__()
         self.lamda = lamda
+        self.seed = seed
+        self._num_calls = 0
 
     def predict_on_batch(self, input_tensor):
-        # tf.random.set_seed(42)
         # Uniform integers from 0 to 2 * lamda have about the mean lamda, like poisson values, and are much faster to
         # draw. They also have few distinct values, which compress well in parquet.
+        # Each call draws with its own stateless seed, so that the tracks do not depend on the global random state.
         # Enformer reads only the human tracks.
-        tracks = tf.random.uniform((input_tensor.shape[0], 896, 5313,), maxval=int(2 * self.lamda) + 1, dtype=tf.int32)
+        tracks = tf.random.stateless_uniform((input_tensor.shape[0], 896, 5313,), seed=[self.seed, self._num_calls],
+                                             minval=0, maxval=int(2 * self.lamda) + 1, dtype=tf.int32)
+        self._num_calls += 1
         return {
             'human': tf.cast(tracks, tf.float32),
         }

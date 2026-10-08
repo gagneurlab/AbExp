@@ -1,0 +1,77 @@
+name: PR Title Lint
+
+# SECURITY NOTE: This workflow uses `pull_request_target` so that the
+# title-lint can write commit statuses on PRs from forks (the default
+# `pull_request` token is read-only for forks).
+#
+# `pull_request_target` runs with a privileged token in the context of
+# the BASE branch. That is only safe because this workflow:
+#   - never checks out or executes PR code (no actions/checkout),
+#   - never interpolates PR-controlled data (title, body, branch name)
+#     into `run:` scripts,
+#   - grants nothing by default (`permissions: {}` below), so only the job
+#     that reads the PR title opts in, to `pull-requests: read` plus
+#     `statuses: write` and nothing else.
+#
+# DO NOT add a checkout of PR code or run any PR-provided content here.
+# Doing so would let a fork execute arbitrary code with write access to
+# this repository ("pwn request"). If code from the PR ever needs to be
+# tested, use a separate workflow with the plain `pull_request` trigger.
+on:
+  pull_request_target:
+    types: 
+      - opened
+      - edited
+      - synchronize
+      - reopened
+
+# Default-deny; each job opts in to what it needs. The aggregator needs nothing.
+permissions: {}
+
+jobs:
+  conventional-title:
+    name: Validate PR title (Conventional Commits)
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read # read the PR title
+      statuses: write # post the lint result as a commit status
+    steps:
+      - uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6.1.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            chore
+            docs
+            refactor
+            test
+            ci
+            build
+            perf
+            revert
+          requireScope: false
+          subjectPattern: ^[a-z].+[^.]$
+          subjectPatternError: |
+            Subject must start with lowercase letter and not end with a period.
+            Got: "{subject}"
+          # A "[WIP] " title must fail too, or it could be merged. Draft PRs mark work in progress.
+          wip: false
+
+  # Aggregator job: a single, stable check-run name to use as the required
+  # status check in branch protection, independent of the underlying job name.
+  pr-title-lint:
+    name: PR Title Lint
+    needs: [conventional-title]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Verify PR title lint did not fail
+        run: |
+          # Fail only on failure/cancelled; a skipped run is allowed.
+          result="${{ needs.conventional-title.result }}"
+          if [ "$result" = "failure" ] || [ "$result" = "cancelled" ]; then
+            echo "PR title lint did not pass: $result"
+            exit 1
+          fi

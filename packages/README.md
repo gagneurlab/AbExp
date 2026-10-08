@@ -130,13 +130,20 @@ constellation per test. They need no files and no network:
 cd packages/aberrant_expression && pytest tests/absplice2
 ```
 
-CI (`.github/workflows/packages.yml`) runs the tests of each area on pull requests and pushes to main that change
-`packages/`, the root `pyproject.toml` or `uv.lock`. It installs only the extras of the area, with
-`uv sync --locked`. For the enformer tests, it fetches the test data with the same command and caches it. For the
-pangolin tests, it caches the published weights of Pangolin, with a key from `abexp/pangolin/weights.py`, which
-holds their SHA-256 sums. A second job installs each extra alone and imports all modules of its subpackages, so that
-a missing requirement fails. It skips the extra `rocksdb`, because uv cannot build python-rocksdb there. A third
-job builds the sdist and wheel with `uv build`.
+CI (`.github/workflows/ci.yml`) calls `.github/workflows/packages.yml` on pull requests and pushes to main that
+change `packages/`, `example/`, the root `pyproject.toml`, `.python-version`, `uv.lock` or `packages.yml`.
+The same run calls `.github/workflows/dry-run.yml` when a change touches `workflow/`, `config/`, `example/`,
+`resources/` or `dry-run.yml`. A change of `ci.yml` calls both. The job `CI` of `ci.yml` always reports, so it is
+the required status check of the ruleset for main. It fails if the job `changes` or a called workflow failed or was
+cancelled, and passes if they passed or were skipped. A path filter on the called workflows themselves would
+report nothing for an unrelated change and block the pull request. `check-pr.yml` adds the required check
+"PR Title Lint", which runs from the base branch, so it reports only once it is on main.
+
+`packages.yml` installs only the extras of the area, with `uv sync --locked`. For the enformer tests, it fetches
+the test data with the same command and caches it. For the pangolin tests, it caches the published weights of
+Pangolin, with a key from `abexp/pangolin/weights.py`, which holds their SHA-256 sums. A second job installs each
+extra alone and imports all modules of its subpackages, so that a missing requirement fails. It skips the extra
+`rocksdb`, because uv cannot build python-rocksdb there. A third job builds the sdist and wheel with `uv build`.
 
 A push of new test data needs git-lfs in the pushing clone, so that its pre-push hook uploads the LFS objects.
 
@@ -188,7 +195,9 @@ The extras `splicing`, `enformer` and `pangolin` depend on kipoiseq2 0.1 from Py
 3.12 or later, so aberrant-expression does too.
 
 Notes:
-- GitHub starts no workflows for pull requests that the `GITHUB_TOKEN` opens, so the tests do not run on release PRs.
+- GitHub starts no workflows for pull requests that the `GITHUB_TOKEN` opens, so the required checks "CI" and
+  "PR Title Lint" do not run on release PRs. release-please updates the release PR after each push to main, and
+  the new head again has no checks. Close and reopen the release PR right before merging, then enable auto-merge.
 - release-please needs the repository setting "Allow GitHub Actions to create and approve pull requests".
 
 ## Bioconda

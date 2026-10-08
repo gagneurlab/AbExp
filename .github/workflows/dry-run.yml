@@ -1,30 +1,13 @@
 # Dry-runs the workflow on config/config.yaml and the example files, in several variants of the config.
+# ci.yml calls it when a change touches the files that its job `changes` lists for this workflow.
 name: dry-run
 
 on:
-  pull_request:
-    paths:
-      - "workflow/**"
-      - "config/**"
-      - "example/**"
-      - "resources/**"
-      - ".github/workflows/dry-run.yml"
-  push:
-    branches: [main]
-    paths:
-      - "workflow/**"
-      - "config/**"
-      - "example/**"
-      - "resources/**"
-      - ".github/workflows/dry-run.yml"
+  workflow_call:
   workflow_dispatch:
 
 permissions:
   contents: read
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   dry-run:

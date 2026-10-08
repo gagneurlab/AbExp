@@ -1,43 +1,13 @@
 # Tests and builds the Python package aberrant-expression in packages/. See packages/README.md.
+# ci.yml calls it when a change touches the files that its job `changes` lists for this workflow.
 name: packages
 
 on:
-  pull_request:
-    paths:
-      - "packages/**"
-      # the uv workspace
-      - "pyproject.toml"
-      - "uv.lock"
-      # the abexp.enformer tests read these example files
-      - "example/chr22_hg19.fa*"
-      - "example/chr22.gencode.v40lift37.annotation.gff3.gz"
-      # the splicing tests read this example file
-      - "example/chr22_hg38.fa*"
-      - ".github/workflows/packages.yml"
-  push:
-    branches: [main]
-    paths:
-      - "packages/**"
-      # the uv workspace
-      - "pyproject.toml"
-      - "uv.lock"
-      # the abexp.enformer tests read these example files
-      - "example/chr22_hg19.fa*"
-      - "example/chr22.gencode.v40lift37.annotation.gff3.gz"
-      # the splicing tests read this example file
-      - "example/chr22_hg38.fa*"
-      - ".github/workflows/packages.yml"
+  workflow_call:
   workflow_dispatch:
 
 permissions:
   contents: read
-
-env:
-  UV_PYTHON: "3.12"
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   test:

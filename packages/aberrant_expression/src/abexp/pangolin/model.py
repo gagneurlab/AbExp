@@ -6,7 +6,7 @@ import numpy as np
 import torch
 from torch import nn
 
-from abexp.pangolin.weights import MODEL_FILES
+from abexp.pangolin.weights import MODEL_FILES, MODEL_SHA256, PANGOLIN_COMMIT, check_sha256
 
 # the 16 residual blocks of Pangolin: kernel size and dilation of their two convolutions
 KERNEL_SIZES = (11,) * 8 + (21,) * 4 + (41,) * 4
@@ -120,11 +120,15 @@ class PangolinModels:
     def from_dir(cls, models_dir, device=None):
         """Load the published models of Pangolin, the files of `MODEL_FILES`, from `models_dir`.
 
-        `download_models` downloads the files.
+        `download_models` downloads the files. Each file must have the SHA-256 sum of `MODEL_SHA256`, so that the files
+        of another Pangolin commit, e.g. from an older version of this package, do not load.
 
         Args:
           models_dir: folder with the model files
           device: torch device. Default is the GPU if torch finds one, as in Pangolin, else the CPU.
+
+        Raises:
+          ValueError: if a file has another SHA-256 sum
         """
         if device is None:
             device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -132,8 +136,14 @@ class PangolinModels:
         for files in MODEL_FILES:
             replicates = []
             for file in files:
+                path = Path(models_dir) / file
+                try:
+                    check_sha256(path, MODEL_SHA256[file])
+                except ValueError as e:
+                    raise ValueError(f'{e}, the sum at Pangolin commit {PANGOLIN_COMMIT}. Delete the folder '
+                                     f'{models_dir} and download the files again.') from e
                 net = PangolinNet()
-                net.load_state_dict(torch.load(Path(models_dir) / file, map_location=device, weights_only=True))
+                net.load_state_dict(torch.load(path, map_location=device, weights_only=True))
                 replicates.append(net.to(device).eval())
             nets.append(replicates)
         return cls(nets)

@@ -265,7 +265,8 @@ computation, and it scores ref and alt sequences of equal length in batches.
 The weights are not part of this package. They are GPL-3, as the Pangolin repository. `download_models` downloads
 the 12 files of `abexp.pangolin.MODEL_FILES` (35 MB) from `pangolin/models` of the Pangolin repository at the
 pinned commit `PANGOLIN_COMMIT` (5cf94b8), and checks their SHA-256 sums. It keeps the files that exist with the right
-sum. `download_model(file, models_dir)` does the same for one file.
+sum. `download_model(file, models_dir)` does the same for one file. `PangolinModels.from_dir` checks the SHA-256
+sums too, and stops with a ValueError on files of another commit.
 
 ```python
 from abexp.pangolin import Pangolin, PangolinModels, download_models, read_gff3_genes

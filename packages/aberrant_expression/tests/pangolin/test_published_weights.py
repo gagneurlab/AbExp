@@ -1,12 +1,13 @@
 import os
 import shutil
+from pathlib import Path
 
 import polars as pl
 import polars.testing
 import pytest
 
 import grch38_excerpt as g
-from abexp.pangolin import Pangolin, PangolinModels, download_models, read_gff3_genes
+from abexp.pangolin import MODEL_FILES, MODEL_SHA256, Pangolin, PangolinModels, download_models, read_gff3_genes
 
 # The expected rows come from upstream Pangolin with the published weights, see make_expected_published.py. PyTorch
 # sums in another order for the unpadded convolutions and the batches, which changes the scores in the last float32
@@ -18,7 +19,7 @@ pytestmark = pytest.mark.xdist_group('pangolin_published_weights')
 
 
 @pytest.fixture(scope='module')
-def models(request):
+def models_dir(request):
     """The published models, downloaded once into the pytest cache, or into ABEXP_PANGOLIN_MODELS_DIR if set."""
     models_dir = os.environ.get('ABEXP_PANGOLIN_MODELS_DIR') or request.config.cache.mkdir('pangolin_models')
     try:
@@ -27,6 +28,11 @@ def models(request):
         pytest.fail(f'Cannot download the published weights of Pangolin into {models_dir}: {e!r}. These tests need '
                     'network access once, or ABEXP_PANGOLIN_MODELS_DIR set to a folder with the 12 weight files.',
                     pytrace=False)
+    return Path(models_dir)
+
+
+@pytest.fixture(scope='module')
+def models(models_dir):
     return PangolinModels.from_dir(models_dir, device='cpu')
 
 
@@ -122,3 +128,18 @@ def test_masking_off(predict):
         ('chr22:8063:A>C', 'ENSG00000169314.15', 0.004535311367362738, 24, -0.0009371079504489899, -8, []),
         ('chr22:8063:A>C', 'ENSG00000250479.9', 0.46277084946632385, 0, -0.10231306403875351, 42, []),
     )
+
+
+def test_from_dir_checks_sha256(models_dir, tmp_path):
+    # a copy of the published models in which final.2.4.3.v2 holds the weights of final.1.4.3.v2: a valid model of
+    # another weight set, which PyTorch would load
+    for files in MODEL_FILES:
+        for file in files:
+            shutil.copy(models_dir / file, tmp_path / file)
+    shutil.copy(models_dir / 'final.1.4.3.v2', tmp_path / 'final.2.4.3.v2')
+    message = (f'The SHA-256 sum of {tmp_path / "final.2.4.3.v2"} is {MODEL_SHA256["final.1.4.3.v2"]}, not '
+               f'{MODEL_SHA256["final.2.4.3.v2"]}, the sum at Pangolin commit '
+               f'5cf94b8db938c658391b4305cd7ce33297d44ff7. Delete the folder {tmp_path} and download the files again.')
+    with pytest.raises(ValueError) as e:
+        PangolinModels.from_dir(tmp_path, device='cpu')
+    assert str(e.value) == message

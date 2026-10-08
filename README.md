@@ -410,6 +410,9 @@ rules downstream of them rerun because their input changed.
   `"predict"`, and the VEP annotation and its parsing share one key.
 - The download rules have no version; their URL is the version. Rules that only index a file or convert the
   format of a download have none either.
+- The Pangolin weights are an exception: aberrant-expression pins their commit and their SHA-256 sums, not the
+  download rule. So after a new pin, Snakemake keeps the old files, and the Pangolin scoring stops with a
+  SHA-256 error. Delete `<resources_dir>/absplice2/pangolin_models` and run `veff__absplice2_setup` again.
 
 Snakemake uses this profile when it runs `workflow/Snakefile`, also with `--snakefile` from another directory.
 `--rerun-triggers` on the command line overrides the setting. The setting does not apply:

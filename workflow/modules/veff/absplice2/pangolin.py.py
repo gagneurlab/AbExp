@@ -92,7 +92,12 @@ genes_df
 # # Scores
 
 # %%
-models = PangolinModels.from_dir(snakemake.params["models_dir"])
+# from_dir checks the SHA-256 sums of the weight files. The download rule has no version, so
+# Snakemake keeps the files of an older Pangolin commit after aberrant-expression pins a new one.
+try:
+    models = PangolinModels.from_dir(snakemake.params["models_dir"])
+except ValueError as e:
+    raise ValueError(f"{e} The rule veff__absplice2_setup downloads them.") from e
 pangolin = Pangolin(
     snakemake.input["fasta"],
     genes_df,

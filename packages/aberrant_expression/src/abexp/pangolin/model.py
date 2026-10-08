@@ -6,19 +6,14 @@ import numpy as np
 import torch
 from torch import nn
 
+from abexp.pangolin.weights import MODEL_FILES
+
 # the 16 residual blocks of Pangolin: kernel size and dilation of their two convolutions
 KERNEL_SIZES = (11,) * 8 + (21,) * 4 + (41,) * 4
 DILATIONS = (1,) * 4 + (4,) * 4 + (10,) * 4 + (25,) * 4
 N_CHANNELS = 32
 # after every 4th residual block, and after the last one, a 1x1 convolution adds the features to the skip connection
 SKIP_INTERVAL = 4
-# The published models of the ensemble, in pangolin/models of the Pangolin repository: 3 replicates for each of the
-# 4 tissues. MODEL_FILES[head][replicate] is the file name; final.<replicate>.<2 * head>.3.v2 predicts with the
-# output head 2 * head + 1 (conv_last1, 3, 5 or 7).
-MODEL_FILES = tuple(
-    tuple(f'final.{replicate}.{2 * head}.3.v2' for replicate in (1, 2, 3))
-    for head in range(4)
-)
 
 
 class ResidualBlock(nn.Module):
@@ -124,6 +119,8 @@ class PangolinModels:
     @classmethod
     def from_dir(cls, models_dir, device=None):
         """Load the published models of Pangolin, the files of `MODEL_FILES`, from `models_dir`.
+
+        `download_models` downloads the files.
 
         Args:
           models_dir: folder with the model files

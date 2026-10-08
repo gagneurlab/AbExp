@@ -293,7 +293,8 @@ with the AbSplice2 model, from Pangolin and from the MMSplice and SpliceMap resu
 module. It is off by default; set `system.absplice2.enabled: true` and request
 `<output_dir>/veff/absplice2/veff.parquet/<vcf_file>.parquet` as target. Its output is not read by
 tissue_specific_vep, fset or predict. The module downloads the AbSplice2 model (0.7 MB) and the Pangolin
-weights (35 MB).
+weights (35 MB). Each of the 12 weight files has its own download job. It calls `abexp.pangolin.download_model`,
+which downloads the file from the Pangolin repository at a pinned commit and checks its SHA-256 sum.
 
 Pangolin runs as `abexp.pangolin` of the aberrant-expression package: our own code with the published weights
 of Pangolin. It gives the scores of `pangolin -m True -d 50`, with the differences listed in
@@ -313,8 +314,10 @@ AbSplice_DNA below 0.001, and did not change the other 2,603 pairs.
 Each module has its own `config.schema.yaml` with its options and defaults, its own scripts and
 conda environments (`envs/`), and the files it ships. The conda environments that several veff modules
 use are in `workflow/modules/veff/envs/`. Every rule that needs more than a shell has a
-`conda:` environment. The download rules have no conda environment and use aria2c, tar and gzip from the
-PATH. So the importing workflow needs Snakemake 9 and aria2c (conda-forge package `aria2`) in one
+`conda:` environment. The download rules that use aria2c, tar and gzip have no conda environment and take
+these tools from the PATH. The other download rules run in a conda environment, e.g.
+`veff__absplice2_download_pangolin_model` calls `abexp.pangolin.download_model` in the Pangolin environment.
+So the importing workflow needs Snakemake 9 and aria2c (conda-forge package `aria2`) in one
 environment, and `--sdm conda`.
 
 Example: VEP only. The VEP module reads the variant IDs that `vcf_prep` sets, so it takes the

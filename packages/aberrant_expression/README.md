@@ -262,12 +262,15 @@ on kipoiseq2 and PyTorch. Per variant and gene, it gives the largest gain and lo
 come from Pangolin. The network uses unpadded convolutions, which give the same outputs with about a third less
 computation, and it scores ref and alt sequences of equal length in batches.
 
-The weights are not part of this package. They are GPL-3, as the Pangolin repository. Download the 12 files of
-`abexp.pangolin.MODEL_FILES` from `pangolin/models` of the Pangolin repository, commit 5cf94b8, into one folder.
+The weights are not part of this package. They are GPL-3, as the Pangolin repository. `download_models` downloads
+the 12 files of `abexp.pangolin.MODEL_FILES` (35 MB) from `pangolin/models` of the Pangolin repository at the
+pinned commit `PANGOLIN_COMMIT` (5cf94b8), and checks their SHA-256 sums. It keeps the files that exist with the right
+sum. `download_model(file, models_dir)` does the same for one file.
 
 ```python
-from abexp.pangolin import Pangolin, PangolinModels, read_gff3_genes
+from abexp.pangolin import Pangolin, PangolinModels, download_models, read_gff3_genes
 
+download_models('pangolin_models')
 genes = read_gff3_genes('gencode.v42.annotation.gff3.gz', transcript_tags=['Ensembl_canonical'])
 pangolin = Pangolin('genome.fa', genes, PangolinModels.from_dir('pangolin_models'), distance=50, mask=True)
 pangolin.predict_df('variants.vcf').write_parquet('pangolin.parquet')

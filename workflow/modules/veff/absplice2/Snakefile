@@ -42,7 +42,8 @@ TISSUE_MAPPING_CSV = config.get("tissue_mapping_csv") or workflow.source_path(
 
 MODEL_PKL = os.path.abspath(config.get("model_pkl", f"{RESOURCES_DIR}/absplice2/AbSplice_2_DNA.pkl"))
 
-# The published weights of Pangolin: 12 models, 3 replicates for each of its 4 heads
+# The published weights of Pangolin: 12 models, 3 replicates for each of its 4 heads. The file
+# names are those of abexp.pangolin.MODEL_FILES; the Snakemake process does not import the package.
 PANGOLIN_MODELS_DIR = f"{RESOURCES_DIR}/absplice2/pangolin_models"
 PANGOLIN_MODEL_FILES = [f"final.{replicate}.{head}.3.v2" for head in (0, 2, 4, 6) for replicate in (1, 2, 3)]
 # Pangolin takes the annotated splice sites from the exons of the transcripts with one of these

@@ -16,15 +16,10 @@
 
 # %%
 import os
-import shutil
 
-import numpy as np
-import pandas as pd
+import polars as pl
 
-import json
-import yaml
-
-import pyranges
+from abexp.utils.gff3 import read_gff3
 
 # %%
 snakefile_path = os.getcwd() + "/../../Snakefile"
@@ -65,40 +60,46 @@ gff3_file = snakemake.input["gff3_file"]
 gff3_file
 
 # %%
-gff3_df = pyranges.read_gff3(gff3_file, as_df=True)
+# The attributes of the GENCODE transcripts. The attributes that only the lift37 files have, e.g.
+# remap_status, stay out.
+GFF3_ATTRIBUTES = (
+    "gene_id",
+    "gene_type",
+    "gene_name",
+    "level",
+    "transcript_id",
+    "transcript_type",
+    "transcript_name",
+    "transcript_support_level",
+    "tag",
+    "hgnc_id",
+    "havana_gene",
+    "havana_transcript",
+    "ont",
+    "protein_id",
+    "ccdsid",
+)
+
+# %%
+# GENCODE marks the chrY PAR copies only in `ID`. With `par_y_suffix`, their `gene_id` and
+# `transcript_id` get the suffix "_PAR_Y", as in the GENCODE GTF, so that the IDs stay unique.
+gff3_df = read_gff3(gff3_file, GFF3_ATTRIBUTES, par_y_suffix=True)
 gff3_df
 
 # %%
-transcripts = gff3_df.query("Feature == 'transcript'")
+# The readers of the output expect the column names of pyranges, which this rule used before.
+transcripts = gff3_df.filter(pl.col("type") == "transcript").rename({
+    "chrom": "Chromosome",
+    "source": "Source",
+    "type": "Feature",
+    "start": "Start",
+    "end": "End",
+    "score": "Score",
+    "strand": "Strand",
+    "phase": "Frame",
+    "transcript_type": "transcript_biotype",
+})
 transcripts
-
-# %%
-# GENCODE GFF3 marks the chrY PAR copies only in `ID` and `Parent`: with the suffix "_PAR_Y",
-# or with the older prefix "ENSTR" in some lift37 entries (e.g. ENSTR0000302805.2). Their
-# `transcript_id` and `gene_id` are those of the chrX copy. Add the suffix "_PAR_Y", as in the
-# GENCODE GTF, so that the IDs stay unique.
-is_par_y = transcripts["ID"].str.endswith("_PAR_Y") | transcripts["ID"].str.startswith("ENSTR")
-
-
-def add_par_y_suffix(ids):
-    missing = is_par_y & ~ids.str.endswith("_PAR_Y")
-    return ids.where(~missing, ids + "_PAR_Y")
-
-
-transcripts = transcripts.assign(
-    transcript_id=add_par_y_suffix(transcripts["transcript_id"]),
-    gene_id=add_par_y_suffix(transcripts["gene_id"]),
-).drop(columns=["ID", "Parent"])
-transcripts
-
-# %%
-if "transcript_type" in transcripts.columns:
-    transcripts = transcripts.rename(columns={"transcript_type": "transcript_biotype"})
-
-# %%
-# protein_coding_transcripts = transcripts.query("transcript_biotype == 'protein_coding'")
-# protein_coding_transcripts = protein_coding_transcripts.set_index("gene_id").sort_index()
-# protein_coding_transcripts
 
 # %% [markdown]
 # # Write output file
@@ -107,6 +108,6 @@ if "transcript_type" in transcripts.columns:
 snakemake.output
 
 # %%
-transcripts.to_parquet(snakemake.output["gtf_transcripts"])
+transcripts.write_parquet(snakemake.output["gtf_transcripts"])
 
 # %%

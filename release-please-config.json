@@ -20,6 +20,7 @@
       "extra-files": [
         { "type": "generic", "path": "README.md" },
         { "type": "generic", "path": "/workflow/envs/abexp-veff-py.yaml" },
+        { "type": "generic", "path": "/workflow/modules/gtf_transcripts/envs/gtf_transcripts.yaml" },
         { "type": "generic", "path": "/workflow/modules/veff/envs/abexp-tensorflow-cpu.yaml" },
         { "type": "generic", "path": "/workflow/modules/veff/envs/abexp-tensorflow-cuda.yaml" },
         { "type": "generic", "path": "/workflow/modules/veff/absplice2/envs/absplice2.yaml" },

@@ -37,4 +37,4 @@ rule expected_expression_tsv_to_parquet:
     conda:
         CONDA_ENV_YAML_DIR.join("abexp-veff-py.yaml")
     script:
-        "tsv_to_parquet.py"
+        "../modules/veff/tissue_specific_vep/tsv_to_parquet.py"

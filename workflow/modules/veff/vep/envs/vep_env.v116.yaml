@@ -1,0 +1,17 @@
+name: ensembl-vep
+
+channels:
+- conda-forge
+- bioconda
+
+dependencies:
+- perl
+- bioconda::bcftools
+- bioconda::perl-dbd-sqlite
+- bioconda::perl-bio-bigfile
+- bioconda::perl-bio-procedural
+- bioconda::perl-set-intervaltree
+- bioconda::perl-list-moreutils
+- bioconda::ensembl-vep=116
+- bioconda::samtools
+- bioconda::tabix

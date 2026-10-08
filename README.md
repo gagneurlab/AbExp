@@ -21,7 +21,8 @@ The publication to this method can be found in [Nature Communications](https://w
 - Linux with tar and gzip
 - Disk space for the downloaded resources of one genome assembly (hg38): about 300GB with the default config, or
   about 130GB with `absplice.use_spliceai_rocksdb: False` in the `system` section
-  - VEP v108 cache: 26GB (hg38), 16GB (hg19); twice as much while the download is extracted
+  - VEP cache: 26GB (hg38), 16GB (hg19) for the default VEP 108, 30GB (hg38), 27GB (hg19) for VEP 116; twice as
+    much while the download is extracted
   - CADD v1.6: 88GB (hg38), 84GB (hg19)
   - LOFTEE: 14GB (hg38), 1.3GB (hg19)
   - GTEx and SpliceMap tables: 2GB
@@ -45,6 +46,7 @@ The publication to this method can be found in [Nature Communications](https://w
    - `vep.vep_cache_dir`, `vep.cadd_dir`, `vep.loftee_data_dir` and `vep.loftee_src_path`: existing caches to reuse instead of downloading
    - `vep.cadd_plugin: False` and `vep.loftee_plugin: False` to skip CADD and LOFTEE; the shipped models then do not
      run, see [Turning off CADD or LOFTEE](#turning-off-cadd-or-loftee)
+   - `vep.version: 116` to run VEP 116 instead of VEP 108, see [VEP version](#vep-version)
    - `absplice.use_spliceai_rocksdb: False` to skip the SpliceAI-RocksDB download
    - Any option in `workflow/schemas/config.schema.yaml` can be set in this section.
      The schema also lists the defaults. The options of each veff module, e.g. `vep` or `absplice`, are in
@@ -140,6 +142,22 @@ prediction:
 
 Turn a plugin off only if you do not predict with the shipped models, e.g. to train a new model without CADD or
 LOFTEE features, or to try the annotation without the large downloads.
+
+## VEP version
+
+`system.vep.version` selects the VEP release: 108 (default) or 116. The module also keeps the environments of the
+older releases 99 and 105. The version selects the conda environment `workflow/modules/veff/vep/envs/vep_env.v<version>.yaml` and the VEP
+cache of the same Ensembl release, which the pipeline downloads into `<resources_dir>/vep/<version>`. Changing the
+version reruns VEP and the steps after it.
+
+The shipped models were trained on features of VEP 108, so predict with VEP 108. VEP 116 is for the annotation
+alone or for training new models; see [Turning off CADD or LOFTEE](#turning-off-cadd-or-loftee) for the targets.
+The workflow does not stop if a shipped model runs on VEP 116 features. Some of these features differ:
+- `NMD_escaping_variant`: since VEP 110, the NMD plugin applies the rule of the last 50 bases of the penultimate
+  exon at the correct end of minus-strand transcripts.
+- `coding_sequence_variant`: a variant that covers a whole protein-coding transcript gets the new term
+  `coding_transcript_variant` instead.
+- The VEP 116 cache holds the transcripts of Ensembl 116 instead of Ensembl 108.
 
 ## Using mehari instead of VEP
 

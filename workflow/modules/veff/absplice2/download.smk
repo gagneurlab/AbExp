@@ -1,11 +1,14 @@
-# Download of the AbSplice2 model. The rule produces the path in the Snakefile, so Snakemake
-# downloads the model only if it does not exist yet and a job needs it.
+# Download of the AbSplice2 model and of the Pangolin weights. The rules produce the paths in the
+# Snakefile, so Snakemake downloads a file only if it does not exist yet and a job needs it.
 #
-# The rule follows the download rules of the vep module (see vep/download.smk): write-protected
-# output, aria2c from the PATH instead of a conda environment, `<output>.part` with the aria2c
-# control file `<output>.part.aria2` for resuming, and a constant runtime.
-#
+# The AbSplice2 rule follows the download rules of the vep module (see vep/download.smk):
+# write-protected output, aria2c from the PATH instead of a conda environment, `<output>.part`
+# with the aria2c control file `<output>.part.aria2` for resuming, and a constant runtime.
 # Snakemake also reruns a rule when its shell command changes. Keep the shell command stable.
+#
+# The Pangolin weights come from abexp.pangolin.download_model in the Pangolin environment, one job
+# per file. The package holds the pinned commit of the Pangolin repository and the SHA-256 sums of
+# the files.
 
 # pinned commit of the AbSplice2 repository
 ABSPLICE2_COMMIT = "a30120f5349de7dfd9ed1caca4d94e3f6f9849a8"
@@ -44,10 +47,38 @@ rule veff__absplice2_download_model:
         """
 
 
+rule veff__absplice2_download_pangolin_model:
+    """
+    Downloads one of the 12 Pangolin weight files (2.9 MB each) with abexp.pangolin.download_model:
+    from the Pangolin repository at the commit that the package pins, with a check of its SHA-256
+    sum.
+    """
+    threads: 1
+    resources:
+        ntasks=1,
+        # importing abexp.pangolin imports PyTorch
+        mem_mb=lambda wildcards, attempt, threads: (2000 * threads) * attempt,
+        runtime=5,
+    output:
+        model=protected(f"{PANGOLIN_MODELS_DIR}/{{pangolin_model}}"),
+    log:
+        f"{OUTPUT_DIR}/absplice2/logs/download_pangolin_model/{{pangolin_model}}.log",
+    params:
+        models_dir=PANGOLIN_MODELS_DIR,
+    wildcard_constraints:
+        pangolin_model=r"final\.[123]\.[0246]\.3\.v2",
+    retries: 3
+    conda:
+        PANGOLIN_CONDA_ENV_YAML
+    script:
+        "download_pangolin_model.py"
+
+
 rule veff__absplice2_setup:
     """
-    Downloads the AbSplice2 model if it does not exist yet.
+    Downloads the AbSplice2 model and the Pangolin weights if they do not exist yet.
     """
     input:
         MODEL_PKL,
+        expand(f"{PANGOLIN_MODELS_DIR}/{{pangolin_model}}", pangolin_model=PANGOLIN_MODEL_FILES),
     localrule: True

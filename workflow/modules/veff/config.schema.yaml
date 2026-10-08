@@ -47,8 +47,8 @@ properties:
     type: string
     description: >-
       The GENCODE genome annotation (GFF3) that `gtf_transcripts` comes from. mehari builds its
-      transcript database from it, loftee reads it by default, and absplice2 builds the Pangolin
-      annotation database from it by default.
+      transcript database from it, loftee reads it by default, and absplice2 takes the genes and
+      splice sites of Pangolin from it by default.
   chrom_alias_tsv:
     type: string
     description: Mapping of chromosome names, the same as for the vcf_prep module, e.g. its resources/chromAlias.tsv.

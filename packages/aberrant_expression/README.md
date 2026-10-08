@@ -11,6 +11,8 @@ installs it as `aberrant-expression`, and Python imports it as `abexp`. The base
 | `abexp.mmsplice`         | MMSplice and the junction VCF dataloaders                                                 | `splicing` |
 | `abexp.absplice`         | AbSplice-DNA from MMSplice with SpliceMaps and from SpliceAI                              | `splicing` |
 | `abexp.spliceai_rocksdb` | SpliceAI scores from SpliceAI-RocksDB                                                     | `rocksdb`  |
+| `abexp.pangolin`         | Pangolin's splice scores per variant and gene, with the published weights of Pangolin     | `pangolin` |
+| `abexp.absplice2`        | AbSplice2-DNA from Pangolin and from MMSplice with SpliceMaps                             | `absplice2` |
 
 `abexp.utils` and `abexp.enformer` were the distributions abexp-utils (`abexp_utils`) and kipoi-enformer
 (`kipoi_enformer`). `abexp.mmsplice`, `abexp.absplice` and `abexp.spliceai_rocksdb` were the distribution
@@ -38,6 +40,8 @@ pip install "aberrant-expression[polars] @ git+https://github.com/gagneurlab/AbE
 | `gff3`     | `abexp.utils.gff3`                                                        |
 | `splicing` | `abexp.mmsplice` and `abexp.absplice`                                     |
 | `rocksdb`  | `abexp.spliceai_rocksdb`, with `splicing`                                 |
+| `pangolin` | `abexp.pangolin`. conda-forge has PyTorch as `pytorch-cpu` and `pytorch-gpu`. |
+| `absplice2` | `abexp.absplice2`                                                        |
 | `enformer` | `abexp.enformer`. For GPU support on Linux, also install `tensorflow[and-cuda]`. |
 | `all`      | all extras but `rocksdb`                                                  |
 | `numpy`, `kipoiseq2`, `tensorflow`, `tqdm` | one requirement each, which several extras share |
@@ -63,9 +67,9 @@ pip install -e "packages/aberrant_expression[all,dev]"
 
 `abexp.utils.polars_functions` and `abexp.utils.spark_functions` reshape polars and Spark DataFrames and join the
 feature sets of AbExp. `abexp.utils.models` holds the scikit-learn model wrappers of the AbExp models, and needs the
-extra `models`. `abexp.utils.gff3` reads GFF3 files with polars-bio for `abexp.enformer`, and needs the extra `gff3`.
-With `par_y_suffix=True`, it adds the suffix `_PAR_Y` to `gene_id` and `transcript_id` of the chrY PAR copies, as
-`abexp.enformer` does.
+extra `models`. `abexp.utils.gff3` reads GFF3 files with polars-bio for `abexp.enformer` and `abexp.pangolin`, and
+needs the extra `gff3`. With `par_y_suffix=True`, it adds the suffix `_PAR_Y` to `gene_id` and `transcript_id` of the
+chrY PAR copies, as `abexp.enformer` does.
 
 ## abexp.enformer
 
@@ -252,6 +256,86 @@ looks up the SpliceAI scores in SpliceAI-RocksDB and runs SpliceAI for the varia
   and exon tables, the VCF writers, the variant filters of absplice, AbSplice-RNA, the CADD-Splice and
   sample-based features, and the SpliceMap count tables. `predict_absplice_dna` reads only ONNX models.
 
+## abexp.pangolin
+
+Pangolin's splice scores of variants (Zeng and Li, Genome Biology 2022, [Pangolin](https://github.com/tkzeng/Pangolin)),
+on kipoiseq2 and PyTorch. Per variant and gene, it gives the largest gain and loss of splice site usage within
+`distance` bases, like `pangolin -d 50 -m True`. The network and the data path are our own code; only the weights
+come from Pangolin. The network uses unpadded convolutions, which give the same outputs with about a third less
+computation, and it scores ref and alt sequences of equal length in batches.
+
+The weights are not part of this package. They are GPL-3, as the Pangolin repository. `download_models` downloads
+the 12 files of `abexp.pangolin.MODEL_FILES` (35 MB) from `pangolin/models` of the Pangolin repository at the
+pinned commit `PANGOLIN_COMMIT` (5cf94b8), and checks their SHA-256 sums. It keeps the files that exist with the right
+sum. `download_model(file, models_dir)` does the same for one file. `PangolinModels.from_dir` checks the SHA-256
+sums too, and stops with a ValueError on files of another commit.
+
+```python
+from abexp.pangolin import Pangolin, PangolinModels, download_models, read_gff3_genes
+
+download_models('pangolin_models')
+genes = read_gff3_genes('gencode.v42.annotation.gff3.gz', transcript_tags=['Ensembl_canonical'])
+pangolin = Pangolin('genome.fa', genes, PangolinModels.from_dir('pangolin_models'), distance=50, mask=True)
+pangolin.predict_df('variants.vcf').write_parquet('pangolin.parquet')
+```
+
+### Differences from upstream Pangolin
+
+The scores match Pangolin (fork neverov-am/Pangolin 232cba0) up to the last float32 digits, except here:
+
+- Every ALT allele of a record is scored. Pangolin scores only the first one.
+- A gene counts if the ref allele overlaps it. Pangolin misses a gene that starts at the variant position, and a gene
+  that a deletion reaches only after its first base.
+- Beyond the chromosome ends, the sequence is N. Pangolin skips variants within 5050 bases of the chromosome start,
+  and stops with an error for most variants within 5050 bases of its end.
+- The ref check ignores the case of the FASTA file, and the sequence is upper case. Pangolin skips a variant whose
+  FASTA ref is in lower case.
+- Variants with letters other than A, C, G, T and N in ref or alt are skipped. Pangolin stops with an error on them.
+  kipoiseq2 drops ALT alleles with N; Pangolin scores them with N as 0.
+- The output is a polars DataFrame with unrounded float32 scores, not a VCF file with scores rounded to 2 decimals.
+- The genes and splice sites come from a GENCODE GFF3 file, not from a gffutils database. An exon belongs to the
+  gene with its `gene_id` on its chromosome.
+- With `mask`, each gene is masked on its own, as in the fork. tkzeng/Pangolin 5cf94b8 masks the loss and gain
+  arrays of a strand in place. So there, each gene starts from the arrays that the genes before it on the same
+  strand have masked (`pangolin/pangolin.py`, lines 133 to 153). The fork copies the arrays for each gene (lines 144
+  and 145 of 232cba0).
+
+## abexp.absplice2
+
+AbSplice2-DNA per variant, gene and GTEx tissue, from Pangolin, MMSplice with SpliceMaps, and the SpliceMaps. The
+code is our own, in polars, for the steps of the [AbSplice2](https://github.com/gagneurlab/absplice2) example
+workflow after MMSplice and Pangolin, at commit a30120f. `absplice2_dna` matches Pangolin's gain and loss sites
+with the SpliceMap sites within 2 bp, joins them with MMSplice, scores each row with the model, and keeps the row
+with the largest score per variant, gene and tissue.
+
+The AbSplice2 model is not part of this package. It is an ExplainableBoostingClassifier of interpret 0.2.7, which
+the caller loads and passes as a function:
+
+```python
+import pickle
+
+import polars as pl
+from abexp.absplice2 import absplice2_dna, read_mmsplice_splicemap
+
+with open('AbSplice_2_DNA.pkl', 'rb') as fd:
+    model = pickle.load(fd)
+df = absplice2_dna(
+    pangolin=pl.read_parquet('pangolin.parquet'),  # the output of abexp.pangolin
+    splicemap5=['Whole_Blood_splicemap_psi5.csv.gz'],
+    splicemap3=['Whole_Blood_splicemap_psi3.csv.gz'],
+    mmsplice_splicemap=read_mmsplice_splicemap('mmsplice_splicemap.csv'),
+    predict=lambda features: model.predict_proba(features.to_pandas())[:, 1],
+)
+```
+
+The output matches the AbSplice2 scripts, except here:
+
+- The variant is split into `chrom`, `start` (0-based), `end`, `ref` and `alt`, and `gene_id` is named `gene`.
+- Pangolin's scores are rounded to 2 decimals in float64, Pangolin rounds them in float32. The two differ by 0.01
+  only for scores within float32 precision of a rounding boundary.
+- Of the rows with the same largest score, AbSplice2 keeps any one. `absplice2_dna` keeps the first in the order
+  of the output columns, so its MMSplice columns can differ from AbSplice2.
+
 ## Tests
 
 The tests are in one directory per area, and each area needs the extras of its subpackages:
@@ -261,6 +345,8 @@ The tests are in one directory per area, and each area needs the extras of its s
 | `tests/utils`    | `polars`, `spark`, `gff3` | nothing; the Spark tests need a Java runtime                                    |
 | `tests/enformer` | `enformer`        | the files in `tests/enformer/data/` and the hg19 chr22 sequence `example/chr22_hg19.fa` |
 | `tests/splicing` | `splicing`        | the files in `tests/splicing/data/` and the hg38 chr22 sequence `example/chr22_hg38.fa` |
+| `tests/pangolin` | `pangolin`        | the files in `tests/pangolin/data/` and the published weights of Pangolin (35 MB)       |
+| `tests/absplice2` | `absplice2`      | nothing                                                                                 |
 
 The example sequences are in the AbExp repository, outside of the package. Pytest skips a test if one of its files
 is missing, e.g. in an sdist.
@@ -275,12 +361,24 @@ cd packages/aberrant_expression
 pytest tests/utils
 pytest tests/enformer
 pytest tests/splicing
+pytest tests/pangolin
+pytest tests/absplice2
 ```
 
 The tests run across all cores by default, through pytest-xdist. Pass `-n0` to run them in one process, which a
 debugger needs and which restores per-test output order. The tests of one xdist group run on one worker, one after
 the other: the Spark tests, and the tests that run Enformer, which share their outputs. With `-n0`, the enformer
 tests need about 3 GB of memory.
+
+The pangolin tests run small networks with fixed random weights on a synthetic genome, and the published weights of
+Pangolin on an excerpt of GRCh38 chr22 in `tests/pangolin/data/`. They download the published weights once into the
+pytest cache, or into the folder in `ABEXP_PANGOLIN_MODELS_DIR` if set. Without network access, the download fails,
+and so do the tests with the published weights. Their expected rows come from upstream Pangolin, see
+`tests/pangolin/make_expected.py` and `tests/pangolin/make_expected_published.py`.
+
+The absplice2 tests run `absplice2_dna` with a stand-in for the AbSplice2 model on the made-up inputs of
+`tests/absplice2/constellations.py`, one constellation per test. Their expected rows come from the AbSplice2 scripts
+with the same stand-in, see `tests/absplice2/make_expected.py`.
 
 The expected outputs in `tests/splicing/data/expected/` come from the upstream packages, see
 `tests/splicing/make_expected.py`. The SpliceAI-RocksDB tests also need the extra `rocksdb` and the hg38 chr22
@@ -290,4 +388,5 @@ skips them. The test of the SpliceAI predictions also needs SpliceAI.
 ## License
 
 The code is under the MIT license, see [LICENSE](LICENSE). It lists the copyright notices of the upstream
-projects of `abexp.mmsplice`, `abexp.absplice` and `abexp.spliceai_rocksdb`.
+projects of `abexp.mmsplice`, `abexp.absplice` and `abexp.spliceai_rocksdb`. `abexp.pangolin` loads the weights of Pangolin, which are
+GPL-3 and not part of the package, see [abexp.pangolin](#abexppangolin).

@@ -48,8 +48,16 @@ jobs:
           # the RocksDB library, and the SpliceAI-RocksDB test needs the 2.6 GB database, so pytest skips that test
           - area: splicing
             extras: splicing
+          # abexp.pangolin, with small test models and with the published weights of Pangolin
+          - area: pangolin
+            extras: pangolin
+          # abexp.absplice2, with a stand-in for the AbSplice2 model
+          - area: absplice2
+            extras: absplice2
     env:
       TEST_DATA: packages/aberrant_expression/tests/enformer/data/**
+      # the pangolin tests download the published weights of Pangolin into this folder
+      ABEXP_PANGOLIN_MODELS_DIR: ${{ github.workspace }}/pangolin_models
     steps:
       - uses: actions/checkout@v7
         with:
@@ -68,6 +76,12 @@ jobs:
       - name: Fetch the test data from git-lfs
         if: matrix.area == 'enformer'
         run: git lfs pull --include="$TEST_DATA" --exclude=""
+      # weights.py holds the SHA-256 sums of the weights, so a new list of weights gets a new key
+      - uses: actions/cache@v6
+        if: matrix.area == 'pangolin'
+        with:
+          path: pangolin_models
+          key: pangolin-weights-${{ hashFiles('packages/aberrant_expression/src/abexp/pangolin/weights.py') }}
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
@@ -111,6 +125,10 @@ jobs:
             modules: abexp.mmsplice abexp.absplice abexp.spliceai_rocksdb
           - extra: enformer
             modules: abexp.enformer
+          - extra: pangolin
+            modules: abexp.pangolin
+          - extra: absplice2
+            modules: abexp.absplice2
     steps:
       - uses: actions/checkout@v7
         with:

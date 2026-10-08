@@ -292,26 +292,35 @@ It runs [Pangolin](https://github.com/tkzeng/Pangolin) and scores each variant, 
 with the AbSplice2 model, from Pangolin and from the MMSplice and SpliceMap results of the absplice
 module. It is off by default; set `system.absplice2.enabled: true` and request
 `<output_dir>/veff/absplice2/veff.parquet/<vcf_file>.parquet` as target. Its output is not read by
-tissue_specific_vep, fset or predict. The module downloads the AbSplice2 model (0.7 MB).
+tissue_specific_vep, fset or predict. The module downloads the AbSplice2 model (0.7 MB) and the Pangolin
+weights (35 MB). Each of the 12 weight files has its own download job. It calls `abexp.pangolin.download_model`,
+which downloads the file from the Pangolin repository at a pinned commit and checks its SHA-256 sum.
+
+Pangolin runs as `abexp.pangolin` of the aberrant-expression package: our own code with the published weights
+of Pangolin. It gives the scores of `pangolin -m True -d 50`, with the differences listed in
+[packages/aberrant_expression/README.md](packages/aberrant_expression/README.md#differences-from-upstream-pangolin).
+The scoring with the AbSplice2 model runs as `abexp.absplice2`: our own code in polars for the steps of the
+AbSplice2 example workflow, with the differences listed in
+[packages/aberrant_expression/README.md](packages/aberrant_expression/README.md#abexpabsplice2).
 
 Pangolin needs a GPU for large VCFs (`use_gpu: True`, see [GPU](#gpu)). On a CPU with 4 threads, it takes
-about 3 s per variant, i.e. about 9 hours for 10,000 variants. A whole-genome VCF with millions of variants
-would take months.
+about 0.7 s per variant, i.e. about 2 hours for 10,000 variants. A whole-genome VCF with millions of variants
+would take weeks.
 
-The module builds the Pangolin annotation database from `gff3_file`: all genes, and the transcripts and
-exons with the transcript tags of the databases published with Pangolin (Ensembl_canonical for hg38).
-AbSplice2 was trained with Pangolin's GENCODE v38 database. Built from the GENCODE v38 GFF3, the database
-has the same genes, transcripts and exons. Other GENCODE releases differ in their genes and canonical
-transcripts. For every 4th variant of the chr22 ClinVar example VCFs, GENCODE v40 instead of v38 added 14
-variant/gene pairs, all with AbSplice_DNA below 0.001, and did not change the other 2,603 pairs. Set
-`system.absplice2.pangolin_annotation_db` to use an existing database instead, e.g. the GENCODE v38
-database of Pangolin.
+Pangolin takes the genes and their annotated splice sites from `gff3_file`: all genes, and the exons with
+the transcript tags of the databases published with Pangolin (Ensembl_canonical for hg38). AbSplice2 was
+trained with Pangolin's GENCODE v38 database, which has the same genes, transcripts and exons as the
+GENCODE v38 GFF3. Other GENCODE releases differ in their genes and canonical transcripts. For every 4th
+variant of the chr22 ClinVar example VCFs, GENCODE v40 instead of v38 added 14 variant/gene pairs, all with
+AbSplice_DNA below 0.001, and did not change the other 2,603 pairs.
 
 Each module has its own `config.schema.yaml` with its options and defaults, its own scripts and
 conda environments (`envs/`), and the files it ships. The conda environments that several veff modules
 use are in `workflow/modules/veff/envs/`. Every rule that needs more than a shell has a
-`conda:` environment. The download rules have no conda environment and use aria2c, tar and gzip from the
-PATH. So the importing workflow needs Snakemake 9 and aria2c (conda-forge package `aria2`) in one
+`conda:` environment. The download rules that use aria2c, tar and gzip have no conda environment and take
+these tools from the PATH. The other download rules run in a conda environment, e.g.
+`veff__absplice2_download_pangolin_model` calls `abexp.pangolin.download_model` in the Pangolin environment.
+So the importing workflow needs Snakemake 9 and aria2c (conda-forge package `aria2`) in one
 environment, and `--sdm conda`.
 
 Example: VEP only. The VEP module reads the variant IDs that `vcf_prep` sets, so it takes the
@@ -404,6 +413,9 @@ rules downstream of them rerun because their input changed.
   `"predict"`, and the VEP annotation and its parsing share one key.
 - The download rules have no version; their URL is the version. Rules that only index a file or convert the
   format of a download have none either.
+- The Pangolin weights are an exception: aberrant-expression pins their commit and their SHA-256 sums, not the
+  download rule. So after a new pin, Snakemake keeps the old files, and the Pangolin scoring stops with a
+  SHA-256 error. Delete `<resources_dir>/absplice2/pangolin_models` and run `veff__absplice2_setup` again.
 
 Snakemake uses this profile when it runs `workflow/Snakefile`, also with `--snakefile` from another directory.
 `--rerun-triggers` on the command line overrides the setting. The setting does not apply:
@@ -441,7 +453,7 @@ The Python package in `packages/` carries its own MIT license file.
 **Please note:** AbExp relies on [CADD](https://cadd.gs.washington.edu/) and [SpliceAI](https://github.com/Illumina/SpliceAI/), both of which are free to use only in non-commercial settings.
 If you plan to use AbExp in a commercial context, please ensure that you have the appropriate permissions or licenses to use both tools.
 
-The optional module absplice2 installs [Pangolin](https://github.com/tkzeng/Pangolin) and downloads the model of
+The optional module absplice2 downloads the weights of [Pangolin](https://github.com/tkzeng/Pangolin) and the model of
 [AbSplice2](https://github.com/gagneurlab/absplice2) when it runs. Both are licensed under the GPL-3.0 and are not part of this repository.
 
 ## Development setup

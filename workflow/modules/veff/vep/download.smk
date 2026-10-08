@@ -268,7 +268,8 @@ if LOFTEE_GERP_BIGWIG:
 
 rule veff__vep_setup:
     """
-    Downloads the data of this module that does not exist yet: VEP cache, CADD and LOFTEE.
+    Downloads the data of this module that does not exist yet: VEP cache, LOFTEE source, and
+    CADD and LOFTEE data if their plugin is on.
     """
     input:
         **VEP_DATA,

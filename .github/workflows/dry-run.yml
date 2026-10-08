@@ -1,0 +1,145 @@
+# Dry-runs the workflow on config/config.yaml and the example files, in several variants of the config.
+name: dry-run
+
+on:
+  pull_request:
+    paths:
+      - "workflow/**"
+      - "config/**"
+      - "example/**"
+      - "resources/**"
+      - ".github/workflows/dry-run.yml"
+  push:
+    branches: [main]
+    paths:
+      - "workflow/**"
+      - "config/**"
+      - "example/**"
+      - "resources/**"
+      - ".github/workflows/dry-run.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  dry-run:
+    name: dry-run ${{ matrix.case }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # config: changes to config/config.yaml
+        # targets: files to build instead of the default target `all`, relative to the repository
+        # placeholders: empty files to create; a dry-run only checks that the input files exist
+        # expect_error: the dry-run must fail with a ValueError whose log contains this text
+        include:
+          - case: hg38
+          - case: hg19
+            config: |
+              output_dir: example/output_hg19
+              human_genome_version: hg19
+              fasta_file: example/chr22_hg19.fa
+              gff3_file: example/chr22.gencode.v40lift37.annotation.gff3.gz
+          - case: GPU
+            config: |
+              use_gpu: true
+          # All models need the CADD and LOFTEE features of VEP. So the next two cases predict nothing
+          # and build the output of tissue_specific_vep instead.
+          - case: mehari
+            config: |
+              predict_abexp_models: []
+              veff:
+                annotator: mehari
+                mehari_gencode_transcripts_fasta: example/gencode.v40.transcripts.fa.gz
+            placeholders: example/gencode.v40.transcripts.fa.gz
+            targets: >-
+              example/output_hg38/veff/tissue_specific_vep.py/veff.parquet/clinvar_chr22_benign.vcf.gz.parquet
+              example/output_hg38/veff/tissue_specific_vep.py/veff.parquet/clinvar_chr22_pathogenic.vcf.gz.parquet
+          - case: VEP without CADD and LOFTEE
+            config: |
+              predict_abexp_models: []
+              system:
+                vep:
+                  cadd_plugin: false
+                  loftee_plugin: false
+            targets: >-
+              example/output_hg38/veff/tissue_specific_vep.py/veff.parquet/clinvar_chr22_benign.vcf.gz.parquet
+              example/output_hg38/veff/tissue_specific_vep.py/veff.parquet/clinvar_chr22_pathogenic.vcf.gz.parquet
+          # Snakemake parses the absplice2 module only if it is enabled
+          - case: absplice2
+            config: |
+              system:
+                absplice2:
+                  enabled: true
+            targets: >-
+              example/output_hg38/veff/absplice2/veff.parquet/clinvar_chr22_benign.vcf.gz.parquet
+              example/output_hg38/veff/absplice2/veff.parquet/clinvar_chr22_pathogenic.vcf.gz.parquet
+          # abexp_v1.1 needs the feature cadd_raw.max, so workflow/Snakefile must stop this config
+          - case: abexp_v1.1 without CADD
+            config: |
+              system:
+                vep:
+                  cadd_plugin: false
+            expect_error: cadd_plugin
+    env:
+      CONFIG: ${{ matrix.config }}
+      TARGETS: ${{ matrix.targets }}
+      PLACEHOLDERS: ${{ matrix.placeholders }}
+      EXPECT_ERROR: ${{ matrix.expect_error }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      # To parse the workflow, Snakemake needs only itself and PyYAML. It also needs conda, because
+      # workflow/profiles/default sets `software-deployment-method: conda` and Snakemake runs
+      # `conda info` also in a dry-run.
+      - uses: mamba-org/setup-micromamba@v3
+        with:
+          environment-name: snakemake
+          create-args: >-
+            python=3.12
+            snakemake-minimal>=9
+            conda
+          condarc: |
+            channels:
+              - conda-forge
+              - bioconda
+            channel_priority: strict
+      # The steps run in a plain bash, not in a login shell (`bash -el {0}`) that activates the
+      # environment: a login shell runs ~/.bash_logout on exit, its clear_console fails without a
+      # terminal, and so the step fails with exit code 1 even after `exit 0`.
+      - name: Put the environment on the PATH
+        run: echo "$MAMBA_ROOT_PREFIX/envs/snakemake/bin" >> "$GITHUB_PATH"
+      - name: Dry-run
+        id: dry-run
+        # the next step checks the error
+        continue-on-error: ${{ matrix.expect_error != '' }}
+        run: |
+          for file in $PLACEHOLDERS; do touch "$file"; done
+          configfiles=(config/config.yaml)
+          if [ -n "$CONFIG" ]; then
+            printf '%s' "$CONFIG" > "$RUNNER_TEMP/case.yaml"
+            configfiles+=("$RUNNER_TEMP/case.yaml")
+          fi
+          # the outputs of the rules are absolute paths, so the targets must be absolute too
+          targets=()
+          for target in $TARGETS; do targets+=("$PWD/$target"); done
+          # the targets come first, because --configfile takes all arguments after it
+          snakemake "${targets[@]}" --dry-run --quiet rules --configfile "${configfiles[@]}" 2>&1 | tee "$RUNNER_TEMP/dry-run.log"
+          exit "${PIPESTATUS[0]}"
+      - name: Check the expected error
+        if: matrix.expect_error
+        env:
+          OUTCOME: ${{ steps.dry-run.outcome }}
+        run: |
+          if [ "$OUTCOME" != failure ]; then
+            echo "::error::The dry-run passed, but it should fail with a ValueError about $EXPECT_ERROR."
+            exit 1
+          fi
+          grep ValueError "$RUNNER_TEMP/dry-run.log"
+          grep -F -- "$EXPECT_ERROR" "$RUNNER_TEMP/dry-run.log"

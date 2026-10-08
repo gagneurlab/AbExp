@@ -4,8 +4,8 @@ from snakemake.utils import min_version, validate
 
 min_version("9.0")
 
-# Annotates the variants with VEP, including LOFTEE and CADD, and parses the result into a
-# per-transcript table. The input VCFs need the variant IDs `CHROM:POS0:END:REF>ALT` that the
+# Annotates the variants with VEP, by default including LOFTEE and CADD, and parses the result
+# into a per-transcript table. The input VCFs need the variant IDs `CHROM:POS0:END:REF>ALT` that the
 # vcf_prep module sets. See config.schema.yaml.
 validate(config, "config.schema.yaml")
 
@@ -40,6 +40,9 @@ VEP = {
     "vep_bin": config["vep_bin"],
     "perl_bin": config["perl_bin"],
 }
+# run the VEP plugins CADD and LOFTEE
+CADD_PLUGIN = config["cadd_plugin"]
+LOFTEE_PLUGIN = config["loftee_plugin"]
 
 
 def data_path(key, default):
@@ -75,21 +78,28 @@ LOFTEE_GERP_BIGWIG = (
     f"{LOFTEE_DATA_DIR}/gerp_conservation_scores.homo_sapiens.GRCh38.bw" if ASSEMBLY == "GRCh38" else None
 )
 
-# the files that VEP reads, by name
-VEP_DATA = {
-    "vep_cache": VEP_CACHE,
-    "cadd_snv": CADD_SNV_TSV,
-    "cadd_snv_tbi": f"{CADD_SNV_TSV}.tbi",
-    "cadd_indel": CADD_INDEL_TSV,
-    "cadd_indel_tbi": f"{CADD_INDEL_TSV}.tbi",
-    "loftee_src": LOFTEE_SRC_PATH,
-    "human_ancestor_fa": LOFTEE_HUMAN_ANCESTOR_FA,
-    "human_ancestor_fai": f"{LOFTEE_HUMAN_ANCESTOR_FA}.fai",
-    "human_ancestor_gzi": f"{LOFTEE_HUMAN_ANCESTOR_FA}.gzi",
-    "conservation_file": LOFTEE_CONSERVATION_FILE,
-}
-if LOFTEE_GERP_BIGWIG:
-    VEP_DATA["gerp_bigwig"] = LOFTEE_GERP_BIGWIG
+# the files that VEP reads, by name. The files of a plugin that is off are not inputs, so
+# neither the VEP jobs nor veff__vep_setup download them. The download rules stay, because the
+# veff module points the loftee module at the LOFTEE data.
+VEP_DATA = {"vep_cache": VEP_CACHE}
+if CADD_PLUGIN:
+    VEP_DATA |= {
+        "cadd_snv": CADD_SNV_TSV,
+        "cadd_snv_tbi": f"{CADD_SNV_TSV}.tbi",
+        "cadd_indel": CADD_INDEL_TSV,
+        "cadd_indel_tbi": f"{CADD_INDEL_TSV}.tbi",
+    }
+# also without LOFTEE: the MaxEntScan plugin reads the folder maxEntScan of the LOFTEE source
+VEP_DATA["loftee_src"] = LOFTEE_SRC_PATH
+if LOFTEE_PLUGIN:
+    VEP_DATA |= {
+        "human_ancestor_fa": LOFTEE_HUMAN_ANCESTOR_FA,
+        "human_ancestor_fai": f"{LOFTEE_HUMAN_ANCESTOR_FA}.fai",
+        "human_ancestor_gzi": f"{LOFTEE_HUMAN_ANCESTOR_FA}.gzi",
+        "conservation_file": LOFTEE_CONSERVATION_FILE,
+    }
+    if LOFTEE_GERP_BIGWIG:
+        VEP_DATA["gerp_bigwig"] = LOFTEE_GERP_BIGWIG
 
 
 include: "download.smk"

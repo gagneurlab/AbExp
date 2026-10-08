@@ -80,6 +80,7 @@ environment has the released package again.
 
 `.github/workflows/release-please.yml` runs release-please on each push to main. It keeps one release PR open for
 abexp-utils, and one for kipoi-enformer and abexp-splicing together, see [Linked versions](#linked-versions). A
+third release PR covers the workflow itself, see "Releases" in the [README](../README.md#releases). A
 commit counts for a package if it changes files in the package directory and if its type appears in the changelog:
 `feat`, `fix`, `perf`, `deps`, `revert` or `docs`. Before 1.0.0, a breaking change bumps the minor version. The
 tags `abexp-utils-v0.0.1` and `kipoi-enformer-v0.0.1` mark the state imported from gagneurlab/AbExp-utils, and

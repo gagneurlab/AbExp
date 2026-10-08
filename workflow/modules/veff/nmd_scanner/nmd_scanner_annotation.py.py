@@ -16,11 +16,12 @@
 # %% [markdown]
 # # Scan variants for NMD with NMD-Scanner
 #
-# Calls NMD-Scanner's own pipeline steps, in the order of its `cli.main`, on the variants of
-# the stripped VCF and the transcripts of the GTF file, and writes NMD-Scanner's per-transcript,
-# per-variant table unchanged. Added are only the columns that `tissue_specific_vep.py.py` and
-# similar steps need: the variant key (`chrom`, `start`, `end`, `ref`, `alt`) and `gene` and
-# `transcript` without version.
+# Calls NMD-Scanner's `annotate` on the variants of the stripped VCF and the transcripts of the
+# GFF3 file, and writes NMD-Scanner's per-transcript, per-variant table without the sequence
+# columns. Its variant key columns `chrom`, `start`, `end`, `ref` and `alt` have the names that the
+# pipeline uses. Added are only `gene` and `transcript` without version, which
+# `tissue_specific_vep.py.py` and similar steps need. The parquet metadata gets the names of the NMD
+# efficiency model inputs.
 #
 # NMD-Scanner's own rules stay NMD-Scanner's; there is no translation to VEP terms. The
 # transcript consequence annotation comes from a separate mehari or VEP step.
@@ -31,10 +32,10 @@ from IPython.display import display
 # %% jupyter={"outputs_hidden": false} pycharm={"name": "#%%\n"}
 import os
 import sys
+import json
 import shutil
 import logging
 
-import json
 import yaml
 
 from pprint import pprint
@@ -42,6 +43,8 @@ from pprint import pprint
 import numpy as np
 import pandas as pd
 import pyarrow as pa
+import pyarrow.compute as pc
+import pyarrow.parquet as pq
 
 # %%
 snakefile_path = os.getcwd() + "/../../../Snakefile"
@@ -78,117 +81,73 @@ os.getcwd()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s: %(message)s")
 
 # %%
-from pyfaidx import Fasta
-
-from nmd_scanner import add_nmd_features, compute_exon_numbers, evaluate_nmd_escape_rules, extract_ptc, read_gtf, read_vcf
-
-# %% [markdown]
-# # Load input data
-#
-# The same call order as NMD-Scanner's own `cli.main`: read the VCF, GTF and FASTA, optionally
-# recompute the exon numbers, then split the GTF into its CDS and exon rows. The stripped VCF
-# is already left-normalized and single-allelic, which `read_vcf` requires.
-#
-# `cli.main` itself is not called because it writes the output file, and its parquet writer
-# fails on the columns of tuples that are turned into JSON text at the end of this script.
-# NMD-Scanner is pinned in `envs/nmd_scanner_env.yaml`; compare the steps here with `cli.main`
-# when that pin is raised.
-
-# %%
-vcf = read_vcf(snakemake.input["vcf"])
-vcf.df.shape
-
-# %%
-gtf = read_gtf(snakemake.input["gtf"])
-gtf.df.shape
-
-# %%
-fasta = Fasta(snakemake.input["fasta"])
-
-# %%
-if snakemake.params["reassign_exons"]:
-    gtf = compute_exon_numbers(gtf)
-
-# %%
-gtf_df = gtf.df
-cds_df = gtf_df[gtf_df["Feature"] == "CDS"]
-exons_df = gtf_df[gtf_df["Feature"] == "exon"].copy()
-exons_df["exon_length"] = exons_df["End"] - exons_df["Start"]
+import nmd_scanner
+from nmd_scanner.schema import MODEL_INPUTS
 
 # %% [markdown]
 # # NMD scan
 #
-# `extract_ptc` builds the reference and alternative CDS and transcript sequences and finds
-# their start and stop codons. `add_nmd_features` computes UTR lengths, exon counts and PTC
-# distances from that. `evaluate_nmd_escape_rules` applies the five NMD escape rules. It has to
-# run after `add_nmd_features`, since it reads the exon-count and PTC-exon-length columns that
-# step adds.
+# `annotate` reads the VCF, GFF3 and FASTA, optionally recomputes the exon numbers, builds the
+# reference and alternative CDS and transcript sequences, finds their start and stop codons, and
+# adds the NMD features and the five NMD escape rules. It skips records whose ALT allele is symbolic,
+# a breakend, "." or "*". The stripped VCF is already left-normalized and single-allelic, which
+# NMD-Scanner requires.
+#
+# With `sequences=False`, the result lacks the sequence columns `ref_cds_seq`, `alt_cds_seq`,
+# `transcript_seq` and `alt_transcript_seq`. They make up most of the table's size, on disk and in
+# memory. No later step reads them.
 
 # %%
-results = extract_ptc(cds_df, vcf, fasta, exons_df)
+results = nmd_scanner.annotate(
+    snakemake.input["vcf"],
+    snakemake.input["gff3"],
+    snakemake.input["fasta"],
+    reassign_exons=snakemake.params["reassign_exons"],
+    sequences=False,
+)
 results.shape
-
-# %%
-extra_features = results.apply(add_nmd_features, axis=1, result_type="expand")
-results = pd.concat([results, extra_features], axis=1)
-
-# %%
-nmd_results = results.apply(evaluate_nmd_escape_rules, axis=1, result_type="expand")
-results = pd.concat([results, nmd_results], axis=1)
-results
 
 # %% [markdown]
 # # Variant and gene key columns
 #
-# `chromosome`, `start_variant`, `end_variant`, `ref` and `alt` are NMD-Scanner's own variant
-# coordinates: 0-based, half-open, the same convention as `chrom`/`start`/`end` elsewhere in the
-# pipeline (see `scan.py::read_vcf`). `gene_id` is the gene of the CDS that NMD-Scanner joined
-# the variant against. Both `gene_id` and `transcript_id` lose their version, like in
-# `mehari_annotation.py.py`.
+# `to_arrow` gives the columns the types of NMD-Scanner's own parquet output.
+#
+# NMD-Scanner's `chrom`, `start`, `end`, `ref` and `alt` are 0-based and half-open, like
+# `chrom`/`start`/`end` elsewhere in the pipeline: `start` is the VCF POS minus 1. `gene_id` is the
+# gene of the CDS that NMD-Scanner joined the variant against. Both `gene_id` and `transcript_id`
+# lose their version, like in `mehari_annotation.py.py`.
 
 # %%
 key_columns = ["chrom", "start", "end", "ref", "alt", "gene", "transcript"]
 
-results_df = (
-    results
-    .rename(columns={"chromosome": "chrom", "start_variant": "start", "end_variant": "end"})
-    .assign(
-        transcript=lambda df: df["transcript_id"].str.split(".").str[0],
-        gene=lambda df: df["gene_id"].str.split(".").str[0],
-    )
+table = nmd_scanner.to_arrow(results)
+table = (
+    table
+    .append_column("gene", pc.replace_substring_regex(table["gene_id"], r"\..*", ""))
+    .append_column("transcript", pc.replace_substring_regex(table["transcript_id"], r"\..*", ""))
 )
-results_df = results_df[[*key_columns, *[c for c in results_df.columns if c not in key_columns]]]
-results_df
+table = table.select([*key_columns, *[c for c in table.column_names if c not in key_columns]])
+table.schema
+
+# %% [markdown]
+# # Model inputs
+#
+# The parquet metadata key `nmd_scanner.schema.MODEL_INPUTS` holds NMD-Scanner's list of the NMD
+# efficiency model inputs in model order, as JSON. `nmd_scanner_score.py.py` runs without
+# NMD-Scanner and checks this list against the ONNX model. This key replaces the pandas metadata of
+# `to_arrow`, which no later step reads.
+
+# %%
+table = table.replace_schema_metadata({"nmd_scanner.schema.MODEL_INPUTS": json.dumps(MODEL_INPUTS)})
 
 # %% [markdown]
 # # Write output
-#
-# A few NMD-Scanner columns hold tuples of mixed types, e.g. `(5442, "TGA")` for a stop codon
-# position and sequence, or a mix of int and str exon numbers. Parquet needs one type per
-# column, so only those columns are turned into JSON text; every other column keeps
-# NMD-Scanner's own type.
-
-# %%
-parquet_safe_df = results_df.copy()
-json_columns = []
-for column in parquet_safe_df.columns:
-    if parquet_safe_df[column].dtype != object:
-        continue
-    try:
-        pa.Array.from_pandas(parquet_safe_df[column])
-    except (pa.ArrowInvalid, pa.ArrowTypeError):
-        parquet_safe_df[column] = parquet_safe_df[column].apply(
-            lambda v: json.dumps(v) if isinstance(v, (list, tuple, dict)) else v
-        )
-        json_columns.append(column)
-
-json_columns
 
 # %%
 snakemake.output["veff_pq"]
 
 # %%
-parquet_safe_df.to_parquet(snakemake.output["veff_pq"], index=False)
+pq.write_table(table, snakemake.output["veff_pq"])
 
 # %%
 written_df = pd.read_parquet(snakemake.output["veff_pq"])
@@ -213,4 +172,4 @@ assert failed_variants == 0, f"{failed_variants} out of {total_variants} variant
 
 # %%
 non_ensembl_gene = written_df[~written_df["gene"].fillna("").str.startswith("ENSG")].shape[0]
-assert non_ensembl_gene == 0, f"{non_ensembl_gene} out of {total_variants} rows have no Ensembl gene id; was the GTF file built from GENCODE?"
+assert non_ensembl_gene == 0, f"{non_ensembl_gene} out of {total_variants} rows have no Ensembl gene id; was the GFF3 file built from GENCODE or Ensembl?"

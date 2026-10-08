@@ -74,6 +74,8 @@ enformer = [
 # abexp.pangolin; conda-forge has PyTorch as pytorch-cpu and pytorch-gpu
 pangolin = [
     "polars>=1.44",
+    # abexp.utils.gff3. polars-bio 0.36.0 is enough: it reads GFF3 on polars 2 as well, and bioconda has no 0.36.1 yet.
+    "polars-bio>=0.36.0",
     "kipoiseq2[ranges]>=0.1,<0.2",
     "torch>=2.4",
 ]

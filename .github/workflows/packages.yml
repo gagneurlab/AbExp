@@ -48,6 +48,9 @@ jobs:
           # the RocksDB library, and the SpliceAI-RocksDB test needs the 2.6 GB database, so pytest skips that test
           - area: splicing
             extras: splicing
+          # abexp.pangolin, with small test models instead of the published weights
+          - area: pangolin
+            extras: pangolin
     env:
       TEST_DATA: packages/aberrant_expression/tests/enformer/data/**
     steps:
@@ -111,6 +114,8 @@ jobs:
             modules: abexp.mmsplice abexp.absplice abexp.spliceai_rocksdb
           - extra: enformer
             modules: abexp.enformer
+          - extra: pangolin
+            modules: abexp.pangolin
     steps:
       - uses: actions/checkout@v7
         with:

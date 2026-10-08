@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "aberrant-expression"
 version = "0.0.1"
-description = "Utilities, Enformer, MMSplice, AbSplice-DNA and SpliceAI-RocksDB for the AbExp pipeline"
+description = "Utilities, Enformer, MMSplice, AbSplice-DNA, SpliceAI-RocksDB and Pangolin for the AbExp pipeline"
 authors = [
     { name = "Florian Hölzlwimmer", email = "git.ich@frhoelzlwimmer.de" },
     { name = "George Tsitsiridis", email = "gtsitsiridis@gmail.com" },
@@ -22,7 +22,7 @@ requires-python = ">=3.12"
 license = "MIT"
 license-files = ["LICENSE"]
 keywords = ["aberrant expression", "variant effect prediction", "splicing", "mmsplice", "absplice", "spliceai",
-    "enformer", "deep learning", "computational biology", "bioinformatics", "genomics"]
+    "pangolin", "enformer", "deep learning", "computational biology", "bioinformatics", "genomics"]
 # The base has no dependencies, because the package root and abexp.utils.common need only the standard library.
 # Each extra adds the dependencies of some subpackages. Each third-party requirement appears once in this file, with
 # its version range. An extra that needs it refers to the extra that holds it, e.g. "aberrant-expression[gff3]".
@@ -71,9 +71,14 @@ enformer = [
     "zarr>=2.15.0",
     "pyyaml",
 ]
+# abexp.pangolin; conda-forge has PyTorch as pytorch-cpu and pytorch-gpu
+pangolin = [
+    "aberrant-expression[polars,numpy,kipoiseq2]",
+    "torch>=2.4",
+]
 # all extras but rocksdb, because pip builds python-rocksdb only with the RocksDB library installed
 all = [
-    "aberrant-expression[models,polars,spark,gff3,splicing,enformer]",
+    "aberrant-expression[models,polars,spark,gff3,splicing,enformer,pangolin]",
 ]
 # Requirements of several extras. Each of these extras holds one requirement and has its name.
 numpy = [

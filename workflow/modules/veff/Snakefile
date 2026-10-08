@@ -168,6 +168,7 @@ if config["absplice2"].get("enabled"):
         "output_dir": VEFF_DIR,
         "resources_dir": RESOURCES_DIR,
         **GENOME,
+        **optional(config, "fasta_file_idx"),
     }
     # Snakemake pickles the module config for the scripts, so the config holds plain strings only.
     # By default, the absplice2 module gets the tissue mapping of the absplice module from

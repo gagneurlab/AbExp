@@ -32,7 +32,7 @@ properties:
     description: Mapping of chromosome names, the same as for the vcf_prep module, e.g. its resources/chromAlias.tsv.
   version:
     type: integer
-    enum: [99, 105, 108, 116]
+    enum: [108, 116]
     default: 108
     description: >-
       VEP version; selects envs/vep_env.v<version>.yaml and the VEP cache of the same Ensembl

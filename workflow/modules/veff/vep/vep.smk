@@ -90,11 +90,9 @@ def get_vep_cli_options(
         # the column miRNA.
         "--plugin miRNA" if vep_version < 110 else None,
         f"--plugin CADD,{cadd_snv_tsv},{cadd_indel_tsv}" if cadd_plugin else None,
+        "--plugin NMD",
     ]
-    
-    if vep_version >= 105:
-        vep_cli_options.append("--plugin NMD")
-    
+
     return " ".join(o for o in vep_cli_options if o is not None)
 
 

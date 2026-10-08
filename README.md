@@ -145,10 +145,9 @@ LOFTEE features, or to try the annotation without the large downloads.
 
 ## VEP version
 
-`system.vep.version` selects the VEP release: 108 (default) or 116. The module also keeps the environments of the
-older releases 99 and 105. The version selects the conda environment `workflow/modules/veff/vep/envs/vep_env.v<version>.yaml` and the VEP
-cache of the same Ensembl release, which the pipeline downloads into `<resources_dir>/vep/<version>`. Changing the
-version reruns VEP and the steps after it.
+`system.vep.version` selects the VEP release: 108 (default) or 116. The version selects the conda environment
+`workflow/modules/veff/vep/envs/vep_env.v<version>.yaml` and the VEP cache of the same Ensembl release, which the
+pipeline downloads into `<resources_dir>/vep/<version>`. Changing the version reruns VEP and the steps after it.
 
 The shipped models were trained on features of VEP 108, so predict with VEP 108. VEP 116 is for the annotation
 alone or for training new models; see [Turning off CADD or LOFTEE](#turning-off-cadd-or-loftee) for the targets.

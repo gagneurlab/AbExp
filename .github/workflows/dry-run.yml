@@ -77,10 +77,6 @@ jobs:
                 vep:
                   cadd_plugin: false
             expect_error: cadd_plugin
-    defaults:
-      run:
-        # a login shell activates the micromamba environment
-        shell: bash -el {0}
     env:
       CONFIG: ${{ matrix.config }}
       TARGETS: ${{ matrix.targets }}
@@ -105,6 +101,11 @@ jobs:
               - conda-forge
               - bioconda
             channel_priority: strict
+      # The steps run in a plain bash, not in a login shell (`bash -el {0}`) that activates the
+      # environment: a login shell runs ~/.bash_logout on exit, its clear_console fails without a
+      # terminal, and so the step fails with exit code 1 even after `exit 0`.
+      - name: Put the environment on the PATH
+        run: echo "$MAMBA_ROOT_PREFIX/envs/snakemake/bin" >> "$GITHUB_PATH"
       - name: Dry-run
         id: dry-run
         # the next step checks the error

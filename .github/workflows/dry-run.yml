@@ -70,6 +70,15 @@ jobs:
             targets: >-
               example/output_hg38/veff/tissue_specific_vep.py/veff.parquet/clinvar_chr22_benign.vcf.gz.parquet
               example/output_hg38/veff/tissue_specific_vep.py/veff.parquet/clinvar_chr22_pathogenic.vcf.gz.parquet
+          # Snakemake parses the absplice2 module only if it is enabled
+          - case: absplice2
+            config: |
+              system:
+                absplice2:
+                  enabled: true
+            targets: >-
+              example/output_hg38/veff/absplice2/veff.parquet/clinvar_chr22_benign.vcf.gz.parquet
+              example/output_hg38/veff/absplice2/veff.parquet/clinvar_chr22_pathogenic.vcf.gz.parquet
           # abexp_v1.1 needs the feature cadd_raw.max, so workflow/Snakefile must stop this config
           - case: abexp_v1.1 without CADD
             config: |

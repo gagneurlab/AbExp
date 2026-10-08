@@ -4,7 +4,7 @@ channels:
 - conda-forge
 
 dependencies:
-# Snakemake 9 needs >=3.11. pyranges needs ncls, which has builds up to 3.12.
+# Snakemake 9 needs >=3.11 and aberrant-expression >=3.12. The tests of aberrant-expression run on 3.12.
 # A range instead of an exact pin makes the solve take minutes.
 - python=3.12
 - ipykernel
@@ -21,7 +21,6 @@ dependencies:
 - bioconda::bcftools
 - bioconda::tabix
 - bioconda::pyfaidx
-- bioconda::pyranges
 - bioconda::vcf2parquet>=0.4
 - wget
 # aria2c and kagglehub for the download rules, which have no conda environment (see README)

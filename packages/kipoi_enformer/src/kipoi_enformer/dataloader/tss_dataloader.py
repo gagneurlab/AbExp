@@ -225,7 +225,8 @@ class VCFTSSDataloader(TSSDataloader):
         # extend the TSS by variant_upstream_tss bases upstream and variant_downstream_tss bases downstream
         # (0-based start, 1-based end)
         minus = pl.col('Strand') == '-'
-        upstream, downstream = self.variant_upstream_tss, self.variant_downstream_tss
+        upstream = self.variant_upstream_tss
+        downstream = self.variant_downstream_tss
         regions = self._genome_annotation.select(
             pl.col('Chromosome').alias('chrom'),
             (pl.col('Start') - pl.when(minus).then(downstream).otherwise(upstream)).clip(lower_bound=0).alias('start'),

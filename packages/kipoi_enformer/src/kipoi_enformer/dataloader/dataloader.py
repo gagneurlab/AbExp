@@ -203,13 +203,9 @@ def extract_sequences_around_anchor(shifts, chromosome, strand, anchor, seq_leng
         # the extractors reverse complement minus-strand sequences,
         # so the padding of the interval start belongs to the end of the sequence
         if strand == '-':
-            five_end_pad, three_end_pad = three_end_pad, five_end_pad
-
-        if five_end_pad > 0:
-            seq = 'N' * five_end_pad + seq
-
-        if three_end_pad > 0:
-            seq = seq + 'N' * three_end_pad
+            seq = 'N' * three_end_pad + seq + 'N' * five_end_pad
+        else:
+            seq = 'N' * five_end_pad + seq + 'N' * three_end_pad
 
         assert len(seq) == seq_length, \
             f"interval width must be {seq_length} but got {len(seq)}"

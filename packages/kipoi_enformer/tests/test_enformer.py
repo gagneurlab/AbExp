@@ -8,6 +8,7 @@ import pyarrow.parquet as pq
 from kipoi_enformer.logger import logger
 import numpy as np
 import polars as pl
+from polars.testing import assert_frame_equal
 from kipoi_enformer.constants import AlleleType
 from shutil import rmtree
 import sklearn as sk
@@ -236,6 +237,42 @@ def test_veff_with_the_published_seq_end(tmp_path: Path, start_col, end_col, seq
                                'tissue', 'veff_score']
     assert veff_df['gene_id'].to_list() == ['ENSG01', 'ENSG02']
     np.testing.assert_allclose(veff_df['veff_score'].to_list(), [1.0 / np.log10(2), -0.5 / np.log10(2)])
+
+
+def test_veff_rows_in_key_order(tmp_path: Path):
+    # the scores list the rows against the key order: strand '-' before '+', and tissue Lung before Liver
+    transcripts = pl.DataFrame({
+        'tss': [2_000_000, 2_000_000, 1_000_000, 1_000_000],
+        'strand': ['-', '-', '+', '+'],
+        'gene_id': ['ENSG02.1', 'ENSG02.1', 'ENSG01.1', 'ENSG01.1'],
+        'transcript_id': ['ENST02.1', 'ENST02.1', 'ENST01.1', 'ENST01.1'],
+        'transcript_start': [1_900_000, 1_900_000, 1_000_000, 1_000_000],
+        'transcript_end': [2_000_001, 2_000_001, 1_100_000, 1_100_000],
+        'tissue': ['Lung', 'Liver', 'Lung', 'Liver'],
+    })
+    ref = transcripts.with_columns(score=pl.lit(1.0, dtype=pl.Float32))
+    alt = transcripts.with_columns(chrom=pl.lit('chr22'), variant_start=pl.col('tss') + 5,
+                                   variant_end=pl.col('tss') + 6, ref=pl.lit('A'), alt=pl.lit('G'),
+                                   score=pl.Series([2.0, 3.0, 1.5, 0.5], dtype=pl.Float32))
+    ref_path = tmp_path / 'ref.parquet/chrom=chr22/data.parquet'
+    ref_path.parent.mkdir(parents=True)
+    ref.write_parquet(ref_path)
+    alt.write_parquet(tmp_path / 'alt.parquet')
+
+    EnformerVeff().run([ref_path], tmp_path / 'alt.parquet', tmp_path / 'veff.parquet', aggregation_mode='median')
+
+    expected = pl.DataFrame({
+        'chrom': ['chr22', 'chr22', 'chr22', 'chr22'],
+        'strand': ['+', '+', '-', '-'],
+        'gene_id': ['ENSG01', 'ENSG01', 'ENSG02', 'ENSG02'],
+        'variant_start': [1_000_005, 1_000_005, 2_000_005, 2_000_005],
+        'variant_end': [1_000_006, 1_000_006, 2_000_006, 2_000_006],
+        'ref': ['A', 'A', 'A', 'A'],
+        'alt': ['G', 'G', 'G', 'G'],
+        'tissue': ['Liver', 'Lung', 'Liver', 'Lung'],
+        'veff_score': [-0.5 / np.log10(2), 0.5 / np.log10(2), 2.0 / np.log10(2), 1.0 / np.log10(2)],
+    })
+    assert_frame_equal(pl.read_parquet(tmp_path / 'veff.parquet'), expected, check_dtypes=False)
 
 
 @enformer_group

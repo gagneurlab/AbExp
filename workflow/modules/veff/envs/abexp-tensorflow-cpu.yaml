@@ -10,13 +10,13 @@ dependencies:
   - tensorflow-cpu=2.21 # the CPU build of tensorflow 2.21, also on hosts with a CUDA driver
   - pandas
   - pyarrow
-  - polars~=1.44
+  - polars>=1.44
   - xarray
   # not imported by the rules, but dependencies of kipoi-enformer and kipoiseq2: conda installs them instead of pip
   - kagglehub # downloads the Enformer model
   - scikit-learn
   - zarr
-  - polars-bio
+  - polars-bio>=0.36.0
   - pyfaidx
   # dependencies of spliceai and abexp-splicing
   - pysam

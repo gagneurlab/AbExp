@@ -9,7 +9,7 @@ dependencies:
 - numpy
 - pandas
 - pyarrow
-- polars~=1.44
+- polars>=1.44
 - scikit-learn
 - scipy
 - joblib

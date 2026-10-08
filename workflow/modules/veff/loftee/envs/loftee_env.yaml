@@ -2,18 +2,17 @@ name: abexp-loftee
 
 channels:
 - conda-forge
+- bioconda
 
 dependencies:
 - python>=3.12
 - ipykernel
-- pip
-- pip:
-  # reloftee's own runtime dependencies (its pyproject.toml). reloftee itself has no public
-  # git repository, so it is not installed here: point the module's `conda_env` option at an
-  # environment that already has the reloftee package installed instead.
-  - polars
-  - pyfaidx
-  - pyBigWig
-  - pyarrow
-  - "biopython>=1.87"
-  - "polars-bio>=0.31"
+# reloftee's own runtime dependencies (its pyproject.toml). reloftee itself has no public
+# git repository, so it is not installed here: point the module's `conda_env` option at an
+# environment that already has the reloftee package installed instead.
+- polars>=1.44
+- pyfaidx
+- pybigwig
+- pyarrow
+- biopython>=1.87
+- polars-bio>=0.36.0

@@ -159,7 +159,7 @@ df = pl.scan_csv(
     separator="\t",
     new_columns=clean_header,
     null_values="-",
-    dtypes={k: v for k, v in dtypes.items() if v in clean_header},
+    schema_overrides={k: v for k, v in dtypes.items() if v in clean_header},
     #     dtypes={k: v for k, v in dtypes.items() if v in {
     #         t.Boolean,
     #         t.Int8,
@@ -202,7 +202,7 @@ parsed_df = (
         pl.col("PolyPhen").str.extract(r".*\((.*)\)", 1).alias("polyphen_score"),
     ])
     .with_columns([
-        pl.col("chrom").replace(chrom_mapping, default=pl.col("chrom"), return_dtype=t.Utf8()).cast(t.Utf8()),
+        pl.col("chrom").replace_strict(chrom_mapping, default=pl.col("chrom"), return_dtype=t.Utf8()).cast(t.Utf8()),
     ])
     .drop([
         "#Uploaded_variation", 
@@ -399,20 +399,25 @@ parsed_vep_df.schema["Consequence"].fields
 snakemake.output["veff_pq"]
 
 # %%
+# On polars 2, collect() returns the rows in several chunks, and the file keeps each chunk as a row
+# group. tissue_specific_vep sums the rows of a group in another order if they lie in two row
+# groups, so the rows go into one chunk first.
 (
     parsed_vep_df
-    .collect().write_parquet(snakemake.output["veff_pq"], compression="snappy", statistics=True)
+    .collect()
+    .rechunk()
+    .write_parquet(snakemake.output["veff_pq"], compression="snappy", statistics=True)
 )
 
 # %%
 parsed_vep_df = pl.scan_parquet(snakemake.output["veff_pq"], hive_partitioning=False)
 
 # %%
-failed_variants = parsed_vep_df.filter(pl.col("chrom").is_null() | pl.col("start").is_null() | pl.col("end").is_null() | pl.col("ref").is_null() | pl.col("alt").is_null()).select(pl.count()).collect().item()
+failed_variants = parsed_vep_df.filter(pl.col("chrom").is_null() | pl.col("start").is_null() | pl.col("end").is_null() | pl.col("ref").is_null() | pl.col("alt").is_null()).select(pl.len()).collect().item()
 failed_variants
 
 # %%
-total_variants = parsed_vep_df.select(pl.count()).collect().item()
+total_variants = parsed_vep_df.select(pl.len()).collect().item()
 total_variants
 
 # %%

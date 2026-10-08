@@ -483,6 +483,8 @@ class EnformerVeff:
         :return: A polars DataFrame containing the aggregated scores.
         """
 
+        group_keys = ['chrom', 'strand', 'gene_id', 'variant_start', 'variant_end', 'ref', 'alt', 'tissue']
+
         def weighted_logsumexp(score: str, weight: str = 'isoform_proportion') -> pl.Expr:
             # log10(sum(weight * 10 ** score)) per group, shifted by the maximum score to avoid overflow
             s = pl.col(score).cast(pl.Float64)
@@ -497,7 +499,7 @@ class EnformerVeff:
 
             if aggregation_mode == 'logsumexp':
                 veff_ldf = veff_ldf. \
-                    group_by(['chrom', 'strand', 'gene_id', 'variant_start', 'variant_end', 'ref', 'alt', 'tissue']). \
+                    group_by(group_keys). \
                     agg(weighted_logsumexp('ref_score'), weighted_logsumexp('alt_score'))
                 veff_ldf = veff_ldf.with_columns(
                     ((pl.col("alt_score") - pl.col("ref_score")) / np.log10(2)).alias('log2fc').fill_nan(0))
@@ -506,16 +508,16 @@ class EnformerVeff:
                 veff_ldf = veff_ldf.with_columns(
                     (pl.col('isoform_proportion') * (pl.col("alt_score") - pl.col("ref_score")) / np.log10(2)).alias(
                         'log2fc'))
-                veff_ldf = veff_ldf.group_by(['chrom', 'strand', 'gene_id', 'variant_start',
-                                              'variant_end', 'ref', 'alt', 'tissue']).agg(pl.col('log2fc').sum())
-            veff_df = veff_ldf.collect()
+                veff_ldf = veff_ldf.group_by(group_keys).agg(pl.col('log2fc').sum())
+            # The streaming engine, the default of polars 2, sums each group in a varying order, so the last bits
+            # of the scores change from run to run. The in-memory engine sums in row order, as polars 1 did.
+            veff_df = veff_ldf.collect(engine='in-memory')
         elif aggregation_mode == 'canonical':
             # Keep only the canonical transcripts
             veff_ldf = veff_ldf.filter(pl.col('transcript_id').is_in(self.canonical_transcripts.to_list()))
             veff_ldf = veff_ldf.with_columns(
                 ((pl.col("alt_score") - pl.col("ref_score")) / np.log10(2)).alias('log2fc'))
-            veff_ldf = veff_ldf.group_by(['chrom', 'strand', 'gene_id', 'variant_start',
-                                          'variant_end', 'ref', 'alt', 'tissue', ]).agg(
+            veff_ldf = veff_ldf.group_by(group_keys).agg(
                 pl.col(['tss', 'transcript_id', 'transcript_start', 'transcript_end',
                         'ref_score', 'alt_score', 'log2fc']).first(),
                 pl.len().alias('num_transcripts')
@@ -533,11 +535,12 @@ class EnformerVeff:
         elif aggregation_mode == 'median':
             veff_ldf = veff_ldf.with_columns(
                 ((pl.col("alt_score") - pl.col("ref_score")) / np.log10(2)).alias('log2fc'))
-            veff_ldf = veff_ldf.group_by(['chrom', 'strand', 'gene_id', 'variant_start',
-                                          'variant_end', 'ref', 'alt', 'tissue', ]).agg(pl.col('log2fc').median())
+            veff_ldf = veff_ldf.group_by(group_keys).agg(pl.col('log2fc').median())
             veff_df = veff_ldf.collect()
         else:
             raise ValueError(f'Unknown mode: {aggregation_mode}')
 
+        # group_by returns the groups in a random order
+        veff_df = veff_df.sort(group_keys)
         logger.debug(f'Aggregated table size: {len(veff_df)}')
         return veff_df

@@ -81,8 +81,13 @@ os.getcwd()
 # chrom_mapping = dict(pl.read_csv(snakemake.input["chrom_alias"], separator="\t").rename({"#alias": "alias"})[["alias", "chrom"]].rows())
 
 # %%
+# GENCODE annotates each transcript of the pseudoautosomal regions (PAR) on chrX and on chrY. The
+# IDs of the chrY copy end in "_PAR_Y". VEP and mehari report PAR transcripts with the IDs of the
+# chrX copy, also for variants on chrY. Without the version, both copies have the same gene and
+# transcript, and the join below would count each PAR transcript twice. So only the chrX copy stays.
 gtf_transcript_df = (
     pl.scan_parquet(snakemake.input["gtf_transcripts"])
+    .filter(~pl.col("transcript_id").str.ends_with("_PAR_Y"))
     .with_columns([
         pl.col("gene_id").str.split(".").list.get(0).alias("gene"),
         pl.col("transcript_id").str.split(".").list.get(0).alias("transcript"),
@@ -117,7 +122,7 @@ variants_df = (
     .agg(
         pl.col("start").min().alias("min_start"),
         pl.col("start").max().alias("max_start"),
-        pl.count().alias("num_rows"),
+        pl.len().alias("num_rows"),
     )
     .with_columns(
         (pl.col("max_start") - pl.col("min_start")).alias("region_size")
@@ -202,16 +207,19 @@ aggregations
 
 # %%
 def process_batch(vep_batch_df):
+    # the joins keep the row order, so that the float sums below add up in a fixed order
     joint_df = (
         tissues_df.lazy()
         .join(
             vep_batch_df,
-            how="cross"
+            how="cross",
+            maintain_order="left_right",
         )
         .join(
             gtf_transcript_df,
             on=["gene", "transcript"],
-            how="left"
+            how="left",
+            maintain_order="left",
         )
         .join(
             isoform_proportions_df.select([
@@ -223,7 +231,8 @@ def process_batch(vep_batch_df):
                 "sd_transcript_proportions",
             ]),
             on=["gene", "transcript", "tissue"],
-            how="left"
+            how="left",
+            maintain_order="left",
         )
     )
 
@@ -232,7 +241,9 @@ def process_batch(vep_batch_df):
         .group_by(groupby)
         .agg(aggregations)
         .sort(groupby)
-        .collect()
+        # The streaming engine, the default since polars 2, sums the floats of a group in an order
+        # that changes from run to run, which changes the last bits of the sums.
+        .collect(engine="in-memory")
     )
     return aggregated_df
 

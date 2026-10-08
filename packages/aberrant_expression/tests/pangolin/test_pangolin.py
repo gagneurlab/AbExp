@@ -1,3 +1,5 @@
+import dataclasses
+
 import numpy as np
 import polars as pl
 import polars.testing
@@ -38,10 +40,11 @@ def genome(tmp_path_factory):
 
 @pytest.fixture
 def predict(genome, models, tmp_path):
-    def predict(*records, mask=True):
+    def predict(*records, mask=True, genes=s.GENES):
         s.write_vcf(tmp_path / 'variants.vcf', records)
-        genes = read_gff3_genes(genome / 'genes.gff3', s.TRANSCRIPT_TAGS)
-        pangolin = Pangolin(str(genome / 'genome.fa'), genes, models, distance=s.DISTANCE, mask=mask)
+        s.write_gff3(tmp_path / 'genes.gff3', genes)
+        genes_df = read_gff3_genes(tmp_path / 'genes.gff3', s.TRANSCRIPT_TAGS)
+        pangolin = Pangolin(str(genome / 'genome.fa'), genes_df, models, distance=s.DISTANCE, mask=mask)
         return pangolin.predict_df(str(tmp_path / 'variants.vcf'))
     return predict
 
@@ -148,6 +151,18 @@ def test_chromosome_end(predict):
     )
 
 
+def test_same_gene_id_on_two_chromosomes(predict):
+    # MINUS3 has the same position on chr4s and chr4n, like a gene in PAR1 on chrX and chrY. On chr4n, its exon
+    # (5850, 5900) ends at the variant position of chr4s. That splice site does not mask the gain on chr4s, so the row
+    # is that of test_chromosome_end.
+    genes = [dataclasses.replace(gene, exons=((4500, 4600), (5850, 5900))) if gene.chrom == 'chr4n' else gene
+             for gene in s.GENES]
+    assert_rows(
+        predict(s.CHROM_END, genes=genes),
+        ('chr4s:5900:A>G', 'MINUS3', 0.03115805983543396, 0, -0.001647988916374743, -50, []),
+    )
+
+
 def test_variant_at_gene_start(predict):
     # upstream Pangolin misses PLUS1; the row is that of upstream Pangolin with PLUS1 starting at 5797
     assert_rows(
@@ -199,6 +214,20 @@ def test_read_gff3_genes(genome):
         'gene_id': ['PLUS1', 'PLUS2', 'MINUS1', 'MINUS2'],
         'sites': [[5799, 5899, 6019, 6109, 6499, 6599], [6079, 6149, 6299, 6349, 6799, 6899],
                   [6549, 6619, 6699, 6759, 7099, 7199], []],
+    })
+    pl.testing.assert_frame_equal(genes, expected)
+
+
+def test_read_gff3_genes_same_gene_id_on_two_chromosomes(genome):
+    # PLUS4 is on chr3s and chr3n, like a gene in PAR2 on chrX and chrY; each row has the splice sites of its chromosome
+    genes = read_gff3_genes(genome / 'genes.gff3', s.TRANSCRIPT_TAGS).filter(pl.col('gene_id') == 'PLUS4')
+    expected = pl.DataFrame({
+        'chrom': ['chr3s', 'chr3n'],
+        'start': [49, 6049],
+        'end': [1500, 7500],
+        'strand': ['+', '+'],
+        'gene_id': ['PLUS4', 'PLUS4'],
+        'sites': [[49, 149, 299, 399, 1399, 1499], [6049, 6149, 6299, 6399, 7399, 7499]],
     })
     pl.testing.assert_frame_equal(genes, expected)
 

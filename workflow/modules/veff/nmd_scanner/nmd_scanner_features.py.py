@@ -172,12 +172,14 @@ score_features = [
 ]
 
 # Every scored transcript is a PTC transcript, so the left join keeps the groups of the scores.
+# The streaming engine, the default since polars 2, sums the floats of a group in an order that
+# changes from run to run, which changes the last bits of the sums.
 agg_df = (
     ptc_df.group_by(GROUPBY).agg(ptc_features)
     .join(nmd_df.group_by(GROUPBY).agg(score_features), on=GROUPBY, how="left")
     .select(*GROUPBY, pl.struct(pl.all().exclude(GROUPBY)).alias("features"))
     .sort(GROUPBY)
-    .collect()
+    .collect(engine="in-memory")
 )
 
 # %% [markdown]

@@ -97,22 +97,21 @@ chrom_mapping = dict(pl.read_csv(snakemake.input["chrom_alias"], separator="\t")
 # %% [markdown]
 # ## VCF records
 #
-# The stripped VCF has no sample columns; `truncate_ragged_lines` covers inputs that do.
+# The stripped VCF has no sample columns; `columns` drops them from inputs that do.
 
 # %%
-vcf_columns = ["CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO"]
+# the 8 fixed columns of a VCF, by their names in the header line
+vcf_columns = ["#CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO"]
 
 vcf_df = pl.read_csv(
     snakemake.input["vcf"],
     separator="\t",
-    has_header=False,
-    comment_prefix="#",
+    # skips the meta-information lines, but not the header line
+    comment_prefix="##",
     quote_char=None,
-    new_columns=vcf_columns,
-    schema_overrides={c: t.Utf8 for c in vcf_columns},
-    infer_schema_length=0,
-    truncate_ragged_lines=True,
-)
+    columns=vcf_columns,
+    infer_schema=False,
+).rename({"#CHROM": "CHROM"})
 vcf_df
 
 # %% [markdown]

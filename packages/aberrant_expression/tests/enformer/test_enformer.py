@@ -328,6 +328,96 @@ def test_veff_rows_in_key_order(tmp_path: Path):
     assert_frame_equal(pl.read_parquet(tmp_path / 'veff.parquet'), expected, check_dtypes=False)
 
 
+def write_canonical_scores(tmp_path: Path, transcripts: pl.DataFrame, ref_scores: list, alt_scores: list):
+    ref = transcripts.with_columns(score=pl.Series(ref_scores, dtype=pl.Float32))
+    alt = transcripts.with_columns(chrom=pl.lit('chr22'), variant_start=pl.col('tss') + 5,
+                                   variant_end=pl.col('tss') + 6, ref=pl.lit('A'), alt=pl.lit('G'),
+                                   score=pl.Series(alt_scores, dtype=pl.Float32))
+    ref_path = tmp_path / 'ref.parquet/chrom=chr22/data.parquet'
+    ref_path.parent.mkdir(parents=True)
+    ref.write_parquet(ref_path)
+    alt.write_parquet(tmp_path / 'alt.parquet')
+    return ref_path, tmp_path / 'alt.parquet'
+
+
+def test_veff_canonical(tmp_path: Path):
+    # the genome annotation and the scores hold versioned IDs, as in GENCODE
+    genome_annotation = pl.DataFrame({
+        'Chromosome': ['chr22', 'chr22', 'chr22'],
+        'Feature': ['transcript', 'transcript', 'transcript'],
+        'Start': [1_000_000, 1_000_000, 1_900_000],
+        'End': [1_100_000, 1_050_000, 2_000_001],
+        'Strand': ['+', '+', '-'],
+        'gene_id': ['ENSG01.1', 'ENSG01.1', 'ENSG02.8_8'],
+        'transcript_id': ['ENST01.1', 'ENST03.2', 'ENST02.4_6'],
+        'gene_type': ['protein_coding', 'protein_coding', 'protein_coding'],
+        'tag': ['basic,Ensembl_canonical', 'basic', 'Ensembl_canonical'],
+    })
+    # ENST03 is not canonical, so it does not count for ENSG01
+    transcripts = pl.DataFrame({
+        'tss': [1_000_000, 1_000_000, 2_000_000],
+        'strand': ['+', '+', '-'],
+        'gene_id': ['ENSG01.1', 'ENSG01.1', 'ENSG02.8_8'],
+        'transcript_id': ['ENST01.1', 'ENST03.2', 'ENST02.4_6'],
+        'transcript_start': [1_000_000, 1_000_000, 1_900_000],
+        'transcript_end': [1_100_000, 1_050_000, 2_000_001],
+        'tissue': ['Lung', 'Lung', 'Lung'],
+    })
+    ref_path, alt_path = write_canonical_scores(tmp_path, transcripts, ref_scores=[1.0, 3.0, 2.0],
+                                                alt_scores=[2.0, 0.5, 1.5])
+
+    EnformerVeff(genome_annotation=genome_annotation).run([ref_path], alt_path, tmp_path / 'veff.parquet',
+                                                          aggregation_mode='canonical')
+
+    expected = pl.DataFrame({
+        'chrom': ['chr22', 'chr22'],
+        'strand': ['+', '-'],
+        'gene_id': ['ENSG01', 'ENSG02'],
+        'variant_start': [1_000_005, 2_000_005],
+        'variant_end': [1_000_006, 2_000_006],
+        'ref': ['A', 'A'],
+        'alt': ['G', 'G'],
+        'tissue': ['Lung', 'Lung'],
+        'tss': [1_000_000, 2_000_000],
+        'transcript_id': ['ENST01', 'ENST02'],
+        'transcript_start': [1_000_000, 1_900_000],
+        'transcript_end': [1_100_000, 2_000_001],
+        'ref_score': [1.0, 2.0],
+        'alt_score': [2.0, 1.5],
+        # log2 fold change of the canonical transcript: (alt_score - ref_score) / log10(2)
+        'veff_score': [(2.0 - 1.0) / np.log10(2), (1.5 - 2.0) / np.log10(2)],
+    })
+    assert_frame_equal(pl.read_parquet(tmp_path / 'veff.parquet'), expected, check_dtypes=False)
+
+
+def test_veff_canonical_needs_one_transcript_per_gene(tmp_path: Path):
+    genome_annotation = pl.DataFrame({
+        'Chromosome': ['chr22', 'chr22'],
+        'Feature': ['transcript', 'transcript'],
+        'Start': [1_000_000, 1_000_000],
+        'End': [1_100_000, 1_050_000],
+        'Strand': ['+', '+'],
+        'gene_id': ['ENSG01.1', 'ENSG01.1'],
+        'transcript_id': ['ENST01.1', 'ENST03.2'],
+        'gene_type': ['protein_coding', 'protein_coding'],
+        'tag': ['Ensembl_canonical', 'Ensembl_canonical'],
+    })
+    transcripts = pl.DataFrame({
+        'tss': [1_000_000, 1_000_000],
+        'strand': ['+', '+'],
+        'gene_id': ['ENSG01.1', 'ENSG01.1'],
+        'transcript_id': ['ENST01.1', 'ENST03.2'],
+        'transcript_start': [1_000_000, 1_000_000],
+        'transcript_end': [1_100_000, 1_050_000],
+        'tissue': ['Lung', 'Lung'],
+    })
+    ref_path, alt_path = write_canonical_scores(tmp_path, transcripts, ref_scores=[1.0, 3.0], alt_scores=[2.0, 0.5])
+
+    with pytest.raises(ValueError, match='Multiple canonical transcripts'):
+        EnformerVeff(genome_annotation=genome_annotation).run([ref_path], alt_path, tmp_path / 'veff.parquet',
+                                                              aggregation_mode='canonical')
+
+
 @enformer_group
 @pytest.mark.parametrize("model", [
     linear_model.ElasticNetCV(cv=2),

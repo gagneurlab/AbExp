@@ -20,9 +20,7 @@ PANGOLIN_CONDA_ENV_YAML = CONDA_ENV_YAML_DIR.join(
 # One version per step. Bump the key of the earliest step whose outputs change, see
 # "When jobs rerun" in README.md.
 OUTPUT_VERSION = {
-    "annotation_db": 1,
-    "pyfastx_index": 1,
-    "pangolin": 1,
+    "pangolin": 2,
     "absplice2": 1,
 }
 
@@ -32,6 +30,8 @@ RESOURCES_DIR = os.path.abspath(config.get("resources_dir", f"{OUTPUT_DIR}/resou
 HUMAN_GENOME_VERSION = config["human_genome_version"]
 
 FASTA_FILE = os.path.abspath(config["fasta_file"])
+FASTA_INDEX_FILE = os.path.abspath(config.get("fasta_file_idx", config["fasta_file"] + ".fai"))
+GFF3_FILE = os.path.abspath(config["gff3_file"])
 VALID_VCF_FILE_PATTERN = config["valid_vcf"]
 MMSPLICE_SPLICEMAP_CSV_PATTERN = config["mmsplice_splicemap"]
 SPLICEMAP5 = config["splicemap_5"]
@@ -42,13 +42,12 @@ TISSUE_MAPPING_CSV = config.get("tissue_mapping_csv") or workflow.source_path(
 
 MODEL_PKL = os.path.abspath(config.get("model_pkl", f"{RESOURCES_DIR}/absplice2/AbSplice_2_DNA.pkl"))
 
-# The gffutils database of Pangolin: an existing file (`pangolin_annotation_db`), or built from
-# `gff3_file` into the output folder. The default transcript tags are those of the databases
-# that Pangolin publishes for GENCODE v38.
-BUILD_PANGOLIN_ANNOTATION_DB = "pangolin_annotation_db" not in config
-PANGOLIN_ANNOTATION_DB = os.path.abspath(
-    config.get("pangolin_annotation_db", f"{OUTPUT_DIR}/absplice2/pangolin_annotation.db")
-)
+# The published weights of Pangolin: 12 models, 3 replicates for each of its 4 heads
+PANGOLIN_MODELS_DIR = f"{RESOURCES_DIR}/absplice2/pangolin_models"
+PANGOLIN_MODEL_FILES = [f"final.{replicate}.{head}.3.v2" for head in (0, 2, 4, 6) for replicate in (1, 2, 3)]
+# Pangolin takes the annotated splice sites from the exons of the transcripts with one of these
+# tags in gff3_file. The default tags are those of the databases that Pangolin publishes for
+# GENCODE v38.
 PANGOLIN_TRANSCRIPT_TAGS = config.get(
     "pangolin_transcript_tags",
     {
@@ -56,8 +55,6 @@ PANGOLIN_TRANSCRIPT_TAGS = config.get(
         "hg38": ["Ensembl_canonical"],
     }[HUMAN_GENOME_VERSION],
 )
-if BUILD_PANGOLIN_ANNOTATION_DB:
-    GFF3_FILE = os.path.abspath(config["gff3_file"])
 
 
 include: "download.smk"

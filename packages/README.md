@@ -127,7 +127,8 @@ cd packages/aberrant_expression && uv run pytest tests/pangolin
 The absplice2 tests run `absplice2_dna` with a stand-in for the AbSplice2 model on made-up inputs, one
 constellation per test. They need no files and no network:
 ```bash
-cd packages/aberrant_expression && pytest tests/absplice2
+uv sync --extra absplice2 --group test
+cd packages/aberrant_expression && uv run pytest tests/absplice2
 ```
 
 CI (`.github/workflows/ci.yml`) calls `.github/workflows/packages.yml` on pull requests and pushes to main that

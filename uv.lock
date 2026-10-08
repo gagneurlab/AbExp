@@ -37,6 +37,9 @@ version = "0.0.1"
 source = { editable = "packages/aberrant_expression" }
 
 [package.optional-dependencies]
+absplice2 = [
+    { name = "polars" },
+]
 all = [
     { name = "kagglehub" },
     { name = "kipoiseq2", extra = ["ranges"] },
@@ -132,8 +135,9 @@ test = [
 requires-dist = [
     { name = "aberrant-expression", extras = ["gff3", "models", "kipoiseq2", "tensorflow", "tqdm"], marker = "extra == 'enformer'" },
     { name = "aberrant-expression", extras = ["gff3", "numpy", "kipoiseq2"], marker = "extra == 'pangolin'" },
-    { name = "aberrant-expression", extras = ["models", "polars", "spark", "gff3", "splicing", "enformer", "pangolin"], marker = "extra == 'all'" },
+    { name = "aberrant-expression", extras = ["models", "polars", "spark", "gff3", "splicing", "enformer", "pangolin", "absplice2"], marker = "extra == 'all'" },
     { name = "aberrant-expression", extras = ["numpy"], marker = "extra == 'models'" },
+    { name = "aberrant-expression", extras = ["polars"], marker = "extra == 'absplice2'" },
     { name = "aberrant-expression", extras = ["polars"], marker = "extra == 'gff3'" },
     { name = "aberrant-expression", extras = ["polars", "numpy", "kipoiseq2", "tensorflow", "tqdm"], marker = "extra == 'splicing'" },
     { name = "aberrant-expression", extras = ["splicing"], marker = "extra == 'rocksdb'" },
@@ -155,7 +159,7 @@ requires-dist = [
     { name = "xarray", marker = "extra == 'enformer'", specifier = ">=2024.5.0" },
     { name = "zarr", marker = "extra == 'enformer'", specifier = ">=2.15.0" },
 ]
-provides-extras = ["models", "polars", "spark", "gff3", "splicing", "rocksdb", "enformer", "pangolin", "all", "numpy", "kipoiseq2", "tensorflow", "tqdm"]
+provides-extras = ["models", "polars", "spark", "gff3", "splicing", "rocksdb", "enformer", "pangolin", "absplice2", "all", "numpy", "kipoiseq2", "tensorflow", "tqdm"]
 
 [package.metadata.requires-dev]
 test = [

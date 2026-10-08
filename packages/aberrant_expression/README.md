@@ -306,7 +306,7 @@ The tests are in one directory per area, and each area needs the extras of its s
 | `tests/utils`    | `polars`, `spark`, `gff3` | nothing; the Spark tests need a Java runtime                                    |
 | `tests/enformer` | `enformer`        | the files in `tests/enformer/data/` and the hg19 chr22 sequence `example/chr22_hg19.fa` |
 | `tests/splicing` | `splicing`        | the files in `tests/splicing/data/` and the hg38 chr22 sequence `example/chr22_hg38.fa` |
-| `tests/pangolin` | `pangolin`        | nothing; the tests use small networks with fixed random weights on a synthetic genome  |
+| `tests/pangolin` | `pangolin`        | the files in `tests/pangolin/data/` and the published weights of Pangolin (35 MB)       |
 
 The example sequences are in the AbExp repository, outside of the package. Pytest skips a test if one of its files
 is missing, e.g. in an sdist.
@@ -328,6 +328,12 @@ The tests run across all cores by default, through pytest-xdist. Pass `-n0` to r
 debugger needs and which restores per-test output order. The tests of one xdist group run on one worker, one after
 the other: the Spark tests, and the tests that run Enformer, which share their outputs. With `-n0`, the enformer
 tests need about 3 GB of memory.
+
+The pangolin tests run small networks with fixed random weights on a synthetic genome, and the published weights of
+Pangolin on an excerpt of GRCh38 chr22 in `tests/pangolin/data/`. They download the published weights once into the
+pytest cache, or into the folder in `ABEXP_PANGOLIN_MODELS_DIR` if set. Without network access, the download fails,
+and so do the tests with the published weights. Their expected rows come from upstream Pangolin, see
+`tests/pangolin/make_expected.py` and `tests/pangolin/make_expected_published.py`.
 
 The expected outputs in `tests/splicing/data/expected/` come from the upstream packages, see
 `tests/splicing/make_expected.py`. The SpliceAI-RocksDB tests also need the extra `rocksdb` and the hg38 chr22

@@ -84,16 +84,20 @@ The SpliceAI-RocksDB test also needs the extra `rocksdb` and the hg38 chr22 data
 `ABEXP_SPLICEAI_ROCKSDB_HG38_CHR22` to the path of `spliceAI_hg38_chr22.db`, otherwise pytest skips it. pip
 builds python-rocksdb only with the RocksDB library installed; conda-forge has a build of it.
 
-The pangolin tests use small networks with fixed random weights on a synthetic genome, and need no files of the
-repository:
+The pangolin tests run small networks with fixed random weights on a synthetic genome, and the published weights of
+Pangolin on an excerpt of GRCh38 chr22 in `packages/aberrant_expression/tests/pangolin/data/`, which git stores
+directly. They download the published weights (35 MB) once into the pytest cache, or into the folder in
+`ABEXP_PANGOLIN_MODELS_DIR` if set. Without network access, the tests with the published weights fail:
 ```bash
 cd packages/aberrant_expression && pytest tests/pangolin
 ```
 
 CI (`.github/workflows/packages.yml`) runs the tests of each area on pull requests and pushes to main that change
 `packages/`. It installs only the extras of the area. For the enformer tests, it fetches the test data with the same
-command and caches it. A second job installs each extra alone and imports all modules of its subpackages, so that
-a missing requirement fails. It skips the extra `rocksdb`, because pip cannot build python-rocksdb there.
+command and caches it. For the pangolin tests, it caches the published weights of Pangolin, with a key from
+`abexp/pangolin/weights.py`, which holds their SHA-256 sums. A second job installs each extra alone and imports all
+modules of its subpackages, so that a missing requirement fails. It skips the extra `rocksdb`, because pip cannot build
+python-rocksdb there.
 
 A push of new test data needs git-lfs in the pushing clone, so that its pre-push hook uploads the LFS objects.
 

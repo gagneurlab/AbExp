@@ -216,16 +216,34 @@ def test_predict_tissue_mapper(allele_type: str, chr22_example_files, output_dir
         assert tbl.shape == (num_tissues * size, 13 + 2)
 
 
+# The first row of the variant effects. Of the 10 variants of the size-10 outputs, only this one passes the filters
+# of the cases below: it lies 100 to 200 bases upstream of a TSS. Its gene has no transcript tagged Ensembl_canonical.
+FIRST_VEFF_ROW = {'chrom': 'chr22', 'strand': '-', 'gene_id': 'ENSG00000198062', 'variant_start': 16287859,
+                  'variant_end': 16287860, 'ref': 'G', 'alt': 'A', 'tissue': 'Adipose - Subcutaneous'}
+
+
+# The scores come from the size-10 outputs of the seeded RandomModel, with batch size 5 and 21 output bins.
 @enformer_group
-@pytest.mark.parametrize("aggregation_mode, upstream_tss, downstream_tss", [
-    ('logsumexp', 100, 50), ('canonical', 100, 50), ('median', 100, 50), ('weighted_sum', 100, 50),
-    ('logsumexp', 200, 50), ('canonical', 200, 50), ('median', 200, 50), ('weighted_sum', 200, 50),
+@pytest.mark.parametrize("aggregation_mode, upstream_tss, downstream_tss, num_rows, first_row", [
+    ('logsumexp', 100, 50, 0, None),
+    ('canonical', 100, 50, 0, None),
+    ('median', 100, 50, 0, None),
+    ('weighted_sum', 100, 50, 0, None),
+    # the transcripts of the gene have the isoform proportion 0 in this tissue
+    ('logsumexp', 200, 50, 53, {**FIRST_VEFF_ROW, 'ref_score': -np.inf, 'alt_score': -np.inf, 'veff_score': 0.0}),
+    ('canonical', 200, 50, 0, None),
+    ('median', 200, 50, 54, {**FIRST_VEFF_ROW, 'veff_score': -0.3584242144811321}),
+    ('weighted_sum', 200, 50, 53, {**FIRST_VEFF_ROW, 'veff_score': 0.0}),
 ])
 def test_calculate_veff(chr22_example_files, output_dir: Path,
                         enformer_tracks_path: Path, gtex_tissue_mapper_path: Path, aggregation_mode, downstream_tss,
-                        upstream_tss):
-    calculate_veff(chr22_example_files, output_dir, enformer_tracks_path, gtex_tissue_mapper_path, aggregation_mode,
-                   downstream_tss, upstream_tss)
+                        upstream_tss, num_rows, first_row):
+    output_path = calculate_veff(chr22_example_files, output_dir, enformer_tracks_path, gtex_tissue_mapper_path,
+                                 aggregation_mode, downstream_tss, upstream_tss)
+    veff_df = pl.read_parquet(output_path)
+    assert len(veff_df) == num_rows
+    if first_row is not None:
+        assert_frame_equal(veff_df.head(1), pl.DataFrame([first_row]), check_dtypes=False)
 
 
 def calculate_veff(chr22_example_files, output_dir: Path, enformer_tracks_path: Path, gtex_tissue_mapper_path: Path,

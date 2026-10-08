@@ -23,15 +23,17 @@ license = "MIT"
 license-files = ["LICENSE"]
 keywords = ["aberrant expression", "variant effect prediction", "splicing", "mmsplice", "absplice", "spliceai",
     "enformer", "deep learning", "computational biology", "bioinformatics", "genomics"]
-# The base dependencies cover abexp.utils.common and abexp.utils.models. Each extra adds the dependencies of other
-# subpackages.
-dependencies = [
-    "numpy>=1.26.4",
-    # abexp.utils.models
-    "scikit-learn",
-]
+# The base has no dependencies, because the package root and abexp.utils.common need only the standard library.
+# Each extra adds the dependencies of some subpackages. Each third-party requirement appears once in this file, with
+# its version range. An extra that needs it refers to the extra that holds it, e.g. "aberrant-expression[gff3]".
+dependencies = []
 
 [project.optional-dependencies]
+# abexp.utils.models
+models = [
+    "aberrant-expression[numpy]",
+    "scikit-learn>=1.4.1.post1",
+]
 # abexp.utils.polars_functions
 polars = [
     "polars>=1.44",
@@ -41,13 +43,17 @@ spark = [
     "pyspark>=3.4",
     "pandas",
 ]
+# abexp.utils.gff3
+gff3 = [
+    "aberrant-expression[polars]",
+    # polars-bio 0.36.0 breaks on polars 2 only in scan_table and read_table with a schema (polars-bio PR #475).
+    # Neither abexp nor kipoiseq2 calls them. bioconda has no newer polars-bio yet.
+    "polars-bio>=0.36.0",
+]
 # abexp.mmsplice and abexp.absplice
 splicing = [
-    "polars>=1.44",
-    "kipoiseq2[ranges]>=0.1,<0.2",
-    "tensorflow>=2.14.0",
+    "aberrant-expression[polars,numpy,kipoiseq2,tensorflow,tqdm]",
     "onnxruntime",
-    "tqdm",
 ]
 # SpliceAI-RocksDB (abexp.spliceai_rocksdb). SpliceAI predictions of the variants that are not in the database
 # also need spliceai, see the README.
@@ -55,27 +61,32 @@ rocksdb = [
     "aberrant-expression[splicing]",
     "python-rocksdb>=0.7",
 ]
-# abexp.enformer
+# abexp.enformer. xarray brings pandas.
 enformer = [
-    "polars>=1.44",
-    # polars-bio 0.36.0 breaks on polars 2 only in scan_table and read_table with a schema (polars-bio PR #475).
-    # Neither abexp nor kipoiseq2 calls them. bioconda has no newer polars-bio yet.
-    "polars-bio>=0.36.0",
-    "kipoiseq2[ranges]>=0.1,<0.2",
-    "tensorflow>=2.14.0",
+    "aberrant-expression[gff3,models,kipoiseq2,tensorflow,tqdm]",
     # downloads the Enformer model
     "kagglehub",
-    "pandas>=2.2.1",
     "pyarrow",
-    "scikit-learn>=1.4.1.post1",
     "xarray>=2024.5.0",
     "zarr>=2.15.0",
     "pyyaml",
-    "tqdm",
 ]
 # all extras but rocksdb, because pip builds python-rocksdb only with the RocksDB library installed
 all = [
-    "aberrant-expression[polars,spark,splicing,enformer]",
+    "aberrant-expression[models,polars,spark,gff3,splicing,enformer]",
+]
+# Requirements of several extras. Each of these extras holds one requirement and has its name.
+numpy = [
+    "numpy>=1.26.4",
+]
+kipoiseq2 = [
+    "kipoiseq2[ranges]>=0.1,<0.2",
+]
+tensorflow = [
+    "tensorflow>=2.14.0",
+]
+tqdm = [
+    "tqdm",
 ]
 dev = [
     "pytest",

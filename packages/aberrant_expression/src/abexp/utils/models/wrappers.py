@@ -1,5 +1,3 @@
-import sys
-
 import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.base import RegressorMixin
@@ -19,21 +17,19 @@ def _import_string(dotted_path):
     """
     try:
         module_path, class_name = dotted_path.rsplit('.', 1)
-    except ValueError:
+    except ValueError as err:
         msg = "%s doesn't look like a module path" % dotted_path
-        import six
-        six.reraise(ImportError, ImportError(msg), sys.exc_info()[2])
+        raise ImportError(msg) from err
 
     from importlib import import_module
     module = import_module(module_path)
 
     try:
         return getattr(module, class_name)
-    except AttributeError:
+    except AttributeError as err:
         msg = 'Module "%s" does not define a "%s" attribute/class' % (
             module_path, class_name)
-        import six
-        six.reraise(ImportError, ImportError(msg), sys.exc_info()[2])
+        raise ImportError(msg) from err
 
 
 class ModelWrapper(BaseEstimator):

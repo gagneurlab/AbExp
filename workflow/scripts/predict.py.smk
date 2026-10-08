@@ -22,8 +22,7 @@ rule predict_veff:
         featureset_config=FSET_CONFIG,
         featureset_pq=FSET_PQ_PATTERN,
         # the model to predict
-        model_joblib=lambda wildcards: config["system"]["models"][wildcards.model_type]["model"],
-        features_yaml=lambda wildcards: config["system"]["models"][wildcards.model_type]["features"],
+        model_txt=lambda wildcards: config["system"]["models"][wildcards.model_type]["model"],
     params:
         output_version=OUTPUT_VERSION["predict"],
         index_cols=['chrom', 'start', 'end', 'ref', 'alt', "gene", "transcript", "tissue", "tissue_type"],

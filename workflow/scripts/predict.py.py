@@ -27,7 +27,7 @@ import yaml
 from pprint import pprint
 
 # %%
-import joblib
+import lightgbm
 
 # %% jupyter={"outputs_hidden": false} pycharm={"name": "#%%\n"}
 import numpy as np
@@ -108,12 +108,6 @@ predict_data_df = data_df
 predict_data_df.collect_schema()
 
 # %%
-# features_list = [c for c in data_df.columns if c.startswith("feature.")]
-with open(snakemake.input["features_yaml"], "r") as fd:
-    features_list = yaml.safe_load(fd)
-features_list
-
-# %%
 # with pd.option_context('display.max_rows', None, 'display.max_columns', None):
 #     display((predict_data_df.iloc[:, predict_data_df.columns.isin(features_list)] == 0).all())
 
@@ -128,7 +122,18 @@ artifact_dir = snakemake.params["output_basedir"]
 artifact_dir
 
 # %%
-model = joblib.load(snakemake.input["model_joblib"])
+model = lightgbm.Booster(model_file=snakemake.input["model_txt"])
+
+# %%
+# the feature names of the model select the columns, in the order of training
+features_list = model.feature_name()
+missing_features = [c for c in features_list if c not in predict_data_df.collect_schema().names()]
+if len(missing_features) > 0:
+    raise ValueError(
+        f"{snakemake.input['featureset_pq']} lacks these features of the model "
+        f"{snakemake.input['model_txt']}: {missing_features}"
+    )
+features_list
 
 # %% [markdown]
 # ## Store testing predictions

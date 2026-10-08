@@ -163,8 +163,7 @@ properties:
           abexp_v1.0:
             $ref: "#/$defs/model"
             default:
-              model: "{ABEXP_DIR}/resources/models/abexp_v1.0/model.joblib"
-              features: "{ABEXP_DIR}/resources/models/abexp_v1.0/features.yaml"
+              model: "{ABEXP_DIR}/resources/models/abexp_v1.0/model.txt"
               cutoffs:
                 high_confidence: 3.3951878750977413
                 low_confidence: 1.3049192425217895
@@ -221,8 +220,7 @@ properties:
           abexp_v1.1_nobcv:
             $ref: "#/$defs/model"
             default:
-              model: "{ABEXP_DIR}/resources/models/abexp_v1.1_nobcv/model.joblib"
-              features: "{ABEXP_DIR}/resources/models/abexp_v1.1_nobcv/features.yaml"
+              model: "{ABEXP_DIR}/resources/models/abexp_v1.1_nobcv/model.txt"
               cutoffs:
                 high_confidence: 3.83833533874002
                 low_confidence: 1.63628553283956
@@ -280,8 +278,7 @@ properties:
           abexp_v1.1:
             $ref: "#/$defs/model"
             default:
-              model: "{ABEXP_DIR}/resources/models/abexp_v1.1/model.joblib"
-              features: "{ABEXP_DIR}/resources/models/abexp_v1.1/features.yaml"
+              model: "{ABEXP_DIR}/resources/models/abexp_v1.1/model.txt"
               cutoffs:
                 high_confidence: 3.83833533874002
                 low_confidence: 1.63628553283956
@@ -289,8 +286,7 @@ properties:
           abexp_v1.1_Enformer:
             $ref: "#/$defs/model"
             default:
-              model: "{ABEXP_DIR}/resources/models/abexp_v1.1_Enformer/model.joblib"
-              features: "{ABEXP_DIR}/resources/models/abexp_v1.1_Enformer/features.yaml"
+              model: "{ABEXP_DIR}/resources/models/abexp_v1.1_Enformer/model.txt"
               cutoffs:
                 high_confidence: 3.83833533874002
                 low_confidence: 1.63628553283956
@@ -310,8 +306,7 @@ $defs:
     properties:
       model:
         type: string
-      features:
-        type: string
+        description: LightGBM text model, see "Model format" in README.md.
       cutoffs:
         type: object
         properties:
@@ -323,4 +318,4 @@ $defs:
         type: array
         items:
           type: string
-    required: ["model", "features"]
+    required: ["model"]

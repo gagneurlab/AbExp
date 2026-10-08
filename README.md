@@ -164,6 +164,33 @@ Setup:
    If you already have a conda environment with the mehari Python package, set `system.mehari.conda_env`
    in the config to its name instead.
 
+## Model format
+
+The AbExp models are LightGBM text models, e.g. `resources/models/abexp_v1.1/model.txt`.
+Any LightGBM 4.x reads them with `lightgbm.Booster(model_file=...)`.
+The feature names of a model are in the `feature_names=` line of its model.txt.
+The predict rule selects the feature columns by these names, in the order of training.
+It fails if the feature set lacks one of them.
+To add a model, set `model` of an entry in `system.models`, see `workflow/schemas/config.schema.yaml`.
+
+Earlier versions stored the models as joblib pickles (`model.joblib`), which need LightGBM 3.3.
+The predict rule no longer reads them. To keep using a custom joblib model, convert it once to a text model.
+The conversion needs LightGBM 3.3, scikit-learn, joblib, and `packages/abexp_utils` for the AbExp model wrapper.
+Run it in the root of this repository:
+```bash
+mamba create -n abexp-convert -c conda-forge python=3.11 "lightgbm~=3.3" "scikit-learn<1.8" joblib
+PYTHONPATH=packages/abexp_utils/src mamba run -n abexp-convert python -c '
+import joblib
+model = joblib.load("my_model/model.joblib")
+# the shipped models wrap an LGBMRegressor; for a bare LGBMRegressor, use model.booster_
+model.model.booster_.save_model("my_model/model.txt")
+'
+```
+The `feature_names=` line of the new model.txt must list the column names of the feature set.
+With scikit-learn below 1.8, `predict()` of the joblib model also runs in this environment, e.g. to compare it with
+the text model. For an `AbExpZscoreRegressor` like the shipped models, `Booster.predict()` of the text model returns
+exactly the values of `predict()` of the joblib model.
+
 ## Using AbExp as Snakemake modules
 
 Other workflows can import all of AbExp, only the variant annotation, or single steps like VEP,

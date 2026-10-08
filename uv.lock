@@ -55,11 +55,6 @@ all = [
     { name = "xarray" },
     { name = "zarr" },
 ]
-dev = [
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "pytest-xdist" },
-]
 enformer = [
     { name = "kagglehub" },
     { name = "kipoiseq2", extra = ["ranges"] },
@@ -126,6 +121,13 @@ tqdm = [
     { name = "tqdm" },
 ]
 
+[package.dev-dependencies]
+test = [
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "pytest-xdist" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "aberrant-expression", extras = ["gff3", "models", "kipoiseq2", "tensorflow", "tqdm"], marker = "extra == 'enformer'" },
@@ -144,9 +146,6 @@ requires-dist = [
     { name = "polars-bio", marker = "extra == 'gff3'", specifier = ">=0.36.0" },
     { name = "pyarrow", marker = "extra == 'enformer'" },
     { name = "pyspark", marker = "extra == 'spark'", specifier = ">=3.4" },
-    { name = "pytest", marker = "extra == 'dev'" },
-    { name = "pytest-cov", marker = "extra == 'dev'" },
-    { name = "pytest-xdist", marker = "extra == 'dev'" },
     { name = "python-rocksdb", marker = "extra == 'rocksdb'", specifier = ">=0.7" },
     { name = "pyyaml", marker = "extra == 'enformer'" },
     { name = "scikit-learn", marker = "extra == 'models'", specifier = ">=1.4.1.post1" },
@@ -156,7 +155,14 @@ requires-dist = [
     { name = "xarray", marker = "extra == 'enformer'", specifier = ">=2024.5.0" },
     { name = "zarr", marker = "extra == 'enformer'", specifier = ">=2.15.0" },
 ]
-provides-extras = ["models", "polars", "spark", "gff3", "splicing", "rocksdb", "enformer", "pangolin", "all", "numpy", "kipoiseq2", "tensorflow", "tqdm", "dev"]
+provides-extras = ["models", "polars", "spark", "gff3", "splicing", "rocksdb", "enformer", "pangolin", "all", "numpy", "kipoiseq2", "tensorflow", "tqdm"]
+
+[package.metadata.requires-dev]
+test = [
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "pytest-xdist" },
+]
 
 [[package]]
 name = "absl-py"

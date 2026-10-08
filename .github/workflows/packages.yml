@@ -103,7 +103,7 @@ jobs:
           java-version: "17"
       - env:
           EXTRAS: ${{ matrix.extras }}
-        run: uv sync --locked --extra "$EXTRAS" --extra dev
+        run: uv sync --locked --extra "$EXTRAS" --group test
       - run: uv run pytest "tests/${{ matrix.area }}"
         working-directory: packages/aberrant_expression
 

@@ -45,7 +45,6 @@ pip install "aberrant-expression[polars] @ git+https://github.com/gagneurlab/AbE
 | `enformer` | `abexp.enformer`. For GPU support on Linux, also install `tensorflow[and-cuda]`. |
 | `all`      | all extras but `rocksdb`                                                  |
 | `numpy`, `kipoiseq2`, `tensorflow`, `tqdm` | one requirement each, which several extras share |
-| `dev`      | pytest, pytest-cov and pytest-xdist for the tests                         |
 
 The extra `rocksdb` installs python-rocksdb, which pip builds only with the RocksDB library installed; conda-forge
 has a build of it. SpliceAI predictions of the variants that are not in SpliceAI-RocksDB also need SpliceAI.
@@ -56,12 +55,16 @@ which also predicts multi-nucleotide variants:
 pip install "spliceai @ git+https://github.com/hoeze/SpliceAI.git@e3470ae185d1418fe40cf35e8c4e33431cbc5df2"
 ```
 
-For development, install the package in editable mode from a checkout of AbExp, and add `rocksdb` to the extras if
-you work on `abexp.spliceai_rocksdb`:
+For development, use the uv workspace of a checkout of AbExp. In the root of the checkout, this installs the
+package in editable mode, with all extras but `rocksdb` and with the dependency group `test` for the tests:
 
 ```bash
-pip install -e "packages/aberrant_expression[all,dev]"
+uv sync --extra all --group test
 ```
+
+Add `--extra rocksdb` if you work on `abexp.spliceai_rocksdb`.
+[packages/README.md](https://github.com/gagneurlab/AbExp/blob/main/packages/README.md) in the AbExp repository
+describes the workspace and the tests.
 
 ## abexp.utils
 

@@ -97,16 +97,19 @@ tensorflow = [
 tqdm = [
     "tqdm",
 ]
-dev = [
-    "pytest",
-    "pytest-cov",
-    "pytest-xdist",
-]
 
 [project.urls]
 Homepage = "https://github.com/gagneurlab/AbExp"
 Source = "https://github.com/gagneurlab/AbExp/tree/main/packages/aberrant_expression"
 Issues = "https://github.com/gagneurlab/AbExp/issues"
+
+# The tools that run the tests. The uv workspace at the repository root holds their version ranges.
+[dependency-groups]
+test = [
+    "pytest",
+    "pytest-cov",
+    "pytest-xdist",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

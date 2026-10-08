@@ -61,38 +61,42 @@ in `uv sync`, `uv run` and `uv build`, also in CI. uv downloads Python 3.12 if i
 may take a newer installed Python, for which some locked requirements, e.g. tensorflow, have no wheels.
 
 `uv sync` in the repository root creates the virtual environment `.venv`. It installs aberrant-expression in
-editable mode, with the extras you choose, and removes the packages that these extras do not need:
+editable mode, with the extras and dependency groups you choose. It removes the packages that these do not need.
+The dependency group `test` holds pytest and its plugins:
 ```bash
-uv sync --extra all --extra dev
+uv sync --extra all --group test
 ```
 `uv run <command>` runs a command in `.venv`. Add the extra `rocksdb` only with the RocksDB library installed,
 because uv builds python-rocksdb from its sdist.
 
 The root `pyproject.toml` sets the uv version in `required-version`. It also holds the version ranges of the test
-tools in `constraint-dependencies`, and the package lists only their names. After a change of the requirements in
-a `pyproject.toml`, run `uv lock` and commit `uv.lock`. `uv lock --check` fails if `uv.lock` does not match the
-`pyproject.toml` files, and so does `uv sync --locked` in CI.
+tools in `constraint-dependencies`, and the dependency group `test` of the package lists only their names. After a
+change of the requirements in a `pyproject.toml`, run `uv lock` and commit `uv.lock`. `uv lock --check` fails if
+`uv.lock` does not match the `pyproject.toml` files, and so does `uv sync --locked` in CI.
 
 ## Running the tests
 
 The tests are in one directory per area: `tests/utils`, `tests/enformer`, `tests/splicing`, `tests/pangolin` and
 `tests/absplice2`.
 Each area needs the extras of its subpackages: `polars`, `spark` and `gff3` for `tests/utils`, and the extra of the
-same name for the other areas. The tests run across all cores by default, through pytest-xdist. Pass `-n0` to run
-them in one process, which a debugger needs and which restores per-test output order.
+same name for the other areas. Install them with the dependency group `test`, and run pytest through `uv run`.
+`uv sync --extra all --group test` covers all areas at once. The tests run across all cores by default, through
+pytest-xdist. Pass `-n0` to run them in one process, which a debugger needs and which restores per-test output
+order.
 
 ```bash
-pip install -e "./packages/aberrant_expression[all,dev]"
-cd packages/aberrant_expression && pytest tests/utils
+uv sync --extra polars,spark,gff3 --group test
+cd packages/aberrant_expression && uv run pytest tests/utils
 ```
-The spark tests need Java.
+The spark tests need Java 17.
 
 The enformer tests read example files from `packages/aberrant_expression/tests/enformer/data/` and the chr22
 sequence from `example/chr22_hg19.fa`. git-lfs stores the files in `tests/enformer/data/`, and a clone fetches them
 only on request. Install git-lfs and fetch them once:
 ```bash
 git lfs pull --include="packages/aberrant_expression/tests/enformer/data/**" --exclude=""
-cd packages/aberrant_expression && pytest tests/enformer
+uv sync --extra enformer --group test
+cd packages/aberrant_expression && uv run pytest tests/enformer
 ```
 Without the files, pytest skips the tests that need them.
 
@@ -104,18 +108,20 @@ runs out, the download fails, and so does the pip install. `--exclude=""` in the
 The splicing tests read the files in `packages/aberrant_expression/tests/splicing/data/`, which git stores directly,
 and the chr22 sequence from `example/chr22_hg38.fa`:
 ```bash
-cd packages/aberrant_expression && pytest tests/splicing
+uv sync --extra splicing --group test
+cd packages/aberrant_expression && uv run pytest tests/splicing
 ```
 The SpliceAI-RocksDB test also needs the extra `rocksdb` and the hg38 chr22 database. Set
-`ABEXP_SPLICEAI_ROCKSDB_HG38_CHR22` to the path of `spliceAI_hg38_chr22.db`, otherwise pytest skips it. pip
-builds python-rocksdb only with the RocksDB library installed; conda-forge has a build of it.
+`ABEXP_SPLICEAI_ROCKSDB_HG38_CHR22` to the path of `spliceAI_hg38_chr22.db`, otherwise pytest skips it. uv and
+pip build python-rocksdb only with the RocksDB library installed; conda-forge has a build of it.
 
 The pangolin tests run small networks with fixed random weights on a synthetic genome, and the published weights of
 Pangolin on an excerpt of GRCh38 chr22 in `packages/aberrant_expression/tests/pangolin/data/`, which git stores
 directly. They download the published weights (35 MB) once into the pytest cache, or into the folder in
 `ABEXP_PANGOLIN_MODELS_DIR` if set. Without network access, the tests with the published weights fail:
 ```bash
-cd packages/aberrant_expression && pytest tests/pangolin
+uv sync --extra pangolin --group test
+cd packages/aberrant_expression && uv run pytest tests/pangolin
 ```
 
 The absplice2 tests run `absplice2_dna` with a stand-in for the AbSplice2 model on made-up inputs, one

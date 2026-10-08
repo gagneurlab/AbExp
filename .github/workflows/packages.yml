@@ -86,6 +86,63 @@ jobs:
       - run: pytest "tests/${{ matrix.area }}"
         working-directory: packages/aberrant_expression
 
+  # A fresh install of one extra imports all modules of its subpackages, so that a missing requirement fails.
+  imports:
+    name: imports of ${{ matrix.extra || 'the base' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # also imports its parents abexp and abexp.utils, but no other subpackage
+          - extra: ""
+            modules: abexp.utils.common
+          - extra: models
+            modules: abexp.utils.models
+          - extra: polars
+            modules: abexp.utils.polars_functions
+          - extra: spark
+            modules: abexp.utils.spark_functions
+          - extra: gff3
+            modules: abexp.utils.gff3
+          # Without the extra rocksdb, because pip builds python-rocksdb only with the RocksDB library installed.
+          # abexp.spliceai_rocksdb imports python-rocksdb only when it opens a database.
+          - extra: splicing
+            modules: abexp.mmsplice abexp.absplice abexp.spliceai_rocksdb
+          - extra: enformer
+            modules: abexp.enformer
+          - extra: pangolin
+            modules: abexp.pangolin
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          lfs: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: packages/aberrant_expression/pyproject.toml
+      - env:
+          EXTRA: ${{ matrix.extra }}
+        run: pip install "./packages/aberrant_expression${EXTRA:+[$EXTRA]}"
+      # -I: import the installed package, not the checkout
+      - env:
+          MODULES: ${{ matrix.modules }}
+        run: |
+          python -I - $MODULES <<'EOF'
+          import importlib
+          import pkgutil
+          import sys
+
+          for name in sys.argv[1:]:
+              module = importlib.import_module(name)
+              print(name)
+              for info in pkgutil.walk_packages(getattr(module, '__path__', []), f'{name}.'):
+                  importlib.import_module(info.name)
+                  print(info.name)
+          EOF
+
   build:
     name: build
     runs-on: ubuntu-latest

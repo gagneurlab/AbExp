@@ -283,6 +283,7 @@ The tests are in one directory per area, and each area needs the extras of its s
 | `tests/utils`    | `polars`, `spark`, `gff3` | nothing; the Spark tests need a Java runtime                                    |
 | `tests/enformer` | `enformer`        | the files in `tests/enformer/data/` and the hg19 chr22 sequence `example/chr22_hg19.fa` |
 | `tests/splicing` | `splicing`        | the files in `tests/splicing/data/` and the hg38 chr22 sequence `example/chr22_hg38.fa` |
+| `tests/pangolin` | `pangolin`        | nothing; the tests use small networks with fixed random weights on a synthetic genome  |
 
 The example sequences are in the AbExp repository, outside of the package. Pytest skips a test if one of its files
 is missing, e.g. in an sdist.
@@ -297,6 +298,7 @@ cd packages/aberrant_expression
 pytest tests/utils
 pytest tests/enformer
 pytest tests/splicing
+pytest tests/pangolin
 ```
 
 The tests run across all cores by default, through pytest-xdist. Pass `-n0` to run them in one process, which a

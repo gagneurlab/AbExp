@@ -1,0 +1,114 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+title: veff module
+description: >-
+  Variant effect annotation: prepared VCFs in, per-variant features out. Combines the modules
+  vep, mehari, loftee, tissue_specific_vep, absplice, enformer and nmd_scanner; the inputs come
+  from the modules vcf_prep and gtf_transcripts. The sections vep, mehari, loftee,
+  tissue_specific_vep, absplice, enformer and nmd_scanner are passed to these modules; their
+  config.schema.yaml lists the options.
+type: object
+additionalProperties: false
+
+properties:
+  vcf:
+    type: string
+    pattern: "\\{vcf_file\\}"
+    description: >-
+      Stripped VCFs with the variant IDs `CHROM:POS0:END:REF>ALT`, as a pattern with the
+      wildcard {vcf_file}, e.g. the stripped VCFs of the vcf_prep module.
+  valid_vcf:
+    type: string
+    pattern: "\\{vcf_file\\}"
+    description: >-
+      The variants with only valid REF and ALT alleles, e.g. the valid variant VCFs of the vcf_prep
+      module. AbSplice also needs the tabix index `<vcf>.tbi`; the vcf_prep module creates it on request.
+  vcf_parquet:
+    type: string
+    pattern: "\\{vcf_file\\}"
+    description: The variants as parquet, e.g. the vcf.parquet output of the vcf_prep module.
+  gtf_transcripts:
+    type: string
+    description: Transcripts of the genome annotation, e.g. the output of the gtf_transcripts module.
+  output_dir:
+    type: string
+    description: The annotations go to <output_dir>/<module>/veff.parquet/<vcf_file>.parquet.
+  resources_dir:
+    type: string
+    description: Downloaded and built resources, shared by the modules. Default is <output_dir>/resources.
+  human_genome_version:
+    type: string
+    enum: ["hg19", "hg38"]
+  fasta_file:
+    type: string
+  fasta_file_idx:
+    type: string
+    description: Index of `fasta_file`. Default is `fasta_file` + ".fai".
+  gff3_file:
+    type: string
+    description: >-
+      The GENCODE genome annotation (GFF3) that `gtf_transcripts` comes from. mehari builds its
+      transcript database from it, and loftee reads it by default.
+  chrom_alias_tsv:
+    type: string
+    description: Mapping of chromosome names, the same as for the vcf_prep module, e.g. its resources/chromAlias.tsv.
+  annotator:
+    type: string
+    enum: ["vep", "mehari"]
+    default: "vep"
+    description: Transcript consequence annotation that tissue_specific_vep aggregates.
+  vep:
+    type: object
+    default: {}
+    description: Options of the vep module.
+  mehari:
+    type: object
+    default: {}
+    description: >-
+      Options of the mehari module. The module is only loaded for `annotator: "mehari"` or if
+      `gencode_transcripts_fasta` is given. Its `gencode_gff3` defaults to `gff3_file`.
+  loftee:
+    type: object
+    default: {}
+    description: >-
+      Options of the loftee module (reloftee). The module is only loaded for
+      `loftee.enabled: true`. Its `genome_annotation` defaults to `gff3_file`.
+  tissue_specific_vep:
+    type: object
+    default: {}
+    description: Options of the tissue_specific_vep module.
+  absplice:
+    type: object
+    default: {}
+    description: Options of the absplice module.
+  enformer:
+    type: object
+    default: {}
+    description: Options of the enformer module.
+  nmd_scanner:
+    type: object
+    default: {}
+    description: >-
+      Options of the nmd_scanner module. The module is only loaded for
+      `nmd_scanner.enabled: true`, and then needs its own `gtf_file`: NMD-Scanner 0.2.0 reads
+      only GTF.
+
+if:
+  properties:
+    annotator:
+      const: "mehari"
+  required: ["annotator"]
+then:
+  properties:
+    mehari:
+      required: ["gencode_transcripts_fasta"]
+
+required:
+  - vcf
+  - valid_vcf
+  - vcf_parquet
+  - gtf_transcripts
+  - output_dir
+  - human_genome_version
+  - fasta_file
+  - gff3_file
+  - chrom_alias_tsv

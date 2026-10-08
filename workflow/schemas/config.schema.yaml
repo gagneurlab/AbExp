@@ -1,0 +1,311 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+title: AbExp configuration
+description: |
+  Configuration of the AbExp pipeline. `validate` in the Snakefile fills in the defaults.
+  String values may use these placeholders:
+    {RESULTS_DIR}, {RESOURCES_DIR}, {VCF_INPUT_DIR}, {HUMAN_GENOME_VERSION}: set by the Snakefile.
+    {ABEXP_DIR}: the AbExp repository; only as prefix, e.g. "{ABEXP_DIR}/resources/models/...".
+    Double braces, e.g. {{vcf_file}}: Snakemake wildcards or values filled in by the rules.
+  The workflow combines the modules workflow/modules/vcf_prep, gtf_transcripts and veff
+  (variant annotation). The sections system.vep, system.mehari, system.loftee,
+  system.absplice, system.enformer and system.nmd_scanner go to the submodules of veff; the
+  config.schema.yaml of each submodule lists their options.
+type: object
+
+properties:
+  vcf_input_dir:
+    type: string
+    description: All `.vcf|.vcf.gz|.vcf.bgz|.bcf` files in this folder are annotated.
+  vcf_is_normalized:
+    type: boolean
+    default: false
+    description: >-
+      True if all variants are left-normalized and biallelic (`bcftools norm -cs -m`) and the
+      contig names start with "chr". Otherwise, the pipeline normalizes the variants.
+  output_dir:
+    type: string
+  predict_abexp_models:
+    type: array
+    items:
+      type: string
+    default: ["abexp_v1.1"]
+    description: Models in `system.models` to predict with.
+  human_genome_version:
+    type: string
+    enum: ["hg19", "hg38"]
+  fasta_file:
+    type: string
+  fasta_file_idx:
+    type: string
+    description: Index of `fasta_file`. Default is `fasta_file` + ".fai".
+  gff3_file:
+    type: string
+    description: >-
+      GENCODE genome annotation (GFF3) of the `human_genome_version`. gtf_transcripts and
+      mehari read it; the loftee module also reads it by default.
+  chrom_alias_tsv:
+    type: string
+    description: >-
+      Mapping of chromosome names. Default is resources/chromAlias.tsv of the vcf_prep module,
+      which maps them to the "chr" prefix.
+  veff:
+    type: object
+    default: {}
+    additionalProperties: false
+    properties:
+      annotator:
+        type: string
+        enum: ["vep", "mehari"]
+        default: "vep"
+        description: Tool for the transcript consequence annotation.
+      mehari_gencode_transcripts_fasta:
+        type: string
+        description: >-
+          Only for "mehari": GENCODE transcript sequences (FASTA) of the same release as
+          `gff3_file`. The pipeline builds the mehari transcript database from the two files.
+    if:
+      properties:
+        annotator:
+          const: "mehari"
+      required: ["annotator"]
+    then:
+      required: ["mehari_gencode_transcripts_fasta"]
+
+  system:
+    type: object
+    default: {}
+    additionalProperties: false
+    description: Settings of the local installation, e.g. the paths to the VEP cache, CADD and LOFTEE.
+    properties:
+      dirs:
+        type: object
+        default: {}
+        additionalProperties: false
+        properties:
+          fset_dir_pattern:
+            type: string
+            description: feature set directory
+            default: "{RESULTS_DIR}/fset/{{feature_set}}"
+          resources_dir:
+            type: string
+            description: default directory for downloaded resources
+            default: "{RESULTS_DIR}/resources"
+
+      expected_expression_tsv:
+        type: string
+        default: "{RESOURCES_DIR}/gtex_v8_expected_expression.tsv"
+      expected_expression_pq:
+        type: string
+        default: "{RESOURCES_DIR}/gtex_v8_expected_expression.parquet"
+      expected_expression_url:
+        type: string
+        default: "https://zenodo.org/records/13895620/files/gtex_v8_expected_expression.tsv?download=1"
+      isoform_proportions_tsv:
+        type: string
+        description: Passed to the tissue_specific_vep module.
+      isoform_proportions_pq:
+        type: string
+        description: Passed to the tissue_specific_vep module.
+
+      vcf_file_endings:
+        type: array
+        items:
+          type: string
+        default: [".vcf", ".vcf.gz", ".vcf.bgz", ".bcf"]
+
+      vep:
+        type: object
+        default: {}
+        description: Options of the vep module (workflow/modules/veff/vep/config.schema.yaml).
+      mehari:
+        type: object
+        default: {}
+        description: Options of the mehari module (workflow/modules/veff/mehari/config.schema.yaml).
+      loftee:
+        type: object
+        default: {}
+        description: Options of the loftee module (workflow/modules/veff/loftee/config.schema.yaml).
+      absplice:
+        type: object
+        default: {}
+        description: Options of the absplice module (workflow/modules/veff/absplice/config.schema.yaml).
+      enformer:
+        type: object
+        default: {}
+        description: Options of the enformer module (workflow/modules/veff/enformer/config.schema.yaml).
+      nmd_scanner:
+        type: object
+        default: {}
+        description: Options of the nmd_scanner module (workflow/modules/veff/nmd_scanner/config.schema.yaml).
+      models:
+        type: object
+        default: {}
+        description: >-
+          AbExp models, by name. The shipped models are always defined; more can be added.
+        additionalProperties:
+          $ref: "#/$defs/model"
+        properties:
+          abexp_v1.0:
+            $ref: "#/$defs/model"
+            default:
+              model: "{ABEXP_DIR}/resources/models/abexp_v1.0/model.joblib"
+              features: "{ABEXP_DIR}/resources/models/abexp_v1.0/features.yaml"
+              cutoffs:
+                high_confidence: 3.3951878750977413
+                low_confidence: 1.3049192425217895
+              predict_tissues:
+                - "Adipose - Subcutaneous"
+                - "Adipose - Visceral (Omentum)"
+                - "Adrenal Gland"
+                - "Artery - Aorta"
+                - "Artery - Coronary"
+                - "Artery - Tibial"
+                - "Brain - Amygdala"
+                - "Brain - Anterior cingulate cortex (BA24)"
+                - "Brain - Caudate (basal ganglia)"
+                - "Brain - Cerebellar Hemisphere"
+                - "Brain - Cerebellum"
+                - "Brain - Cortex"
+                - "Brain - Frontal Cortex (BA9)"
+                - "Brain - Hippocampus"
+                - "Brain - Hypothalamus"
+                - "Brain - Nucleus accumbens (basal ganglia)"
+                - "Brain - Putamen (basal ganglia)"
+                - "Brain - Spinal cord (cervical c-1)"
+                - "Brain - Substantia nigra"
+                - "Breast - Mammary Tissue"
+                - "Cells - EBV-transformed lymphocytes"
+                - "Cells - Cultured fibroblasts"
+                - "Colon - Sigmoid"
+                - "Colon - Transverse"
+                - "Esophagus - Gastroesophageal Junction"
+                - "Esophagus - Mucosa"
+                - "Esophagus - Muscularis"
+                - "Heart - Atrial Appendage"
+                - "Heart - Left Ventricle"
+                # - "Kidney - Cortex"
+                - "Liver"
+                - "Lung"
+                - "Minor Salivary Gland"
+                - "Muscle - Skeletal"
+                - "Nerve - Tibial"
+                - "Ovary"
+                - "Pancreas"
+                - "Pituitary"
+                - "Prostate"
+                - "Skin - Not Sun Exposed (Suprapubic)"
+                - "Skin - Sun Exposed (Lower leg)"
+                - "Small Intestine - Terminal Ileum"
+                - "Spleen"
+                - "Stomach"
+                - "Testis"
+                - "Thyroid"
+                - "Uterus"
+                - "Vagina"
+                - "Whole Blood"
+          abexp_v1.1_nobcv:
+            $ref: "#/$defs/model"
+            default:
+              model: "{ABEXP_DIR}/resources/models/abexp_v1.1_nobcv/model.joblib"
+              features: "{ABEXP_DIR}/resources/models/abexp_v1.1_nobcv/features.yaml"
+              cutoffs:
+                high_confidence: 3.83833533874002
+                low_confidence: 1.63628553283956
+              # the same tissues for all v1.1 models
+              predict_tissues: &v1_1_tissues
+                - "Adipose - Subcutaneous"
+                - "Adipose - Visceral (Omentum)"
+                - "Adrenal Gland"
+                - "Artery - Aorta"
+                - "Artery - Coronary"
+                - "Artery - Tibial"
+                - "Brain - Amygdala"
+                - "Brain - Anterior cingulate cortex (BA24)"
+                - "Brain - Caudate (basal ganglia)"
+                - "Brain - Cerebellar Hemisphere"
+                - "Brain - Cerebellum"
+                - "Brain - Cortex"
+                - "Brain - Frontal Cortex (BA9)"
+                - "Brain - Hippocampus"
+                - "Brain - Hypothalamus"
+                - "Brain - Nucleus accumbens (basal ganglia)"
+                - "Brain - Putamen (basal ganglia)"
+                - "Brain - Spinal cord (cervical c-1)"
+                - "Brain - Substantia nigra"
+                - "Breast - Mammary Tissue"
+                - "Cells - EBV-transformed lymphocytes"
+                - "Cells - Cultured fibroblasts"
+                - "Colon - Sigmoid"
+                - "Colon - Transverse"
+                - "Esophagus - Gastroesophageal Junction"
+                - "Esophagus - Mucosa"
+                - "Esophagus - Muscularis"
+                - "Heart - Atrial Appendage"
+                - "Heart - Left Ventricle"
+                - "Kidney - Cortex"
+                - "Liver"
+                - "Lung"
+                - "Minor Salivary Gland"
+                - "Muscle - Skeletal"
+                - "Nerve - Tibial"
+                - "Ovary"
+                - "Pancreas"
+                - "Pituitary"
+                - "Prostate"
+                - "Skin - Not Sun Exposed (Suprapubic)"
+                - "Skin - Sun Exposed (Lower leg)"
+                - "Small Intestine - Terminal Ileum"
+                - "Spleen"
+                - "Stomach"
+                - "Testis"
+                - "Thyroid"
+                - "Uterus"
+                - "Vagina"
+                - "Whole Blood"
+          abexp_v1.1:
+            $ref: "#/$defs/model"
+            default:
+              model: "{ABEXP_DIR}/resources/models/abexp_v1.1/model.joblib"
+              features: "{ABEXP_DIR}/resources/models/abexp_v1.1/features.yaml"
+              cutoffs:
+                high_confidence: 3.83833533874002
+                low_confidence: 1.63628553283956
+              predict_tissues: *v1_1_tissues
+          abexp_v1.1_Enformer:
+            $ref: "#/$defs/model"
+            default:
+              model: "{ABEXP_DIR}/resources/models/abexp_v1.1_Enformer/model.joblib"
+              features: "{ABEXP_DIR}/resources/models/abexp_v1.1_Enformer/features.yaml"
+              cutoffs:
+                high_confidence: 3.83833533874002
+                low_confidence: 1.63628553283956
+              predict_tissues: *v1_1_tissues
+
+required:
+  - vcf_input_dir
+  - output_dir
+  - human_genome_version
+  - fasta_file
+  - gff3_file
+
+$defs:
+  model:
+    type: object
+    additionalProperties: false
+    properties:
+      model:
+        type: string
+      features:
+        type: string
+      cutoffs:
+        type: object
+        properties:
+          high_confidence:
+            type: number
+          low_confidence:
+            type: number
+      predict_tissues:
+        type: array
+        items:
+          type: string
+    required: ["model", "features"]

@@ -1,0 +1,27 @@
+import os
+
+from snakemake.utils import min_version, validate
+
+min_version("9.0")
+
+# Aggregates a per-transcript consequence table (vep or mehari module) per variant, gene and
+# GTEx tissue, weighted by the GTEx isoform proportions. See config.schema.yaml.
+validate(config, "config.schema.yaml")
+
+# Rules use `conda: CONDA_ENV_YAML_DIR.join("<env>.yaml")`, which does not depend on the folder
+# of the rule file. `workflow.current_basedir` is also correct if this is a module.
+CONDA_ENV_YAML_DIR = workflow.current_basedir.join("envs")
+
+OUTPUT_DIR = os.path.abspath(config["output_dir"])
+RESOURCES_DIR = os.path.abspath(config.get("resources_dir", f"{OUTPUT_DIR}/resources"))
+
+CONSEQUENCES_PQ_PATTERN = config["consequences"]
+GTF_TRANSCRIPTS_PQ = config["gtf_transcripts"]
+CHROM_ALIAS_TSV = config["chrom_alias_tsv"]
+
+ISOFORM_PROPORTIONS_URL = config["isoform_proportions_url"]
+ISOFORM_PROPORTIONS_TSV = config.get("isoform_proportions_tsv", f"{RESOURCES_DIR}/gtex_v8_isoform_proportions.tsv")
+ISOFORM_PROPORTIONS_PQ = config.get("isoform_proportions_pq", f"{RESOURCES_DIR}/gtex_v8_isoform_proportions.parquet")
+
+
+include: "tissue_specific_vep.py.smk"

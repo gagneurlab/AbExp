@@ -1,0 +1,106 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+title: enformer module
+description: Enformer variant effects on the expression of the closest transcripts, mapped to GTEx tissues.
+type: object
+additionalProperties: false
+
+properties:
+  vcf:
+    type: string
+    pattern: "\\{vcf_file\\}"
+    description: Input VCFs, as a pattern with the wildcard {vcf_file}, e.g. the stripped VCFs of the vcf_prep module.
+  gtf_transcripts:
+    type: string
+    description: Transcripts of the genome annotation, e.g. the output of the gtf_transcripts module.
+  output_dir:
+    type: string
+    description: >-
+      The output is <output_dir>/enformer/veff.parquet/<vcf_file>.parquet. Temporary files go to
+      <output_dir>/enformer/<human_genome_version>.
+  resources_dir:
+    type: string
+    description: Base of the default reference score paths. Default is <output_dir>/resources.
+  human_genome_version:
+    type: string
+    enum: ["hg19", "hg38"]
+  fasta_file:
+    type: string
+  download_reference:
+    type: boolean
+    default: true
+    description: Whether to download the pre-calculated reference scores or generate them locally
+  enformer_ref:
+    type: object
+    additionalProperties: false
+    description: >-
+      Reference scores per genome version; `{chromosome}` is filled in. Default is
+      <resources_dir>/enformer_<genome>/chrom={chromosome}/data.parquet.
+    properties:
+      hg19:
+        type: string
+      hg38:
+        type: string
+  reference_urls:
+    type: object
+    description: Download URLs of the pre-calculated reference scores per genome version.
+    default:
+      hg19: "https://zenodo.org/records/14900896/files/enformer_hg19.tar?download=1"
+      hg38: "https://zenodo.org/records/14900896/files/enformer_hg38.tar?download=1"
+  tissue_mapper_pkl:
+    type: string
+    description: Default is resources/tissue_mapper.pkl of this module.
+  tracks_yml:
+    type: string
+    description: Default is resources/tracks.yaml of this module.
+  use_gpu:
+    type: boolean
+    default: false
+  batch_size:
+    type: integer
+    default: 2
+  isoform_aggregation_mode:
+    type: string
+    default: "canonical"
+  variant_upstream_tss:
+    type: integer
+    default: 50
+  variant_downstream_tss:
+    type: integer
+    default: 200
+  canonical_only:
+    type: boolean
+    description: Whether to calculate the variant effect only for the canonical transcripts
+    default: true
+  protein_coding_only:
+    type: boolean
+    description: Whether to calculate the variant effect only for the protein coding transcripts
+    default: true
+  chromosomes:
+    type: array
+    items:
+      type: string
+    description: the chromosomes in which to look for transcripts
+    default: ["chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9", "chr10", "chr11",
+              "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21",
+              "chr22", "chrX", "chrY"]
+  num_agg_central_bins:
+    type: integer
+    description: How many central bins to average over?
+    default: 3
+  shift:
+    type: integer
+    description: Enformer will be run 3 times, once centered on the TSS, and +-<shift> from the TSS
+    default: 43
+  num_output_bins:
+    type: integer
+    description: >-
+      How many bins to save from each run. A smaller number will save space, since
+      we only care about the central bins (close to the TSS)
+    default: 21
+
+required:
+  - vcf
+  - gtf_transcripts
+  - output_dir
+  - human_genome_version
+  - fasta_file

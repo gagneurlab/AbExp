@@ -1,0 +1,38 @@
+import os
+
+from snakemake.utils import min_version, validate
+
+min_version("9.0")
+
+# Annotates the variants with VEP, including LOFTEE and CADD, and parses the result into a
+# per-transcript table. The input VCFs need the variant IDs `CHROM:POS0:END:REF>ALT` that the
+# vcf_prep module sets. See config.schema.yaml.
+validate(config, "config.schema.yaml")
+
+# Rules use `conda: CONDA_ENV_YAML_DIR.join("<env>.yaml")`, which does not depend on the folder
+# of the rule file. `workflow.current_basedir` is also correct if this is a module.
+CONDA_ENV_YAML_DIR = workflow.current_basedir.join("envs")
+
+OUTPUT_DIR = os.path.abspath(config["output_dir"])
+RESOURCES_DIR = os.path.abspath(config.get("resources_dir", f"{OUTPUT_DIR}/resources"))
+
+HUMAN_GENOME_VERSION = config["human_genome_version"]
+ASSEMBLY = {"hg19": "GRCh37", "hg38": "GRCh38"}[HUMAN_GENOME_VERSION]
+
+FASTA_FILE = os.path.abspath(config["fasta_file"])
+CHROM_ALIAS_TSV = config["chrom_alias_tsv"]
+VCF_FILE_PATTERN = config["vcf"]
+
+# VEP settings; `{vep_version}` and `{human_genome_assembly}` are filled in by the rules
+VEP = {
+    "version": config["version"],
+    "vep_bin": config["vep_bin"],
+    "perl_bin": config["perl_bin"],
+    "vep_cache_dir": config.get("vep_cache_dir", f"{RESOURCES_DIR}/{{vep_version}}"),
+    "cadd_dir": config.get("cadd_dir", f"{RESOURCES_DIR}/{{human_genome_assembly}}"),
+    "loftee_data_dir": config.get("loftee_data_dir", f"{RESOURCES_DIR}/{{human_genome_assembly}}"),
+    "loftee_src_path": config.get("loftee_src_path", f"{RESOURCES_DIR}/{{human_genome_assembly}}_src"),
+}
+
+
+include: "vep.smk"

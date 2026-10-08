@@ -1,0 +1,91 @@
+projectTitle: AbExp
+
+vcf_input_dir: "example/clinvar_chr22"
+# set this to True if you are sure that the variants are already normalized
+# and contig names start with "chr"
+vcf_is_normalized: False
+
+output_dir: "example/output_hg38"
+# output_dir: "example/output_hg19"
+
+predict_abexp_models:
+  - "abexp_v1.1"
+#  - "abexp_v1.1_Enformer"
+#  - "abexp_v1.1_nobcv"
+
+
+human_genome_version: "hg38"
+# human_genome_version: "hg19"
+
+fasta_file: "example/chr22_hg38.fa"
+# fasta_file: "example/chr22_hg19.fa"
+
+# fasta file index is by default `fasta_file + ".fai"` but could be changed here:
+# fasta_file_idx: "example/chr22_hg38.fa.fai"
+# fasta_file_idx: "example/chr22_hg19.fa.fai"
+
+# GENCODE genome annotation (GFF3)
+gff3_file: "example/chr22.gencode.v40.annotation.gff3.gz"
+# gff3_file: "example/chr22.gencode.v40lift37.annotation.gff3.gz"
+
+veff:
+  # tool for the transcript consequence annotation: "vep" (default) or "mehari".
+  annotator: "vep"
+  # only for "mehari": GENCODE transcript sequences (FASTA) of the same release as
+  # `gff3_file`. The pipeline builds the mehari transcript database from the two files;
+  # misc/mehari/download_gencode.sh fetches them. See "Using mehari instead of VEP" in the
+  # README.
+  # mehari_gencode_transcripts_fasta: "data/gencode/release_40/gencode.v40.transcripts.fa.gz"
+
+# mapping of chromosome names. By default, maps them to "chr" prefix
+# (workflow/modules/vcf_prep/resources/chromAlias.tsv).
+# chrom_alias_tsv: "my_chromAlias.tsv"
+
+# Settings of the local installation. All options and their defaults are in
+# workflow/schemas/config.schema.yaml; the options of vep, mehari, absplice and enformer
+# are in workflow/modules/veff/<module>/config.schema.yaml.
+system:
+  # canonical_transcript_pq: "/s/project/rep/processed/training_results_v14/general/gtex_canonical_transcript.parquet"
+  # subtissue_level_isoform_contribution_scores_pq: "/s/project/rep/processed/training_results_v14/general/gtex_subtissue_level_pext_scores.parquet"
+  # expressed_genes_pq: "/s/project/rep/processed/training_results_v14/gtex_v8/gene_is_expressed_per_subtissue.parquet"
+  # gtex_expected_expr: "/s/project/rep/processed/training_results_v14/gtex_v8/feature_sets/expected_expr.py/data.parquet"
+
+  vep:
+    version: 108
+    vep_bin: "vep"
+    perl_bin: "perl"
+    vep_cache_dir: "/s/raw/vep/{vep_version}"
+    cadd_dir: "/s/raw/cadd/v1.6/{human_genome_assembly}"
+    loftee_data_dir: "/s/raw/loftee/{human_genome_assembly}"
+    loftee_src_path: "/s/raw/loftee/{human_genome_assembly}_src"
+
+  # mehari:
+  #   transcripts_db: "/s/raw/mehari/{human_genome_assembly}.txs.bin.zst"
+  #   conda_env: "abexp-mehari"
+
+  # reloftee on `gff3_file`; needs an existing conda environment with reloftee
+  # loftee:
+  #   enabled: True
+  #   conda_env: "reloftee"
+
+  # NMD-Scanner 0.2.0 reads only GTF: set the GTF of the same GENCODE release
+  # nmd_scanner:
+  #   enabled: True
+  #   gtf_file: "data/gencode/release_40/gencode.v40.annotation.gtf.gz"
+
+
+  #enformer:
+  #  download_reference: True
+  #  use_gpu: True
+  #  batch_size: 2
+  # variant_upstream_tss: 50
+  # variant_downstream_tss: 200
+
+  # absplice:
+  #   splicemap:
+  #     psi3: '/path/to/splicemaps/splicemap_{genome}/{tissue}_splicemap_psi3_method=kn_event_filter=median_cutoff.csv.gz'
+  #     psi5: '/path/to/splicemaps/splicemap_{genome}/{tissue}_splicemap_psi5_method=kn_event_filter=median_cutoff.csv.gz'
+  #   use_spliceai_rocksdb: True
+  #   spliceai_rocksdb_path:
+  #     hg19: '/path/to/spliceai_rocksdb/spliceAI_hg19_chr{chromosome}.db'
+  #     hg38: '/path/to/spliceai_rocksdb/spliceAI_hg38_chr{chromosome}.db'

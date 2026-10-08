@@ -1,0 +1,161 @@
+import os
+
+from snakemake.utils import min_version, validate
+
+min_version("9.0")
+
+# Variant effect annotation: prepared VCFs in, per-variant features out. Combines the modules
+# in the subfolders; each of them can also be imported alone. The inputs come from the modules
+# vcf_prep and gtf_transcripts. See config.schema.yaml.
+validate(config, "config.schema.yaml")
+
+# the annotation modules write to <output_dir>/<module output>
+VEFF_DIR = os.path.abspath(config["output_dir"])
+RESOURCES_DIR = os.path.abspath(config.get("resources_dir", f"{VEFF_DIR}/resources"))
+
+STRIPPED_VCF = config["vcf"]
+VALID_VCF = config["valid_vcf"]
+VCF_PQ = config["vcf_parquet"]
+GTF_TRANSCRIPTS = config["gtf_transcripts"]
+CHROM_ALIAS_TSV = config["chrom_alias_tsv"]
+GENOME = {
+    "human_genome_version": config["human_genome_version"],
+    "fasta_file": config["fasta_file"],
+}
+ANNOTATOR = config["annotator"]
+
+
+def optional(cfg, *keys):
+    return {k: cfg[k] for k in keys if k in cfg}
+
+
+VEP_CONFIG = {
+    **config["vep"],
+    "vcf": STRIPPED_VCF,
+    "output_dir": VEFF_DIR,
+    "resources_dir": RESOURCES_DIR,
+    **GENOME,
+    "chrom_alias_tsv": CHROM_ALIAS_TSV,
+}
+
+module vep:
+    snakefile: "vep/Snakefile"
+    config: VEP_CONFIG
+
+use rule * from vep
+
+CONSEQUENCES = str(rules.veff__vep_parse.output.veff_pq)
+
+
+# builds its transcript database from gff3_file and the GENCODE transcript FASTA; the config
+# schema requires the FASTA for `annotator: "mehari"`
+if ANNOTATOR == "mehari" or "gencode_transcripts_fasta" in config["mehari"]:
+    MEHARI_CONFIG = {
+        "gencode_gff3": config["gff3_file"],
+        **config["mehari"],
+        "vcf": STRIPPED_VCF,
+        "output_dir": VEFF_DIR,
+        "resources_dir": RESOURCES_DIR,
+        **GENOME,
+        **optional(config, "fasta_file_idx"),
+        "chrom_alias_tsv": CHROM_ALIAS_TSV,
+    }
+
+    module mehari:
+        snakefile: "mehari/Snakefile"
+        config: MEHARI_CONFIG
+
+    use rule * from mehari
+
+    if ANNOTATOR == "mehari":
+        CONSEQUENCES = str(rules.veff__mehari_annotation.output.veff_pq)
+
+
+# off by default: needs a conda environment with reloftee (see loftee/config.schema.yaml).
+# reloftee calls its own consequences from the VCF and its genome_annotation (default
+# gff3_file), independently of the annotator above.
+if config["loftee"].get("enabled"):
+    LOFTEE_CONFIG = {
+        "genome_annotation": config["gff3_file"],
+        **config["loftee"],
+        "vcf": STRIPPED_VCF,
+        "output_dir": VEFF_DIR,
+        "resources_dir": RESOURCES_DIR,
+        **GENOME,
+        **optional(config, "fasta_file_idx"),
+    }
+
+    module loftee:
+        snakefile: "loftee/Snakefile"
+        config: LOFTEE_CONFIG
+
+    use rule * from loftee
+
+
+TISSUE_SPECIFIC_VEP_CONFIG = {
+    **config["tissue_specific_vep"],
+    "consequences": CONSEQUENCES,
+    "gtf_transcripts": GTF_TRANSCRIPTS,
+    "output_dir": VEFF_DIR,
+    "resources_dir": RESOURCES_DIR,
+    "chrom_alias_tsv": CHROM_ALIAS_TSV,
+}
+
+module tissue_specific_vep:
+    snakefile: "tissue_specific_vep/Snakefile"
+    config: TISSUE_SPECIFIC_VEP_CONFIG
+
+use rule * from tissue_specific_vep
+
+
+ABSPLICE_CONFIG = {
+    **config["absplice"],
+    "valid_vcf": VALID_VCF,
+    "vcf_parquet": VCF_PQ,
+    "output_dir": VEFF_DIR,
+    "resources_dir": RESOURCES_DIR,
+    **GENOME,
+    "chrom_alias_tsv": CHROM_ALIAS_TSV,
+}
+
+module absplice:
+    snakefile: "absplice/Snakefile"
+    config: ABSPLICE_CONFIG
+
+use rule * from absplice
+
+
+ENFORMER_CONFIG = {
+    **config["enformer"],
+    "vcf": STRIPPED_VCF,
+    "gtf_transcripts": GTF_TRANSCRIPTS,
+    "output_dir": VEFF_DIR,
+    "resources_dir": RESOURCES_DIR,
+    **GENOME,
+}
+
+module enformer:
+    snakefile: "enformer/Snakefile"
+    config: ENFORMER_CONFIG
+
+use rule * from enformer
+
+
+# off by default: needs its own conda environment, and its output is not read by
+# tissue_specific_vep, fset or predict. NMD-Scanner 0.2.0 reads only GTF, so the section
+# nmd_scanner has its own gtf_file.
+if config["nmd_scanner"].get("enabled"):
+    NMD_SCANNER_CONFIG = {
+        **config["nmd_scanner"],
+        "vcf": STRIPPED_VCF,
+        "output_dir": VEFF_DIR,
+        "resources_dir": RESOURCES_DIR,
+        **GENOME,
+        **optional(config, "fasta_file_idx"),
+    }
+
+    module nmd_scanner:
+        snakefile: "nmd_scanner/Snakefile"
+        config: NMD_SCANNER_CONFIG
+
+    use rule * from nmd_scanner

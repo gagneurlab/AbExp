@@ -1,0 +1,40 @@
+import os
+
+from snakemake.utils import min_version, validate
+
+min_version("9.0")
+
+# Prepares the input VCFs for the annotation modules: renames the contigs, normalizes the
+# variants, strips everything but the variants and sets the variant IDs
+# `CHROM:POS0:END:REF>ALT`, which the annotation modules read. See config.schema.yaml.
+validate(config, "config.schema.yaml")
+
+# Rules use `conda: CONDA_ENV_YAML_DIR.join("<env>.yaml")`, which does not depend on the folder
+# of the rule file. `workflow.current_basedir` is also correct if this is a module.
+CONDA_ENV_YAML_DIR = workflow.current_basedir.join("envs")
+
+OUTPUT_DIR = os.path.abspath(config["output_dir"])
+
+FASTA_FILE = os.path.abspath(config["fasta_file"])
+FASTA_INDEX_FILE = os.path.abspath(config.get("fasta_file_idx", config["fasta_file"] + ".fai"))
+CHROM_ALIAS_TSV = config.get("chrom_alias_tsv") or workflow.source_path("resources/chromAlias.tsv")
+VCF_HEADER = config.get("vcf_header") or workflow.source_path("resources/header.vcf")
+
+VCF_FILE_ENDINGS = config["vcf_file_endings"]
+VCF_FILE_REGEX = "(" + "|".join([e.replace(".", r"\.") for e in VCF_FILE_ENDINGS]) + ")"
+
+VCF_INPUT_FILE_PATTERN = config["vcf"]
+NORMALIZED_VCF_FILE_PATTERN = f"{OUTPUT_DIR}/normalized_vcf/{{vcf_file}}.vcf.gz"
+if config["vcf_is_normalized"]:
+    NORMALIZED_VCF_FILE_PATTERN = VCF_INPUT_FILE_PATTERN
+STRIPPED_VCF_FILE_PATTERN = f"{OUTPUT_DIR}/stripped_vcf/{{vcf_file}}.vcf.gz"
+VALID_VARIANTS_VCF_FILE_PATTERN = f"{OUTPUT_DIR}/valid_variants_vcf/{{vcf_file}}.vcf.gz"
+VCF_PQ_FILE_PATTERN = f"{OUTPUT_DIR}/vcf.parquet/{{vcf_file}}.parquet"
+
+FORMATTED_VCF_HEADER = f"{OUTPUT_DIR}/header.vcf"
+CHROM_ALIAS_WSV = f"{OUTPUT_DIR}/chrom_alias.wsv"
+CHROM_TARGETS_FILE = f"{OUTPUT_DIR}/chrom_targets.txt"
+
+
+include: "extract_vcf_variants.smk"
+include: "vcf2parquet.smk"

@@ -1,0 +1,38 @@
+import os
+
+from snakemake.utils import min_version, validate
+
+min_version("9.0")
+
+# NMD-Scanner (https://github.com/gagneurlab/NMD-Scanner) scans variants for premature
+# termination codons and evaluates its NMD escape rules on the transcripts of a GTF file.
+# It writes NMD-Scanner's own per-transcript, per-variant table, unchanged. See
+# config.schema.yaml.
+validate(config, "config.schema.yaml")
+
+# Rules use `conda: CONDA_ENV_YAML_DIR.join("<env>.yaml")`, which does not depend on the folder
+# of the rule file. `workflow.current_basedir` is also correct if this is a module.
+CONDA_ENV_YAML_DIR = workflow.current_basedir.join("envs")
+
+OUTPUT_DIR = os.path.abspath(config["output_dir"])
+RESOURCES_DIR = os.path.abspath(config.get("resources_dir", f"{OUTPUT_DIR}/resources"))
+
+HUMAN_GENOME_VERSION = config["human_genome_version"]
+
+FASTA_FILE = os.path.abspath(config["fasta_file"])
+FASTA_INDEX_FILE = os.path.abspath(config.get("fasta_file_idx", config["fasta_file"] + ".fai"))
+GTF_FILE = os.path.abspath(config["gtf_file"])
+VCF_FILE_PATTERN = config["vcf"]
+
+# NMD-Scanner recommends recomputing the exon numbers for GENCODE annotations built against
+# hg19, which numbered the exons of minus-strand transcripts the other way round. hg38
+# annotations do not need it.
+REASSIGN_EXONS = config.get("reassign_exons", HUMAN_GENOME_VERSION == "hg19")
+
+# conda environment of the nmd_scanner rule: envs/nmd_scanner_env.yaml (built by
+# `snakemake --sdm conda`), or the name of an existing environment with the nmd_scanner
+# Python package (`conda_env`)
+NMD_SCANNER_CONDA_ENV = config.get("conda_env") or CONDA_ENV_YAML_DIR.join("nmd_scanner_env.yaml")
+
+
+include: "nmd_scanner.smk"

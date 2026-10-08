@@ -1,0 +1,21 @@
+name: abexp-mehari
+
+channels:
+- conda-forge
+- bioconda
+
+dependencies:
+# bioconda publishes mehari-python (the Python bindings; the bioconda package "mehari" is
+# only the CLI binary) for py312 and py313 builds. Pinned to py313: the py312 build of
+# 0.46.0 (py312hb3c3c00_0) does not contain the CDS-padding fix (mehari pull request
+# #1062) that this version bump is for, even though it carries the same version number;
+# the py313 build (py313h045a65b_0) does. Revisit the pin once bioconda ships a corrected
+# py312 build.
+- python>=3.13,<3.14
+- ipykernel
+- numpy
+- pyyaml
+- polars>=1.39
+- pyarrow
+- tqdm
+- bioconda::mehari-python=0.46.0

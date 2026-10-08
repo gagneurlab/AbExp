@@ -1,0 +1,64 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+title: vep module
+description: >-
+  Annotates the variants with VEP, including LOFTEE and CADD, and parses the result into a
+  per-transcript table.
+type: object
+additionalProperties: false
+
+properties:
+  vcf:
+    type: string
+    pattern: "\\{vcf_file\\}"
+    description: >-
+      Input VCFs, as a pattern with the wildcard {vcf_file}. They need the variant IDs
+      `CHROM:POS0:END:REF>ALT`, e.g. the stripped VCFs of the vcf_prep module.
+  output_dir:
+    type: string
+    description: The output is <output_dir>/vep/veff.parquet/<vcf_file>.parquet.
+  resources_dir:
+    type: string
+    description: Base of the default VEP, CADD and LOFTEE paths. Default is <output_dir>/resources.
+  human_genome_version:
+    type: string
+    enum: ["hg19", "hg38"]
+  fasta_file:
+    type: string
+  chrom_alias_tsv:
+    type: string
+    description: Mapping of chromosome names, the same as for the vcf_prep module, e.g. its resources/chromAlias.tsv.
+  version:
+    type: integer
+    default: 108
+    description: VEP version; selects envs/vep_env.v<version>.yaml.
+  vep_bin:
+    type: string
+    default: "vep"
+  perl_bin:
+    type: string
+    default: "perl"
+  vep_cache_dir:
+    type: string
+    description: VEP cache; `{vep_version}` is filled in. Default is <resources_dir>/{vep_version}.
+  cadd_dir:
+    type: string
+    description: >-
+      CADD v1.6 files; `{human_genome_assembly}` is filled in. Default is
+      <resources_dir>/{human_genome_assembly}.
+  loftee_data_dir:
+    type: string
+    description: >-
+      LOFTEE data; `{human_genome_assembly}` is filled in. Default is
+      <resources_dir>/{human_genome_assembly}.
+  loftee_src_path:
+    type: string
+    description: >-
+      LOFTEE source code; `{human_genome_assembly}` is filled in. Default is
+      <resources_dir>/{human_genome_assembly}_src.
+
+required:
+  - vcf
+  - output_dir
+  - human_genome_version
+  - fasta_file
+  - chrom_alias_tsv

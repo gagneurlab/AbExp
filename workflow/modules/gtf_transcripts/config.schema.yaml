@@ -1,0 +1,17 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+title: gtf_transcripts module
+description: Converts the transcripts of a GENCODE GFF3 file to parquet.
+type: object
+additionalProperties: false
+
+properties:
+  gff3_file:
+    type: string
+    description: GENCODE genome annotation (GFF3), gzip allowed.
+  output_dir:
+    type: string
+    description: The output is <output_dir>/gtf_transcripts.parquet.
+
+required:
+  - gff3_file
+  - output_dir

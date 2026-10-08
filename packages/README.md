@@ -91,8 +91,7 @@ breaking change bumps the minor version.
 The tag `aberrant-expression-v0.0.1` marks the first state of aberrant-expression, which the conda environments pin
 until the first release. The tag has no GitHub release, so release-please finds no release of aberrant-expression.
 The first release PR therefore counts all commits since the `bootstrap-sha` in `release-please-config.json` and
-proposes 0.1.0. The tags `abexp-utils-v0.0.1`, `kipoi-enformer-v0.0.1` and
-`abexp-splicing-v0.0.1` mark the three former distributions, for old checkouts.
+proposes 0.1.0.
 
 The release PR bumps:
 - the version in `pyproject.toml` and the `CHANGELOG.md` of the package

@@ -11,9 +11,9 @@ dependencies:
   # reloftee's own runtime dependencies (its pyproject.toml). reloftee itself has no public
   # git repository, so it is not installed here: point the module's `conda_env` option at an
   # environment that already has the reloftee package installed instead.
-  - polars
+  - "polars>=1.44"
   - pyfaidx
   - pyBigWig
   - pyarrow
   - "biopython>=1.87"
-  - "polars-bio>=0.31"
+  - "polars-bio>=0.36.1"

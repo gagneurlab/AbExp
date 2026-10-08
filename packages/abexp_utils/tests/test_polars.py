@@ -150,3 +150,25 @@ def test_join_featuresets():
 
     # Assert Equality
     assert result_df.equals(expected_df), f"Expected:\n{expected_df}\nGot:\n{result_df}"
+
+
+def test_join_featuresets_with_initial_df():
+    # the default join "outer" with an initial_df, which polars 2 names "full"
+    initial_df = pl.DataFrame({"id": [1, 3]})
+    df1 = pl.DataFrame({
+        "id": [1, 2],
+        "data1": [
+            {"nested": {"field1": 10}},
+            {"nested": {"field1": 30}}
+        ]
+    })
+    variables = {"df1": {"data1": {"nested": ["field1"]}}}
+
+    expected_df = pl.DataFrame({
+        "id": [1, 2, 3],
+        "feature.df1@data1.nested.field1": [10, 30, None],
+    })
+
+    result_df = pl_funcs.join_featuresets({"df1": df1}, variables, ["id"], initial_df=initial_df)
+
+    assert result_df.sort("id").equals(expected_df), f"Expected:\n{expected_df}\nGot:\n{result_df}"

@@ -24,9 +24,8 @@ dependencies = [
     # downloads the Enformer model
     "kagglehub",
     "tensorflow>=2.14.0",
-    # kipoiseq2 0.1 needs polars 1.37.1
-    "polars>=1.37.1",
-    "polars-bio>=0.31",
+    "polars>=1.44",
+    "polars-bio>=0.36.1",
     "scikit-learn>=1.4.1.post1",
     "zarr>=2.15.0",
     "xarray>=2024.5.0",

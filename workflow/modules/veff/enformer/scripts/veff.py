@@ -1,5 +1,5 @@
-from kipoi_enformer.enformer import EnformerVeff
-from kipoi_enformer.logger import setup_logger
+from abexp.enformer.enformer import EnformerVeff
+from abexp.enformer.logger import setup_logger
 import pandas as pd
 import polars as pl
 
@@ -16,7 +16,7 @@ logger.info(f'Running veff on {wildcards["vcf_file"]}')
 logger.info(params)
 
 gtf_df = pd.read_parquet(input_['gtf_path'])
-veff = EnformerVeff(isoforms_path=None, gtf=gtf_df)
+veff = EnformerVeff(isoforms_path=None, genome_annotation=gtf_df)
 veff.run(input_['ref_tissue_paths'], input_['vcf_tissue_path'], output[0],
          aggregation_mode=config['isoform_aggregation_mode'],
          upstream_tss=None,

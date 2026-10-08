@@ -1,5 +1,5 @@
-from kipoi_enformer.enformer import EnformerAggregator
-from kipoi_enformer.logger import setup_logger
+from abexp.enformer.enformer import EnformerAggregator
+from abexp.enformer.logger import setup_logger
 
 # SNAKEMAKE SCRIPT
 input_ = snakemake.input

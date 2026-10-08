@@ -1,5 +1,5 @@
-from kipoi_enformer.enformer import EnformerTissueMapper
-from kipoi_enformer.logger import setup_logger
+from abexp.enformer.enformer import EnformerTissueMapper
+from abexp.enformer.logger import setup_logger
 
 # SNAKEMAKE SCRIPT
 params = snakemake.params

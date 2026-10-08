@@ -175,12 +175,23 @@ To add a model, set `model` of an entry in `system.models`, see `workflow/schema
 
 Earlier versions stored the models as joblib pickles (`model.joblib`), which need LightGBM 3.3.
 The predict rule no longer reads them. To keep using a custom joblib model, convert it once to a text model.
-The conversion needs LightGBM 3.3, scikit-learn, joblib, and `packages/abexp_utils` for the AbExp model wrapper.
+The conversion needs LightGBM 3.3, scikit-learn, joblib, and `packages/aberrant_expression` for the AbExp model
+wrapper. The pickles name the module of the wrapper by its old name, `abexp_utils.models.wrappers` or
+`rep.models.wrappers`, so the conversion maps both to `abexp.utils.models.wrappers`.
 Run it in the root of this repository:
 ```bash
 mamba create -n abexp-convert -c conda-forge python=3.11 "lightgbm~=3.3" "scikit-learn<1.8" joblib
-PYTHONPATH=packages/abexp_utils/src mamba run -n abexp-convert python -c '
+PYTHONPATH=packages/aberrant_expression/src mamba run -n abexp-convert python -c '
 import joblib
+import joblib.numpy_pickle
+
+class Unpickler(joblib.numpy_pickle.NumpyUnpickler):
+    def find_class(self, module, name):
+        if module in ("abexp_utils.models.wrappers", "rep.models.wrappers"):
+            module = "abexp.utils.models.wrappers"
+        return super().find_class(module, name)
+
+joblib.numpy_pickle.NumpyUnpickler = Unpickler
 model = joblib.load("my_model/model.joblib")
 # the shipped models wrap an LGBMRegressor; for a bare LGBMRegressor, use model.booster_
 model.model.booster_.save_model("my_model/model.txt")
@@ -380,9 +391,9 @@ The dict has one key per step. A step is one rule or several rules that must cha
 predictions of the reference and the alternative sequences. A new value reruns the rules of the step, and the
 rules downstream of them rerun because their input changed.
 - In a commit that changes outputs, bump the key of the earliest step whose outputs change, e.g. after a new tool
-  version in a conda environment or a changed script. For example, if a new kipoi-enformer release changes the
-  scores of the Enformer tissue mapper, bump `"tissue"` in `workflow/modules/veff/enformer/Snakefile`. The tissue
-  rules and all rules downstream of them rerun, but not the Enformer predictions.
+  version in a conda environment or a changed script. For example, if a new aberrant-expression release changes
+  the scores of the Enformer tissue mapper, bump `"tissue"` in `workflow/modules/veff/enformer/Snakefile`. The
+  tissue rules and all rules downstream of them rerun, but not the Enformer predictions.
 - A conda environment can serve several steps, e.g. the TensorFlow environment of Enformer and SpliceAI. After a
   change of such an environment, bump each step whose outputs change.
 - Do not bump a key for changes that keep the outputs, e.g. a comment.
@@ -407,24 +418,25 @@ to date and records the new params. Do this only if the last run finished and no
 because `--touch` also marks outputs as up to date that need a rerun. Alternatively,
 `--cleanup-metadata <files>` deletes the recorded params of the given outputs.
 
-## Python packages
+## Python package
 
-`packages/` contains the Python packages `abexp-utils`, `kipoi-enformer` and `abexp-splicing`, which the workflow
-uses. abexp-splicing holds the parts of MMSplice, AbSplice and SpliceAI-RocksDB that the absplice module runs,
-ported to kipoiseq2. The conda environments install the packages from this repository, pinned to their release
-tags. So a change of a package takes effect in the workflow only with its next release.
-[packages/README.md](packages/README.md) describes how to test, release and publish them.
+`packages/aberrant_expression` contains the Python distribution aberrant-expression, which the workflow imports as
+`abexp`. Its subpackages are `abexp.utils`, `abexp.enformer`, and `abexp.mmsplice`, `abexp.absplice` and
+`abexp.spliceai_rocksdb`: the parts of MMSplice, AbSplice and SpliceAI-RocksDB that the absplice module runs, ported
+to kipoiseq2. The conda environments install the package from this repository, pinned to its release tag. So a
+change of the package takes effect in the workflow only with its next release.
+[packages/README.md](packages/README.md) describes how to test, release and publish it.
 
 ## Releases
 
 release-please releases the workflow from the conventional commits on main, see
 `.github/workflows/release-please.yml`. The release PR updates `CHANGELOG.md` and `TAG` in the module example
 above. Merging it creates the tag `vX.Y.Z` and the GitHub release. Commits that change only files in `packages/`
-do not count for the workflow, because the packages have their own releases.
+do not count for the workflow, because the package has its own releases.
 
 ## License
 All source code and model weights in this repository are licensed under the [MIT license](./LICENSE).
-The Python packages in `packages/` carry their own MIT license files.
+The Python package in `packages/` carries its own MIT license file.
 
 **Please note:** AbExp relies on [CADD](https://cadd.gs.washington.edu/) and [SpliceAI](https://github.com/Illumina/SpliceAI/), both of which are free to use only in non-commercial settings.
 If you plan to use AbExp in a commercial context, please ensure that you have the appropriate permissions or licenses to use both tools.

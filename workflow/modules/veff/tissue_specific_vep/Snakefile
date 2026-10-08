@@ -16,7 +16,7 @@ SHARED_CONDA_ENV_YAML_DIR = workflow.current_basedir.join("../envs")
 # One version per step. Bump the key of the earliest step whose outputs change, see
 # "When jobs rerun" in README.md.
 OUTPUT_VERSION = {
-    "tissue_specific_vep": 1,
+    "tissue_specific_vep": 2,
 }
 
 OUTPUT_DIR = os.path.abspath(config["output_dir"])

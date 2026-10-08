@@ -1,12 +1,12 @@
 # aberrant-expression
 
 tl;dr: The Python packages of the [AbExp](https://github.com/gagneurlab/AbExp) pipeline, in one distribution. pip
-installs it as `aberrant-expression`, and Python imports it as `abexp`. The base dependencies cover only
-`abexp.utils.common` and `abexp.utils.models`; each extra adds the dependencies of other subpackages.
+installs it as `aberrant-expression`, and Python imports it as `abexp`. The base has no dependencies and covers
+`abexp.utils.common`; each extra adds the dependencies of other subpackages.
 
 | import                   | contents                                                                                  | extra      |
 | ------------------------ | ----------------------------------------------------------------------------------------- | ---------- |
-| `abexp.utils`            | functions on polars and Spark DataFrames, and the scikit-learn model wrappers of AbExp     | `polars`, `spark` |
+| `abexp.utils`            | functions on polars and Spark DataFrames, a GFF3 reader, and the scikit-learn model wrappers of AbExp | `polars`, `spark`, `gff3`, `models` |
 | `abexp.enformer`         | variant effect prediction of promoter variants with Enformer                              | `enformer` |
 | `abexp.mmsplice`         | MMSplice and the junction VCF dataloaders                                                 | `splicing` |
 | `abexp.absplice`         | AbSplice-DNA from MMSplice with SpliceMaps and from SpliceAI                              | `splicing` |
@@ -33,13 +33,16 @@ pip install "aberrant-expression[polars] @ git+https://github.com/gagneurlab/AbE
 
 | extra      | for                                                                       |
 | ---------- | ------------------------------------------------------------------------- |
+| `models`   | `abexp.utils.models`                                                      |
 | `polars`   | `abexp.utils.polars_functions`                                            |
 | `spark`    | `abexp.utils.spark_functions`. The Spark functions need a Java runtime; pyspark 4 requires Java 17 or newer. |
+| `gff3`     | `abexp.utils.gff3`                                                        |
 | `splicing` | `abexp.mmsplice` and `abexp.absplice`                                     |
 | `rocksdb`  | `abexp.spliceai_rocksdb`, with `splicing`                                 |
 | `pangolin` | `abexp.pangolin`. conda-forge has PyTorch as `pytorch-cpu` and `pytorch-gpu`. |
 | `enformer` | `abexp.enformer`. For GPU support on Linux, also install `tensorflow[and-cuda]`. |
 | `all`      | all extras but `rocksdb`                                                  |
+| `numpy`, `kipoiseq2`, `tensorflow`, `tqdm` | one requirement each, which several extras share |
 | `dev`      | pytest, pytest-cov and pytest-xdist for the tests                         |
 
 The extra `rocksdb` installs python-rocksdb, which pip builds only with the RocksDB library installed; conda-forge
@@ -61,9 +64,9 @@ pip install -e "packages/aberrant_expression[all,dev]"
 ## abexp.utils
 
 `abexp.utils.polars_functions` and `abexp.utils.spark_functions` reshape polars and Spark DataFrames and join the
-feature sets of AbExp. `abexp.utils.models` holds the scikit-learn model wrappers of the AbExp models.
-`abexp.utils.gff3` reads GFF3 files with polars-bio for `abexp.enformer` and `abexp.pangolin`, and needs the extra
-`enformer` or `pangolin`.
+feature sets of AbExp. `abexp.utils.models` holds the scikit-learn model wrappers of the AbExp models, and needs the
+extra `models`. `abexp.utils.gff3` reads GFF3 files with polars-bio for `abexp.enformer` and `abexp.pangolin`, and
+needs the extra `gff3`.
 
 ## abexp.enformer
 

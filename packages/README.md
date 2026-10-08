@@ -4,9 +4,27 @@ tl;dr: `aberrant_expression/` holds the Python distribution aberrant-expression,
 `abexp`. The workflow installs it from this repository, pinned to its release tag. release-please releases it. A
 change of the package reaches the workflow only with its next release.
 
-| directory             | distribution          | import                                                                                        | tag                              |
-| --------------------- | --------------------- | --------------------------------------------------------------------------------------------- | -------------------------------- |
-| `aberrant_expression` | `aberrant-expression` | `abexp.utils`, `abexp.enformer`, `abexp.mmsplice`, `abexp.absplice`, `abexp.spliceai_rocksdb` | `aberrant-expression-v<version>` |
+| directory             | distribution          | import                                                                                                          | tag                              |
+| --------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| `aberrant_expression` | `aberrant-expression` | `abexp.utils`, `abexp.enformer`, `abexp.mmsplice`, `abexp.absplice`, `abexp.spliceai_rocksdb`, `abexp.pangolin` | `aberrant-expression-v<version>` |
+
+The base of aberrant-expression has no dependencies. Each extra adds the requirements of some subpackages:
+
+| extra      | subpackages                        | requirements, and the extras it refers to                                                     |
+| ---------- | ---------------------------------- | --------------------------------------------------------------------------------------------- |
+| `models`   | `abexp.utils.models`               | scikit-learn, `numpy`                                                                         |
+| `polars`   | `abexp.utils.polars_functions`     | polars                                                                                        |
+| `spark`    | `abexp.utils.spark_functions`      | pyspark, pandas                                                                               |
+| `gff3`     | `abexp.utils.gff3`                 | polars-bio, `polars`                                                                          |
+| `splicing` | `abexp.mmsplice`, `abexp.absplice` | onnxruntime, `polars`, `numpy`, `kipoiseq2`, `tensorflow`, `tqdm`                             |
+| `rocksdb`  | `abexp.spliceai_rocksdb`           | python-rocksdb, `splicing`                                                                    |
+| `enformer` | `abexp.enformer`                   | kagglehub, pyarrow, xarray, zarr, pyyaml, `gff3`, `models`, `kipoiseq2`, `tensorflow`, `tqdm` |
+| `pangolin` | `abexp.pangolin`                   | torch, `gff3`, `numpy`, `kipoiseq2`                                                           |
+| `all`      | all but `abexp.spliceai_rocksdb`   | all extras but `rocksdb`                                                                      |
+
+`pyproject.toml` names each third-party requirement once, with its version range. An extra that needs a requirement
+refers to the extra that holds it, e.g. `pangolin` lists `aberrant-expression[gff3]` for polars-bio. The extras
+`numpy`, `kipoiseq2`, `tensorflow` and `tqdm` hold one requirement each, which several extras share.
 
 aberrant-expression replaces three distributions: abexp-utils (`abexp_utils`, now `abexp.utils`), kipoi-enformer
 (`kipoi_enformer`, now `abexp.enformer`) and abexp-splicing (`abexp.mmsplice`, `abexp.absplice` and
@@ -19,6 +37,8 @@ now `abexp.enformer.enformer`. The name `abexp` on PyPI belongs to an unrelated 
 The conda environments install aberrant-expression with pip from a git URL of this repository, pinned to a release
 tag, e.g. `...@aberrant-expression-v0.0.1#subdirectory=packages/aberrant_expression`:
 - the extra `polars` in `workflow/envs/abexp-veff-py.yaml`
+- the extra `pangolin` in `workflow/modules/veff/absplice2/envs/absplice2-pangolin-cpu.yaml` and
+  `absplice2-pangolin-cuda.yaml`
 - the extras `enformer`, `splicing` and `rocksdb` in `workflow/modules/veff/envs/abexp-tensorflow-cpu.yaml` and
   `abexp-tensorflow-cuda.yaml`
 
@@ -126,8 +146,9 @@ Bump them by hand once bioconda has published the version.
 
 The recipe would build one noarch package from the archive of the release tag on GitHub:
 - `aberrant-expression-base` installs all code, with the base dependencies.
-- The metapackages `aberrant-expression-polars`, `-spark`, `-splicing`, `-rocksdb` and `-enformer` add the
-  dependencies of each extra, and pin `-base` to the same build. `-rocksdb` depends on `-splicing`.
+- The metapackages `aberrant-expression-models`, `-polars`, `-spark`, `-gff3`, `-splicing`, `-rocksdb`,
+  `-enformer` and `-pangolin` add the dependencies of each extra, and pin `-base` to the same build. Like the
+  extras, `-rocksdb` depends on `-splicing`, and `-enformer` and `-pangolin` depend on `-gff3`.
 - `aberrant-expression` depends on all of them.
 
 Before that, kipoiseq2 needs a bioconda recipe, and bioconda needs polars-bio 0.36.1.

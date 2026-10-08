@@ -18,4 +18,4 @@ dependencies:
   # reads the AbSplice2 model, an ExplainableBoostingClassifier of interpret 0.2.7
   - interpret-core==0.2.7
   # packages/aberrant_expression of this repository at its release tag. release-please bumps the tag.
-  - "aberrant-expression[absplice2] @ git+https://github.com/gagneurlab/AbExp.git@aberrant-expression-v0.0.1#subdirectory=packages/aberrant_expression"  # x-release-please-version
+  - "aberrant-expression[absplice2] @ git+https://github.com/gagneurlab/AbExp.git@aberrant-expression-v0.1.0#subdirectory=packages/aberrant_expression"  # x-release-please-version

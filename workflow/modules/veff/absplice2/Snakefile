@@ -47,7 +47,9 @@ PANGOLIN_MODELS_DIR = f"{RESOURCES_DIR}/absplice2/pangolin_models"
 PANGOLIN_MODEL_FILES = [f"final.{replicate}.{head}.3.v2" for head in (0, 2, 4, 6) for replicate in (1, 2, 3)]
 # Pangolin takes the annotated splice sites from the exons of the transcripts with one of these
 # tags in gff3_file. The default tags are those of the databases that Pangolin publishes for
-# GENCODE v38.
+# GENCODE v38. The lift37 files lack Ensembl_canonical for some genes (v40: 287 of 20,118 protein-coding
+# genes). The three appris tags mark a transcript for these genes. Do not replace them by the
+# appris_principal_1 to _5 of GENCODE: these tag many transcripts of genes that have a canonical one.
 PANGOLIN_TRANSCRIPT_TAGS = config.get(
     "pangolin_transcript_tags",
     {

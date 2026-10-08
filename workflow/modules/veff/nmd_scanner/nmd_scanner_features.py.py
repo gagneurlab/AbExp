@@ -113,7 +113,7 @@ nmd_df = nmd_df.join(isoform_proportions_df, on=["gene", "transcript"], how="inn
 #
 # w is the weight and s the `nmd_pred_score` of a transcript. Sums skip a missing w. A feature that
 # uses w is null if no transcript of the group has a weight, i.e. if the gene has null weights in
-# the tissue.
+# the tissue. `nmd_pred_score.weighted_mean` is also null if the w of the group add up to 0.
 #
 # `alt_has_ptc.proportion` is the sum of w over the PTC transcripts, and `num_ptc` is their number.
 # The other features come from the scored transcripts only. They are null for a variant, gene and
@@ -139,8 +139,8 @@ ptc_features = [
 score_features = [
     weighted((weight * score).sum()).alias("nmd_pred_score.weighted_sum"),
     weighted((weight * pl.col("nmd_escape")).sum()).alias("nmd_escape.proportion"),
-    # NaN if all w are 0
-    weighted((weight * score).sum() / weight.sum()).alias("nmd_pred_score.weighted_mean"),
+    # null if all w are 0
+    weighted(pl.when(weight.sum() > 0).then((weight * score).sum() / weight.sum())).alias("nmd_pred_score.weighted_mean"),
     score.max().alias("nmd_pred_score"),
     score.median().alias("nmd_pred_score.median"),
     score.mean().alias("nmd_pred_score.mean"),

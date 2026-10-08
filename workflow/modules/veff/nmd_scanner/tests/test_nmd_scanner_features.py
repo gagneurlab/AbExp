@@ -288,6 +288,39 @@ def test_gene_without_weights(tmp_path, median):
     ]
 
 
+def test_ptc_transcripts_without_weight_in_gene_with_weights(tmp_path):
+    transcripts = [
+        Transcript("ENST00000000001", "ok", True, nmd_pred_score=2.0),
+        Transcript("ENST00000000002", "ok", True, nmd_pred_score=1.0, nmd_escape=True),
+    ]
+    # The medians add up to 1, but both PTC transcripts have the median 0.
+    proportions = [
+        IsoformProportion("ENST00000000001", 0.0),
+        IsoformProportion("ENST00000000002", 0.0),
+        IsoformProportion("ENST00000000003", 1.0),
+    ]
+
+    assert run_features(tmp_path, transcripts, proportions) == [
+        features_row(
+            **{
+                "alt_has_ptc.proportion": 0.0,
+                "num_ptc": 2,
+                "nmd_pred_score.weighted_sum": 0.0,
+                "nmd_escape.proportion": 0.0,
+                "nmd_pred_score.weighted_mean": None,
+                "nmd_pred_score": 2.0,
+                "nmd_pred_score.median": 1.5,
+                "nmd_pred_score.mean": 1.5,
+                "nmd_pred_score.std": 0.5**0.5,
+                "nmd_pred_score.high_proportion_weighted_max": 0.0,
+                "num_escape": 1,
+                "nmd_pred_score.high_expr_max": None,
+            },
+            **flag_features(0.0, 0.0),
+        )
+    ]
+
+
 def test_medians_that_sum_to_more_than_1(tmp_path):
     transcripts = [
         Transcript("ENST00000000001", "ok", True, nmd_pred_score=1.0),

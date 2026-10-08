@@ -7,9 +7,10 @@ min_version("9.0")
 # Converts the transcripts of a GENCODE GFF3 file to parquet. See config.schema.yaml.
 validate(config, "config.schema.yaml")
 
-# Rules use `conda: CONDA_ENV_YAML_DIR.join("<env>.yaml")`, which does not depend on the folder
-# of the rule file. `workflow.current_basedir` is also correct if this is a module.
-CONDA_ENV_YAML_DIR = workflow.current_basedir.join("envs")
+# Rules use `conda: SHARED_CONDA_ENV_YAML_DIR.join("<env>.yaml")`, which does not depend on the
+# folder of the rule file. `workflow.current_basedir` is also correct if this is a module. The
+# rules run in the light Python environment of the veff modules, in workflow/modules/veff/envs.
+SHARED_CONDA_ENV_YAML_DIR = workflow.current_basedir.join("../veff/envs")
 
 # One version per step. Bump the key of the earliest step whose outputs change, see
 # "When jobs rerun" in README.md.

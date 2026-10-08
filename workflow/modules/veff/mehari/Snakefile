@@ -9,9 +9,10 @@ min_version("9.0")
 # consequence terms. LoF and NMD calls are not part of this module. See config.schema.yaml.
 validate(config, "config.schema.yaml")
 
-# Rules use `conda: CONDA_ENV_YAML_DIR.join("<env>.yaml")`, which does not depend on the folder
-# of the rule file. `workflow.current_basedir` is also correct if this is a module.
-CONDA_ENV_YAML_DIR = workflow.current_basedir.join("envs")
+# Rules use `conda: SHARED_CONDA_ENV_YAML_DIR.join("<env>.yaml")`, which does not depend on the
+# folder of the rule file. `workflow.current_basedir` is also correct if this is a module. The
+# conda environments that several veff modules use are in workflow/modules/veff/envs.
+SHARED_CONDA_ENV_YAML_DIR = workflow.current_basedir.join("../envs")
 
 # One version per step. Bump the key of the earliest step whose outputs change, see
 # "When jobs rerun" in README.md.
@@ -36,9 +37,9 @@ MEHARI_GENCODE_TRANSCRIPTS_FASTA = os.path.abspath(config["gencode_transcripts_f
 MEHARI_TRANSCRIPTS_DB = config.get(
     "transcripts_db", f"{RESOURCES_DIR}/mehari/{{human_genome_assembly}}.txs.bin.zst"
 ).format(human_genome_assembly=ASSEMBLY)
-# conda environment of the mehari rules: envs/mehari_env.yaml (built by `snakemake --sdm conda`),
+# conda environment of the mehari rules: the shared veff-py.yaml (built by `snakemake --sdm conda`),
 # or the name of an existing environment with the mehari Python package (`conda_env`)
-MEHARI_CONDA_ENV = config.get("conda_env") or CONDA_ENV_YAML_DIR.join("mehari_env.yaml")
+MEHARI_CONDA_ENV = config.get("conda_env") or SHARED_CONDA_ENV_YAML_DIR.join("veff-py.yaml")
 
 
 include: "mehari.smk"

@@ -25,7 +25,7 @@ Ensembl release N + 66.
 
 mehari 0.45.1 imports GENCODE GFF3 files incorrectly and pads incomplete CDS on
 minus-strand transcripts wrong (fixed upstream in pull request #1062). Both are fixed
-in the 0.46.0 release, which `workflow/modules/veff/mehari/envs/mehari_env.yaml`
+in the 0.46.0 release, which `workflow/modules/veff/envs/veff-py.yaml`
 installs from bioconda.
 
 ## GRCh37

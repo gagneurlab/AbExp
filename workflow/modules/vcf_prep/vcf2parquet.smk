@@ -12,7 +12,7 @@ rule vcf_to_parquet:
     wildcard_constraints:
         vcf_file=f".+(?:{'|'.join(VCF_FILE_ENDINGS)})",
     conda:
-        CONDA_ENV_YAML_DIR.join("vcf_prep.yaml")
+        SHARED_CONDA_ENV_YAML_DIR.join("veff-py.yaml")
     shell:
         """
         env

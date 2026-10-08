@@ -47,7 +47,7 @@ rule veff__nmd_scanner_score:
     params:
         output_version=OUTPUT_VERSION["score"],
     conda:
-        CONDA_ENV_YAML_DIR.join("nmd_features_env.yaml")
+        SHARED_CONDA_ENV_YAML_DIR.join("veff-py.yaml")
     script:
         "nmd_scanner_score.py.py"
 
@@ -71,7 +71,7 @@ if ISOFORM_PROPORTIONS_PQ:
         params:
             output_version=OUTPUT_VERSION["features"],
         conda:
-            CONDA_ENV_YAML_DIR.join("nmd_features_env.yaml")
+            SHARED_CONDA_ENV_YAML_DIR.join("veff-py.yaml")
         script:
             "nmd_scanner_features.py.py"
 

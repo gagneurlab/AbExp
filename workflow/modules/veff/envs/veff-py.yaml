@@ -1,12 +1,19 @@
-# Python environment of the modules vep, tissue_specific_vep and absplice.
+# Light Python environment of the modules vcf_prep and gtf_transcripts, and of the veff modules vep,
+# tissue_specific_vep, absplice, mehari, loftee and nmd_scanner. NMD-Scanner itself runs in
+# nmd_scanner/envs/nmd_scanner_env.yaml.
 name: abexp-veff-py-small
 
 channels:
 - conda-forge
+- bioconda
 
 dependencies:
-- python
+# Python 3.13: bioconda's py312 build of mehari-python 0.46.0 (py312hb3c3c00_0) lacks the
+# CDS-padding fix of mehari pull request #1062, although it has the same version number. The
+# py313 build (py313h045a65b_0) has it.
+- python=3.13
 - ipython
+- ipykernel
 - numpy
 - pyarrow
 - polars>=1.44
@@ -14,3 +21,25 @@ dependencies:
 - tqdm
 # downloads
 - wget
+# vcf_prep
+- bioconda::bcftools
+# tabix
+- bioconda::htslib
+- bioconda::vcf2parquet>=0.4
+# mehari
+- bioconda::mehari-python=0.46.0
+# reloftee's own runtime dependencies (its pyproject.toml). reloftee itself has no public git
+# repository, so it is not installed here: point the loftee module's `conda_env` option at an
+# environment that already has the reloftee package installed instead.
+- pyfaidx
+- pybigwig
+- biopython>=1.87
+# the NMD features of nmd_scanner: the CPU build, because the rules run the model on the CPU, and
+# the CUDA build is much larger
+- onnxruntime=1.30.0=*_cpu
+# not imported by the rules, but a dependency of aberrant-expression and reloftee: conda installs it, not pip
+- polars-bio>=0.36.0
+- pip
+- pip:
+  # packages/aberrant_expression of this repository at its release tag. release-please bumps the tag.
+  - "aberrant-expression[gff3] @ git+https://github.com/gagneurlab/AbExp.git@aberrant-expression-v0.1.0#subdirectory=packages/aberrant_expression"  # x-release-please-version

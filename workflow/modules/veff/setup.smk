@@ -7,4 +7,5 @@ rule veff__setup:
         rules.veff__loftee_setup.input if config["loftee"].get("enabled") else [],
         rules.veff__tissue_specific_vep_setup.input,
         rules.veff__absplice_setup.input,
+        rules.veff__absplice2_setup.input if config["absplice2"].get("enabled") else [],
     localrule: True

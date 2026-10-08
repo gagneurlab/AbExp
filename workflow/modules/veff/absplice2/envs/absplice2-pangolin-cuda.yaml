@@ -1,0 +1,24 @@
+# Pangolin in the version of AbSplice2 (a fork of tkzeng/Pangolin), and gffutils for its
+# annotation database.
+# absplice2-pangolin-cpu.yaml is the same with the CPU build of PyTorch.
+name: abexp-absplice2-pangolin-cuda
+
+channels:
+- conda-forge
+- bioconda
+
+dependencies:
+- python=3.11
+# Pangolin calls torch.load without weights_only. From pytorch 2.6 on, it defaults to
+# weights_only=True, which is untested with the Pangolin models.
+- pytorch-gpu=2.5.1 # the CUDA build of pytorch 2.5.1, also on hosts without a GPU
+- numpy
+- pandas
+- pysam
+- pyfastx
+- gffutils
+# Pangolin imports pkg_resources
+- setuptools<81
+- pip
+- pip:
+  - "pangolin @ git+https://github.com/neverov-am/Pangolin.git@232cba082c03ffefec40374ffadd4088a42290b6"

@@ -17,7 +17,7 @@ The publication to this method can be found in [Nature Communications](https://w
   - GTEx and SpliceMap tables: 2GB
   - SpliceAI-RocksDB: about 175GB per genome assembly, 349GB for hg19 + hg38
 - RAM: 64GB
-- (optional) a GPU with CUDA for Enformer and SpliceAI, see [GPU](#gpu)
+- (optional) a GPU with CUDA for Enformer, SpliceAI and Pangolin, see [GPU](#gpu)
 
 ## Setup
 
@@ -68,7 +68,7 @@ The publication to this method can be found in [Nature Communications](https://w
    - (optional) `veff.annotator: "mehari"` to annotate transcript consequences with
      [mehari](https://github.com/varfish-org/mehari) instead of VEP, together with
      `veff.mehari_gencode_transcripts_fasta`, see below.
-   - (optional) `use_gpu: True` to run Enformer and SpliceAI on a GPU, see [GPU](#gpu).
+   - (optional) `use_gpu: True` to run Enformer, SpliceAI and Pangolin on a GPU, see [GPU](#gpu).
 
    An example is pre-configured and can be used to test the pipeline.
    A config passed with `--configfile` replaces `config/config.yaml`, see step 2. A key that it leaves out
@@ -96,12 +96,14 @@ The publication to this method can be found in [Nature Communications](https://w
 ## GPU
 
 `use_gpu: True` in the config makes Enformer and SpliceAI use the CUDA variant of their TensorFlow
-environment (`workflow/modules/veff/envs/abexp-tensorflow-cuda.yaml`) instead of the CPU variant. The CUDA
-variant also runs on hosts without a GPU, on the CPU. Only with `use_gpu: True`, these rules request one GPU
-(resource `gpu`), e.g. from SLURM.
+environment (`workflow/modules/veff/envs/abexp-tensorflow-cuda.yaml`) instead of the CPU variant. Pangolin
+of the absplice2 module likewise uses the CUDA variant of its PyTorch environment
+(`workflow/modules/veff/absplice2/envs/absplice2-pangolin-cuda.yaml`). The CUDA variants also run on hosts
+without a GPU, on the CPU. Only with `use_gpu: True`, these rules request one GPU (resource `gpu`), e.g.
+from SLURM.
 
-Conda creates the CUDA variant only on a host with a CUDA driver. To create it on a host without one, e.g. a
-login node, set `CONDA_OVERRIDE_CUDA` to a CUDA version that the driver of the GPU nodes supports, e.g. 12.9:
+Conda creates the CUDA variants only on a host with a CUDA driver. To create them on a host without one, e.g.
+a login node, set `CONDA_OVERRIDE_CUDA` to a CUDA version that the driver of the GPU nodes supports, e.g. 12.9:
 ```bash
 CONDA_OVERRIDE_CUDA=12.9 snakemake --conda-create-envs-only
 ```
@@ -143,6 +145,7 @@ workflow/modules/veff/mehari/               # mehari
 workflow/modules/veff/loftee/               # reloftee: LOFTEE loss-of-function calls
 workflow/modules/veff/tissue_specific_vep/  # consequences per GTEx tissue
 workflow/modules/veff/absplice/             # AbSplice-DNA
+workflow/modules/veff/absplice2/            # AbSplice2-DNA
 workflow/modules/veff/enformer/             # Enformer
 workflow/modules/veff/nmd_scanner/          # NMD-Scanner
 workflow/modules/veff/envs/                 # conda environments that several veff modules use
@@ -163,6 +166,26 @@ also set `system.nmd_scanner.gtf_file` to the GENCODE GTF of the same release as
 
 Both modules keep the output of their tool as it is, and neither is read by tissue_specific_vep,
 fset or predict.
+
+`workflow/modules/veff/absplice2` adds [AbSplice2-DNA](https://github.com/gagneurlab/absplice2).
+It runs [Pangolin](https://github.com/tkzeng/Pangolin) and scores each variant, gene and GTEx tissue
+with the AbSplice2 model, from Pangolin and from the MMSplice and SpliceMap results of the absplice
+module. It is off by default; set `system.absplice2.enabled: true` and request
+`<output_dir>/veff/absplice2/veff.parquet/<vcf_file>.parquet` as target. Its output is not read by
+tissue_specific_vep, fset or predict. The module downloads the AbSplice2 model (0.7 MB).
+
+Pangolin needs a GPU for large VCFs (`use_gpu: True`, see [GPU](#gpu)). On a CPU with 4 threads, it takes
+about 3 s per variant, i.e. about 9 hours for 10,000 variants. A whole-genome VCF with millions of variants
+would take months.
+
+The module builds the Pangolin annotation database from `gff3_file`: all genes, and the transcripts and
+exons with the transcript tags of the databases published with Pangolin (Ensembl_canonical for hg38).
+AbSplice2 was trained with Pangolin's GENCODE v38 database. Built from the GENCODE v38 GFF3, the database
+has the same genes, transcripts and exons. Other GENCODE releases differ in their genes and canonical
+transcripts. For every 4th variant of the chr22 ClinVar example VCFs, GENCODE v40 instead of v38 added 14
+variant/gene pairs, all with AbSplice_DNA below 0.001, and did not change the other 2,603 pairs. Set
+`system.absplice2.pangolin_annotation_db` to use an existing database instead, e.g. the GENCODE v38
+database of Pangolin.
 
 Each module has its own `config.schema.yaml` with its options and defaults, its own scripts and
 conda environments (`envs/`), and the files it ships. The conda environments that several veff modules
@@ -252,8 +275,8 @@ rules downstream of them rerun because their input changed.
   change of such an environment, bump each step whose outputs change.
 - Do not bump a key for changes that keep the outputs, e.g. a comment.
 - Snakemake deletes temporary outputs once no job needs them. So a bump of a step that reads a temporary output
-  also reruns the step that wrote it. Therefore the MMSplice and SpliceAI scores and the aggregated and tissue
-  Enformer predictions are not temporary: storing them costs less than recomputing them. The raw
+  also reruns the step that wrote it. Therefore the MMSplice, SpliceAI and Pangolin scores and the aggregated
+  and tissue Enformer predictions are not temporary: storing them costs less than recomputing them. The raw
   Enformer predictions and the VEP output stay temporary. So the Enformer aggregation shares the key
   `"predict"`, and the VEP annotation and its parsing share one key.
 - The download rules have no version; their URL is the version. Rules that only index a file or convert the
@@ -285,6 +308,9 @@ The Python packages in `packages/` carry their own MIT license files.
 
 **Please note:** AbExp relies on [CADD](https://cadd.gs.washington.edu/) and [SpliceAI](https://github.com/Illumina/SpliceAI/), both of which are free to use only in non-commercial settings.
 If you plan to use AbExp in a commercial context, please ensure that you have the appropriate permissions or licenses to use both tools.
+
+The optional module absplice2 installs [Pangolin](https://github.com/tkzeng/Pangolin) and downloads the model of
+[AbSplice2](https://github.com/gagneurlab/absplice2) when it runs. Both are licensed under the GPL-3.0 and are not part of this repository.
 
 ## Development setup
 Advanced users who want to edit this pipeline can use the following steps to convert the python scripts back to Jupyter notebooks:

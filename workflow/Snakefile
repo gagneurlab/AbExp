@@ -155,6 +155,7 @@ VEFF_CONFIG = {
     "loftee": config["system"]["loftee"],
     "tissue_specific_vep": optional(config["system"], "isoform_proportions_tsv", "isoform_proportions_pq"),
     "absplice": config["system"]["absplice"],
+    "absplice2": config["system"]["absplice2"],
     "enformer": config["system"]["enformer"],
     "nmd_scanner": config["system"]["nmd_scanner"],
 }

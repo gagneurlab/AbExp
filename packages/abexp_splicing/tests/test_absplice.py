@@ -182,6 +182,32 @@ def test_read_spliceai_vcf_keeps_the_entries_of_the_alt_allele():
         {'chr22:28710005:C>A': -37, 'chr22:28710005:C>G': -3}
 
 
+def write_spliceai_vcf(path, *records):
+    """A VCF file with the header of SPLICEAI_VCF and `records`."""
+    header = [line for line in SPLICEAI_VCF.read_text().splitlines() if line.startswith('#')]
+    path.write_text('\n'.join([*header, *records]) + '\n')
+    return str(path)
+
+
+def test_read_spliceai_vcf_record_without_spliceai(tmp_path):
+    # The SpliceAI command line tool writes a record without the INFO field SpliceAI, e.g. for a variant outside its
+    # genes. The expected values follow from the parsing rules.
+    vcf = write_spliceai_vcf(tmp_path / 'spliceai.vcf', 'chr22\t16000000\t.\tA\tG\t.\t.\t.')
+    expected = pl.read_csv(EXPECTED_DIR / 'spliceai_vcf.csv').clear()
+    pl.testing.assert_frame_equal(read_spliceai_vcf(vcf), expected)
+
+
+def test_read_spliceai_vcf_missing_scores(tmp_path):
+    # SpliceAI 1.3.1 writes '.' for a variant whose REF and ALT both have more than 1 bp. The SpliceAI fork of the
+    # workflow scores such variants, so the record follows the format of SpliceAI 1.3.1, and the expected values
+    # follow from the parsing rules: '.' becomes 0.
+    vcf = write_spliceai_vcf(tmp_path / 'spliceai.vcf',
+                             'chr22\t50626900\t.\tGA\tTC\t.\t.\tSpliceAI=TC|ARSA|.|.|.|.|.|.|.|.')
+    expected = pl.DataFrame([('chr22:50626900:GA>TC', 'ARSA', 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0, 0, 0)], orient='row',
+                            schema=pl.read_csv(EXPECTED_DIR / 'spliceai_vcf.csv').schema)
+    pl.testing.assert_frame_equal(read_spliceai_vcf(vcf), expected)
+
+
 def test_predict_absplice_dna():
     df_mmsplice = pl.read_csv(EXPECTED_DIR / 'mmsplice_splicemap.csv')
     # spliceai_vcf.csv gives each ALT allele of a record the entries of all its ALT alleles. Their delta scores

@@ -101,7 +101,10 @@ properties:
     type: integer
     description: >-
       How many bins to save from each run. A smaller number will save space, since
-      we only care about the central bins (close to the TSS)
+      we only care about the central bins (close to the TSS). Keep 21: the published tissue
+      mapper and reference scores were computed with 21 output bins. With an even number, such
+      as 896, shift +43 averages the bins 446 to 448 instead of 447 to 449. See "Known issues"
+      in the Enformer section of packages/aberrant_expression/README.md.
     default: 21
 
 required:

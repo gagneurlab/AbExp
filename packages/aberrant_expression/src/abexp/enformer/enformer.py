@@ -197,8 +197,13 @@ class EnformerAggregator:
         pred_seq_length = bin_size * pred.shape[2]
         agg_pred = []
         for shift_i, shift in enumerate(shifts):
-            # estimate the tss bin
-            # todo verify this calculation
+            # Estimate the TSS bin. The formula takes the middle of the saved bins as the TSS. That is right for an
+            # even number of output bins, such as all 896. With 21 output bins, the workflow default, Enformer saves
+            # the bins 438 to 458. Their middle lies 64 bp downstream of the TSS. So shift +43 averages the bins 447
+            # to 449, although the TSS lies in bin 447. With 896 output bins, it averages 446 to 448.
+            # This is a known issue, kept on purpose: the published tissue mapper and reference scores were computed
+            # with 21 output bins. The fix replaces `pred_seq_length // 2` with `pred.shape[2] // 2 * bin_size`, the
+            # start of the saved TSS bin. It needs a retrained tissue mapper and recomputed reference scores.
             tss_bin = (pred_seq_length // 2 + 1 - shift) // bin_size
             # get num_bins - 1 neighboring bins centered at tss bin
             bins = [tss_bin + i for i in range(-math.floor(num_bins / 2), math.ceil(num_bins / 2))]

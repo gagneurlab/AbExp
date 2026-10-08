@@ -167,6 +167,21 @@ enformer_veff.run(ref_paths=[output_dir / 'tissue/ref.parquet/chrom=chr22/data.p
                   output_path=output_dir / 'veff.parquet', aggregation_mode='canonical')
 ```
 
+### Known issues
+
+`EnformerAggregator` averages the bins around the TSS bin of each shift. As the TSS, it takes the middle of the bins
+that `Enformer.predict` saved. That is right for an even `num_output_bins`, such as all 896. With 21 output bins, the
+workflow default, Enformer saves the bins 438 to 458. Their middle lies 64 bp downstream of the TSS. So shift +43
+averages the bins 447 to 449, although the TSS lies in bin 447. With 896 output bins, it averages 446 to 448. Shifts
+0 and -43 average 447 to 449 in both cases.
+
+The training pipeline [gtsitsiridis/kipoi_veff_analysis](https://github.com/gtsitsiridis/kipoi_veff_analysis)
+trained the published tissue mapper (`elasticnet_cage_gtexv8`) on 21 output bins, so the tissue mapper learned this
+behavior. The reference scores that the workflow downloads come from the same pipeline. So the code keeps the
+behavior. A fix would replace `pred_seq_length // 2` with `pred.shape[2] // 2 * bin_size` in
+`EnformerAggregator._aggregate_batch`. It needs a retrained tissue mapper and recomputed reference scores. The offset
+came in with the crop to 21 output bins, in commit e2bbf5ec (2024-05-16) of the training pipeline.
+
 ## abexp.mmsplice, abexp.absplice and abexp.spliceai_rocksdb
 
 The parts of MMSplice, AbSplice and SpliceAI-RocksDB that the AbExp pipeline runs, on kipoiseq2. kipoi, kipoiseq 0.7,

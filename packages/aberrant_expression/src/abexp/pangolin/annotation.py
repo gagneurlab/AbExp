@@ -1,22 +1,6 @@
 import polars as pl
 
-# the 9 columns of a GFF3 file
-GFF3_SCHEMA = {
-    'seqid': pl.String,
-    'source': pl.String,
-    'type': pl.String,
-    'start': pl.Int64,
-    'end': pl.Int64,
-    'score': pl.String,
-    'strand': pl.String,
-    'phase': pl.String,
-    'attributes': pl.String,
-}
-
-
-def _attribute(name):
-    """The value of the GFF3 attribute `name`, null if the feature has none."""
-    return pl.col('attributes').str.extract(f'(?:^|;){name}=([^;]*)')
+from abexp.utils.gff3 import read_gff3
 
 
 def read_gff3_genes(gff3_file, transcript_tags):
@@ -34,23 +18,19 @@ def read_gff3_genes(gff3_file, transcript_tags):
       polars DataFrame with one row per gene, in the order of the file, and the columns chrom, start (0-based), end,
       strand, gene_id and sites (the sorted 1-based positions of the splice sites).
     """
-    gff = pl.read_csv(gff3_file, separator='\t', has_header=False, comment_prefix='#', quote_char=None,
-                      schema=GFF3_SCHEMA)
+    gff = read_gff3(gff3_file, ('gene_id', 'tag'))
     genes = gff.filter((pl.col('type') == 'gene') & pl.col('strand').is_in(['+', '-'])).select(
-        pl.col('seqid').alias('chrom'),
-        (pl.col('start') - 1).alias('start'),
-        'end',
-        'strand',
-        _attribute('gene_id').alias('gene_id'),
+        'chrom', 'start', 'end', 'strand', 'gene_id',
     )
-    tagged = _attribute('tag').str.split(',').list.eval(pl.element().is_in(list(transcript_tags))).list.any()
+    tagged = pl.col('tag').str.split(',').list.eval(pl.element().is_in(list(transcript_tags))).list.any()
     sites = (
         gff
         .filter((pl.col('type') == 'exon') & tagged)
         .select(
-            pl.col('seqid').alias('chrom'),
-            _attribute('gene_id').alias('gene_id'),
-            pl.concat_list('start', 'end').alias('sites'),
+            'chrom',
+            'gene_id',
+            # the first and last bases of the exon, 1-based
+            pl.concat_list(pl.col('start') + 1, 'end').alias('sites'),
         )
         .explode('sites', empty_as_null=False)
         .unique()

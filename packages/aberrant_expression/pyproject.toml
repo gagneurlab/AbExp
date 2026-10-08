@@ -73,7 +73,7 @@ enformer = [
 ]
 # abexp.pangolin; conda-forge has PyTorch as pytorch-cpu and pytorch-gpu
 pangolin = [
-    "aberrant-expression[polars,numpy,kipoiseq2]",
+    "aberrant-expression[gff3,numpy,kipoiseq2]",
     "torch>=2.4",
 ]
 # all extras but rocksdb, because pip builds python-rocksdb only with the RocksDB library installed

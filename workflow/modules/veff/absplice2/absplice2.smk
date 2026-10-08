@@ -15,7 +15,7 @@ rule veff__absplice2_pangolin:
     threads: 4
     resources:
         ntasks=1,
-        # reading the whole GENCODE GFF3 takes 3.6 GB
+        # the import of PyTorch and reading the whole GENCODE GFF3 take 2.1 GB
         mem_mb=lambda wildcards, attempt: 8000 * attempt,
         gpu=1 if config["use_gpu"] else 0,
     output:

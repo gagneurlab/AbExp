@@ -19,11 +19,11 @@ The base of aberrant-expression has no dependencies. Each extra adds the require
 | `splicing` | `abexp.mmsplice`, `abexp.absplice` | onnxruntime, `polars`, `numpy`, `kipoiseq2`, `tensorflow`, `tqdm`                             |
 | `rocksdb`  | `abexp.spliceai_rocksdb`           | python-rocksdb, `splicing`                                                                    |
 | `enformer` | `abexp.enformer`                   | kagglehub, pyarrow, xarray, zarr, pyyaml, `gff3`, `models`, `kipoiseq2`, `tensorflow`, `tqdm` |
-| `pangolin` | `abexp.pangolin`                   | torch, `polars`, `numpy`, `kipoiseq2`                                                         |
+| `pangolin` | `abexp.pangolin`                   | torch, `gff3`, `numpy`, `kipoiseq2`                                                           |
 | `all`      | all but `abexp.spliceai_rocksdb`   | all extras but `rocksdb`                                                                      |
 
 `pyproject.toml` names each third-party requirement once, with its version range. An extra that needs a requirement
-refers to the extra that holds it, e.g. `enformer` lists `aberrant-expression[gff3]` for polars-bio. The extras
+refers to the extra that holds it, e.g. `pangolin` lists `aberrant-expression[gff3]` for polars-bio. The extras
 `numpy`, `kipoiseq2`, `tensorflow` and `tqdm` hold one requirement each, which several extras share.
 
 aberrant-expression replaces three distributions: abexp-utils (`abexp_utils`, now `abexp.utils`), kipoi-enformer
@@ -156,7 +156,7 @@ The recipe would build one noarch package from the archive of the release tag on
 - `aberrant-expression-base` installs all code, with the base dependencies.
 - The metapackages `aberrant-expression-models`, `-polars`, `-spark`, `-gff3`, `-splicing`, `-rocksdb`,
   `-enformer` and `-pangolin` add the dependencies of each extra, and pin `-base` to the same build. Like the
-  extras, `-rocksdb` depends on `-splicing`, and `-enformer` depends on `-gff3`.
+  extras, `-rocksdb` depends on `-splicing`, and `-enformer` and `-pangolin` depend on `-gff3`.
 - `aberrant-expression` depends on all of them.
 
 Before that, kipoiseq2 needs a bioconda recipe.

@@ -6,7 +6,8 @@ instead of kipoiseq, kipoi and pyranges. MIT License, Copyright (c) 2018, Jun Ch
 from abexp.mmsplice.batching import batch_iter, numpy_collate
 from abexp.mmsplice.dataloader import JunctionPSI5VCFDataloader, JunctionPSI3VCFDataloader
 from abexp.mmsplice.model import MMSplice
-from abexp.mmsplice.utils import encodeDNA, delta_logit_PSI_to_delta_PSI, df_batch_writer
+from abexp.mmsplice.utils import encodeDNA, delta_logit_PSI_to_delta_PSI
+from abexp.utils.polars_functions import df_batch_writer
 
 __all__ = [
     'MMSplice',

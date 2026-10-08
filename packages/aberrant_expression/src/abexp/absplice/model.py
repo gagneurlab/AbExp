@@ -5,7 +5,8 @@ import pathlib
 import polars as pl
 from tqdm import tqdm
 
-from abexp.mmsplice import MMSplice, df_batch_writer, delta_logit_PSI_to_delta_PSI
+from abexp.mmsplice import MMSplice, delta_logit_PSI_to_delta_PSI
+from abexp.utils.polars_functions import df_batch_writer
 
 
 class SpliceOutlier:

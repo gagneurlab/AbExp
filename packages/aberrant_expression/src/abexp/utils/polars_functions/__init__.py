@@ -7,3 +7,7 @@ from .featureset import (
     transform_featureset,
     join_featuresets,
 )
+
+from .write import (
+    df_batch_writer,
+)

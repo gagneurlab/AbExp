@@ -16,7 +16,7 @@ def read_gff3_genes(gff3_file, transcript_tags):
 
     Returns:
       polars DataFrame with one row per gene, in the order of the file, and the columns chrom, start (0-based), end,
-      strand, gene_id and sites (the sorted 1-based positions of the splice sites).
+      strand, gene_id and sites (the sorted 0-based positions of the splice sites, like start).
     """
     gff = read_gff3(gff3_file, ('gene_id', 'tag'))
     genes = gff.filter((pl.col('type') == 'gene') & pl.col('strand').is_in(['+', '-'])).select(
@@ -29,8 +29,8 @@ def read_gff3_genes(gff3_file, transcript_tags):
         .select(
             'chrom',
             'gene_id',
-            # the first and last bases of the exon, 1-based
-            pl.concat_list(pl.col('start') + 1, 'end').alias('sites'),
+            # the first and last bases of the exon, 0-based
+            pl.concat_list('start', pl.col('end') - 1).alias('sites'),
         )
         .explode('sites', empty_as_null=False)
         .unique()

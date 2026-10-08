@@ -227,8 +227,8 @@ class Pangolin:
             loss, gain = scores[(idx, strand)]
             warnings = []
             if self.mask:
-                # the index of position p is p - (pos - distance)
-                sites = self.sites[interval_idx] - (pos - self.distance)
+                # `pos` is 1-based, the sites are 0-based: the index of site s is s - (pos - 1 - distance)
+                sites = self.sites[interval_idx] - (pos - 1 - self.distance)
                 if len(sites) == 0:
                     warnings.append(NO_SITES_WARNING)
                 loss, gain = mask_scores(loss, gain, sites[(sites >= 0) & (sites < len(loss))])

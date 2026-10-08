@@ -30,4 +30,5 @@ dependencies:
 - bioconda::snakemk_util>=3
 - pip
 - pip:
-  - "abexp-utils[polars] @ git+https://github.com/gagneurlab/AbExp-utils.git#subdirectory=packages/abexp_utils"
+  # packages/abexp_utils of this repository at its release tag. release-please bumps the tag.
+  - "abexp-utils[polars] @ git+https://github.com/gagneurlab/AbExp.git@abexp-utils-v0.0.1#subdirectory=packages/abexp_utils"  # x-release-please-version

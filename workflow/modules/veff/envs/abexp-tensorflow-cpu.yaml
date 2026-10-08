@@ -30,7 +30,8 @@ dependencies:
   - kipoiseq # spliceai_rocksdb imports kipoiseq, not kipoiseq2
   - pip
   - pip:
-    - "kipoi-enformer @ git+https://github.com/gagneurlab/AbExp-utils.git@d6cc89de5934ca1f768fac1750a5c595633c75ea#subdirectory=packages/kipoi_enformer"
+    # packages/kipoi_enformer of this repository at its release tag. release-please bumps the tag.
+    - "kipoi-enformer @ git+https://github.com/gagneurlab/AbExp.git@kipoi-enformer-v0.0.1#subdirectory=packages/kipoi_enformer"  # x-release-please-version
     # SpliceAI of the branch mnp, which predicts multi-nucleotide variants
     - "spliceai @ git+https://github.com/hoeze/SpliceAI.git@a1583bd46e76d94dfb6b95e631d877bd615cf5d4"
     - "spliceai_rocksdb @ git+https://github.com/gagneurlab/spliceai_rocksdb.git@3c40d6e61b19e907e802c979c76d52ea5c41c1d5"

@@ -1,0 +1,91 @@
+# Releases the Python packages in packages/ with release-please. See packages/README.md.
+# Publishing to PyPI runs only if the repository variable PYPI_PUBLISH is 'true'.
+name: release-please
+
+on:
+  push:
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
+      paths_released: ${{ steps.release.outputs.paths_released }}
+      # all outputs, to look up per-path outputs such as packages/kipoi_enformer--tag_name
+      release: ${{ toJSON(steps.release.outputs) }}
+    steps:
+      # reads release-please-config.json and .release-please-manifest.json
+      - id: release
+        uses: googleapis/release-please-action@v5
+
+  build:
+    name: build ${{ matrix.path }}
+    needs: release-please
+    if: needs.release-please.outputs.releases_created == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        path: ${{ fromJSON(needs.release-please.outputs.paths_released) }}
+    env:
+      PACKAGE_PATH: ${{ matrix.path }}
+      TAG: ${{ fromJSON(needs.release-please.outputs.release)[format('{0}--tag_name', matrix.path)] }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TAG }}
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: pip install build twine
+      - run: python -m build "$PACKAGE_PATH" --outdir dist
+      - run: twine check --strict dist/*
+      - name: Check for direct URL dependencies
+        env:
+          PYPI_PUBLISH: ${{ vars.PYPI_PUBLISH }}
+        run: |
+          # PyPI rejects a Requires-Dist with a direct URL ("name @ url").
+          # This fails the build only if the upload to PyPI is on.
+          unzip -p dist/*.whl '*.dist-info/METADATA' | grep '^Requires-Dist: .* @ ' > direct-urls.txt || true
+          level=warning
+          if [ "$PYPI_PUBLISH" = true ]; then level=error; fi
+          while IFS= read -r line; do
+            echo "::$level title=Direct URL dependency::$TAG: PyPI rejects ${line#Requires-Dist: }"
+          done < direct-urls.txt
+          if [ "$level" = error ] && [ -s direct-urls.txt ]; then exit 1; fi
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist-${{ env.TAG }}
+          path: dist/
+          if-no-files-found: error
+
+  publish:
+    name: publish to PyPI
+    needs: build
+    if: vars.PYPI_PUBLISH == 'true'
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      # trusted publishing
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: dist-*
+          merge-multiple: true
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1

@@ -48,8 +48,9 @@ Between releases, main installs the package of the last release.
 ## Running the tests
 
 The tests are in one directory per area: `tests/utils`, `tests/enformer` and `tests/splicing`. Each area needs the
-extras of its subpackages. The tests run across all cores by default, through pytest-xdist. Pass `-n0` to run them
-in one process, which a debugger needs and which restores per-test output order.
+extras of its subpackages: `polars`, `spark` and `gff3` for `tests/utils`, and the extra of the same name for the
+other areas. The tests run across all cores by default, through pytest-xdist. Pass `-n0` to run them in one process,
+which a debugger needs and which restores per-test output order.
 
 ```bash
 pip install -e "./packages/aberrant_expression[all,dev]"
@@ -82,7 +83,8 @@ builds python-rocksdb only with the RocksDB library installed; conda-forge has a
 
 CI (`.github/workflows/packages.yml`) runs the tests of each area on pull requests and pushes to main that change
 `packages/`. It installs only the extras of the area. For the enformer tests, it fetches the test data with the same
-command and caches it.
+command and caches it. A second job installs each extra alone and imports all modules of its subpackages, so that
+a missing requirement fails. It skips the extra `rocksdb`, because pip cannot build python-rocksdb there.
 
 A push of new test data needs git-lfs in the pushing clone, so that its pre-push hook uploads the LFS objects.
 

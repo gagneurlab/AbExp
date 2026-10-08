@@ -124,6 +124,20 @@ def test_splice_outlier_predict_save_two_tissues(fasta_file, tmp_path):
     assert all(t == sorted(t, key=['Whole_Blood', 'Other'].index) for t in tissues.to_list())
 
 
+def test_splice_outlier_predict_save_without_ref_psi(fasta_file, tmp_path):
+    splicemap5 = tmp_path / 'Whole_Blood_splicemap_psi5.csv.gz'
+    write_splicemap(SpliceMap.read_csv(SPLICEMAP5).df.with_columns(ref_psi=None), 'Whole_Blood', splicemap5)
+    dl = SpliceOutlierDataloader(fasta_file, str(VCF), splicemap5=[str(splicemap5)])
+    output_csv = tmp_path / 'mmsplice_splicemap.csv'
+    SpliceOutlier().predict_save(dl, output_csv)
+    df = pl.read_csv(output_csv)
+    # a missing ref_psi gives a missing delta_psi, not NaN
+    expected = pl.read_csv(EXPECTED_DIR / 'mmsplice_splicemap.csv') \
+        .filter(pl.col('event_type') == 'psi5') \
+        .with_columns(ref_psi=None, delta_psi=None)
+    assert_frame_equal_sorted(df, expected, MMSPLICE_KEYS + ['gene_id'])
+
+
 def test_junction_metadata_lookup():
     def splicemap(junctions, gene_ids, ref_psi, name):
         df = pl.DataFrame({'junctions': junctions, 'gene_id': gene_ids, 'ref_psi': ref_psi})
@@ -210,3 +224,14 @@ def test_predict_absplice_dna_does_not_depend_on_row_order():
     ]
     for result in results[1:]:
         pl.testing.assert_frame_equal(result, results[0])
+
+
+def test_predict_absplice_dna_without_mmsplice_rows(tmp_path):
+    # the header that the workflow writes if MMSplice yields no samples
+    mmsplice_csv = tmp_path / 'mmsplice_splicemap.csv'
+    mmsplice_csv.write_text(pl.read_csv(EXPECTED_DIR / 'mmsplice_splicemap.csv').clear().write_csv())
+    result = SplicingOutlierResult(df_mmsplice=str(mmsplice_csv), df_spliceai=str(EXPECTED_DIR / 'spliceai_vcf.csv'))
+    df = result.predict_absplice_dna()
+    # The SpliceAI scores get the tissues of the MMSplice table, so without MMSplice rows they drop out too.
+    expected = pl.read_csv(EXPECTED_DIR / 'absplice_dna.csv').clear()
+    pl.testing.assert_frame_equal(df, expected, check_dtypes=False)

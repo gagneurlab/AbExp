@@ -37,7 +37,7 @@ rule veff__absplice2_pangolin:
         distance=50,
         mask=True,
     conda:
-        PANGOLIN_CONDA_ENV_YAML
+        ABSPLICE2_CONDA_ENV_YAML
     script:
         "pangolin.py.py"
 
@@ -63,7 +63,7 @@ rule veff__absplice2:
     params:
         output_version=OUTPUT_VERSION["absplice2"],
     conda:
-        CONDA_ENV_YAML_DIR.join("absplice2.yaml")
+        ABSPLICE2_CONDA_ENV_YAML
     script:
         "absplice2.py.py"
 

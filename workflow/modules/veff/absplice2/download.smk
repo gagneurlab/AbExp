@@ -6,9 +6,9 @@
 # with the aria2c control file `<output>.part.aria2` for resuming, and a constant runtime.
 # Snakemake also reruns a rule when its shell command changes. Keep the shell command stable.
 #
-# The Pangolin weights come from abexp.pangolin.download_model in the Pangolin environment, one job
-# per file. The package holds the pinned commit of the Pangolin repository and the SHA-256 sums of
-# the files.
+# The Pangolin weights come from abexp.pangolin.download_model in the environment of this module,
+# one job per file. The package holds the pinned commit of the Pangolin repository and the SHA-256
+# sums of the files.
 
 # pinned commit of the AbSplice2 repository
 ABSPLICE2_COMMIT = "a30120f5349de7dfd9ed1caca4d94e3f6f9849a8"
@@ -69,7 +69,7 @@ rule veff__absplice2_download_pangolin_model:
         pangolin_model=r"final\.[123]\.[0246]\.3\.v2",
     retries: 3
     conda:
-        PANGOLIN_CONDA_ENV_YAML
+        ABSPLICE2_CONDA_ENV_YAML
     script:
         "download_pangolin_model.py"
 

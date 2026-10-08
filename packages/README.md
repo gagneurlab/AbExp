@@ -109,8 +109,8 @@ update the workflow after the pin has moved.
 
 After a release, the workflow builds the sdist and wheel of the package. PyPI rejects direct URL dependencies.
 If the package has one, the build emits a warning. If the upload to PyPI is on, the build fails instead.
-The extras `splicing` and `enformer` depend on kipoiseq2 0.1 from PyPI, so pip can install them only after that
-release.
+The extras `splicing`, `enformer` and `pangolin` depend on kipoiseq2 0.1 from PyPI. kipoiseq2 requires Python
+3.12 or later, so aberrant-expression does too.
 
 Notes:
 - GitHub starts no workflows for pull requests that the `GITHUB_TOKEN` opens, so the tests do not run on release PRs.
@@ -135,10 +135,9 @@ Before that, kipoiseq2 needs a bioconda recipe, and bioconda needs polars-bio 0.
 ## Enabling PyPI
 
 The upload to PyPI is prepared but off. To turn it on:
-1. Check that kipoiseq2 0.1 is on PyPI.
-2. On PyPI, add a trusted publisher to the project `aberrant-expression`: owner `gagneurlab`, repository `AbExp`,
+1. On PyPI, add a trusted publisher to the project `aberrant-expression`: owner `gagneurlab`, repository `AbExp`,
    workflow `release-please.yml`, environment `pypi`. For a new project, add a pending publisher.
-3. Create the GitHub environment `pypi` in the repository settings.
-4. Set the repository variable `PYPI_PUBLISH` to `true`.
-5. Switch the install snippet in the package README to a version, e.g.
+2. Create the GitHub environment `pypi` in the repository settings.
+3. Set the repository variable `PYPI_PUBLISH` to `true`.
+4. Switch the install snippet in the package README to a version, e.g.
    `pip install "aberrant-expression[polars]==X.Y.Z"`.

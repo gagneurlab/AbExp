@@ -487,6 +487,72 @@ def test_vcf_dataloader(chr22_example_files, variants):
     print(total)
 
 
+# The shift moves the window of 101 bases by 43 bases downstream (+43) or upstream (-43). The TSS stays the anchor of
+# the variant: an indel changes the window only on its side of the TSS. There, the window keeps its length by taking
+# more or fewer bases at its end. The coordinates below are 0-based and half-open.
+# chr22:28315413:CG>C deletes the G at 28315413, three bases downstream of the TSS of ENST00000453632.6_2.
+# chr22:50968459:G>GGCGCCCCAGGACGGCA inserts 16 bases before 50968459, one base downstream of the TSS of
+# ENST00000395678.7_6 on the minus strand.
+@pytest.mark.parametrize("shift, metadata, alt_seq", [
+    pytest.param(
+        43,
+        {'seq_start': 28315360, 'seq_end': 28315461, 'tss': 28315410, 'chrom': 'chr22', 'strand': '+',
+         'gene_id': 'ENSG00000235954.8_9', 'transcript_id': 'ENST00000453632.6_2', 'transcript_start': 28315410,
+         'transcript_end': 28398576, 'variant_start': 28315412, 'variant_end': 28315414, 'ref': 'CG', 'alt': 'C'},
+        # genomic ref 28315403-28315504:
+        # GCAGCCTGCCGAAGAGCGTGCGGCTTCTACTGCGGCTGCGCAAGCTCGACGCGCGCACTCTTGTCTGCTTACGAGGGCTCCTCCCTTCAGCTTTGGTCCCT
+        'GCAGCCTGCCAAGAGCGTGCGGCTTCTACTGCGGCTGCGCAAGCTCGACGCGCGCACTCTTGTCTGCTTACGAGGGCTCCTCCCTTCAGCTTTGGTCCCTC',
+        id='plus-deletion-shift+43'),
+    pytest.param(
+        -43,
+        {'seq_start': 28315360, 'seq_end': 28315461, 'tss': 28315410, 'chrom': 'chr22', 'strand': '+',
+         'gene_id': 'ENSG00000235954.8_9', 'transcript_id': 'ENST00000453632.6_2', 'transcript_start': 28315410,
+         'transcript_end': 28398576, 'variant_start': 28315412, 'variant_end': 28315414, 'ref': 'CG', 'alt': 'C'},
+        # genomic ref 28315317-28315418:
+        # GACCAGTCGCGTCAGCGCGCGAGGGGGCCTAGCTCCGCCCAGTTTCGTGCCCCACCCCGGGCACACGAGGCCTCCACTGCGGTTGCGCAGCCTGCCGAAGA
+        'GACCAGTCGCGTCAGCGCGCGAGGGGGCCTAGCTCCGCCCAGTTTCGTGCCCCACCCCGGGCACACGAGGCCTCCACTGCGGTTGCGCAGCCTGCCAAGAG',
+        id='plus-deletion-shift-43'),
+    pytest.param(
+        43,
+        {'seq_start': 50968410, 'seq_end': 50968511, 'tss': 50968460, 'chrom': 'chr22', 'strand': '-',
+         'gene_id': 'ENSG00000025708.14_13', 'transcript_id': 'ENST00000395678.7_6', 'transcript_start': 50964184,
+         'transcript_end': 50968461, 'variant_start': 50968458, 'variant_end': 50968459, 'ref': 'G',
+         'alt': 'GGCGCCCCAGGACGGCA'},
+        # reverse complement of the genomic ref 50968367-50968468:
+        # CTGGGGCGCCGCCGCCCCGCCGCCGGCAGTGGACCGCTGTGCGCGAACCCTGAACCCTACGGTCCCGACCCGCGGGCGAGGCCGGGTACCTGGGCTGGGAT
+        'CTGGGGCGCTGCCGTCCTGGGGCGCCGCCGCCCCGCCGCCGGCAGTGGACCGCTGTGCGCGAACCCTGAACCCTACGGTCCCGACCCGCGGGCGAGGCCGG',
+        id='minus-insertion-shift+43'),
+    pytest.param(
+        -43,
+        {'seq_start': 50968410, 'seq_end': 50968511, 'tss': 50968460, 'chrom': 'chr22', 'strand': '-',
+         'gene_id': 'ENSG00000025708.14_13', 'transcript_id': 'ENST00000395678.7_6', 'transcript_start': 50964184,
+         'transcript_end': 50968461, 'variant_start': 50968458, 'variant_end': 50968459, 'ref': 'G',
+         'alt': 'GGCGCCCCAGGACGGCA'},
+        # reverse complement of the genomic ref 50968453-50968554:
+        # GATTGGCCGGGGCGCGGCGTGCAAGGCTTCCCGGGGGCGGCGACTGCCGAGCTCCGCCCTCCAGGCGGCCCCACCCGCCTGCCGTCCTGGGGCGCCGCCGC
+        'GATTGGCCGGGGCGCGGCGTGCAAGGCTTCCCGGGGGCGGCGACTGCCGAGCTCCGCCCTCCAGGCGGCCCCACCCGCCTGCCGTCCTGGGGCGCTGCCGT',
+        id='minus-insertion-shift-43'),
+])
+def test_vcf_dataloader_shift(chr22_example_files, shift, metadata, alt_seq):
+    dl = VCFTSSDataloader(
+        fasta_file=chr22_example_files['fasta'],
+        genome_annotation=chr22_example_files['genome_annotation'],
+        vcf_file=chr22_example_files['vcf'],
+        variant_downstream_tss=50,
+        variant_upstream_tss=50,
+        seq_length=101,
+        shifts=[shift],
+        gene_ids=[metadata['gene_id']],
+    )
+    samples = [i for i in dl if i['metadata']['transcript_id'] == metadata['transcript_id']
+               and i['metadata']['variant_start'] == metadata['variant_start']
+               and i['metadata']['alt'] == metadata['alt']]
+    assert len(samples) == 1
+    # seq_start and seq_end hold the window without the shift
+    assert samples[0]['metadata'] == metadata
+    assert one_hot2string(samples[0]['sequences']) == [alt_seq]
+
+
 def test_ref_dataloader(chr22_example_files, references):
     dl = RefTSSDataloader(
         fasta_file=chr22_example_files['fasta'],

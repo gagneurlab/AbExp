@@ -28,7 +28,7 @@ Install a release from the AbExp repository with pip. Choose the extras you need
 
 <!-- x-release-please-start-version -->
 ```bash
-pip install "aberrant-expression[polars] @ git+https://github.com/gagneurlab/AbExp.git@aberrant-expression-v0.1.0#subdirectory=packages/aberrant_expression"
+pip install "aberrant-expression[polars] @ git+https://github.com/gagneurlab/AbExp.git@aberrant-expression-v0.1.1#subdirectory=packages/aberrant_expression"
 ```
 <!-- x-release-please-end -->
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/gagneurlab/AbExp/compare/aberrant-expression-v0.1.0...aberrant-expression-v0.1.1) (2026-10-09)
+
+
+### Bug Fixes
+
+* **deps:** require polars-bio 0.36.1 ([#36](https://github.com/gagneurlab/AbExp/issues/36)) ([8fe3fba](https://github.com/gagneurlab/AbExp/commit/8fe3fba3b42356f1a3514407e4ada0a7c7ead02b))
+
 ## [0.1.0](https://github.com/gagneurlab/AbExp/compare/aberrant-expression-v0.0.1...aberrant-expression-v0.1.0) (2026-10-08)
 
 

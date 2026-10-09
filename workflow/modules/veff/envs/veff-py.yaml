@@ -38,7 +38,7 @@ dependencies:
 # the CUDA build is much larger
 - onnxruntime=1.30.0=*_cpu
 # not imported by the rules, but a dependency of aberrant-expression and reloftee: conda installs it, not pip
-- polars-bio>=0.36.0
+- polars-bio>=0.36.1
 - pip
 - pip:
   # packages/aberrant_expression of this repository at its release tag. release-please bumps the tag.

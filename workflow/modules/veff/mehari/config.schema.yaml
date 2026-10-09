@@ -45,7 +45,8 @@ properties:
     default: null
     description: >-
       Name of an existing conda environment with the mehari Python package. By default,
-      `snakemake --sdm conda` creates envs/mehari_env.yaml, which installs mehari from bioconda.
+      `snakemake --sdm conda` creates the shared workflow/modules/veff/envs/veff-py.yaml, which
+      installs mehari from bioconda.
 
 required:
   - vcf

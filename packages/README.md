@@ -38,10 +38,9 @@ now `abexp.enformer.enformer`. The name `abexp` on PyPI belongs to an unrelated 
 The conda environments install aberrant-expression with pip from a git URL of this repository, pinned to a release
 tag, e.g. `...@aberrant-expression-v0.0.1#subdirectory=packages/aberrant_expression`:
 - the extra `polars` in `workflow/envs/abexp-veff-py.yaml`
-- the extra `gff3` in `workflow/modules/gtf_transcripts/envs/gtf_transcripts.yaml`
-- the extra `pangolin` in `workflow/modules/veff/absplice2/envs/absplice2-pangolin-cpu.yaml` and
-  `absplice2-pangolin-cuda.yaml`
-- the extra `absplice2` in `workflow/modules/veff/absplice2/envs/absplice2.yaml`
+- the extra `gff3` in `workflow/modules/veff/envs/veff-py.yaml`
+- the extras `absplice2` and `pangolin` in `workflow/modules/veff/absplice2/envs/absplice2-cpu.yaml` and
+  `absplice2-cuda.yaml`
 - the extras `enformer`, `splicing` and `rocksdb` in `workflow/modules/veff/envs/abexp-tensorflow-cpu.yaml` and
   `abexp-tensorflow-cuda.yaml`
 

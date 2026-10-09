@@ -10,6 +10,6 @@ rule gtf_transcripts:
     params:
         output_version=OUTPUT_VERSION["gtf_transcripts"],
     conda:
-        CONDA_ENV_YAML_DIR.join("gtf_transcripts.yaml")
+        SHARED_CONDA_ENV_YAML_DIR.join("veff-py.yaml")
     script:
         "gtf_transcripts.py.py"

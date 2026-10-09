@@ -45,7 +45,7 @@ rule tabix_vcf:
     wildcard_constraints:
         vcf_file="[^/]+" + VCF_FILE_REGEX,
     conda:
-        CONDA_ENV_YAML_DIR.join("vcf_prep.yaml")
+        SHARED_CONDA_ENV_YAML_DIR.join("veff-py.yaml")
     shell:
         '''
         tabix -f "{input.vcf_file}"
@@ -71,7 +71,7 @@ if not config["vcf_is_normalized"]:
         wildcard_constraints:
             vcf_file=f".+(?:{'|'.join(VCF_FILE_ENDINGS)})",
         conda:
-            CONDA_ENV_YAML_DIR.join("vcf_prep.yaml")
+            SHARED_CONDA_ENV_YAML_DIR.join("veff-py.yaml")
         shell:
             """
             set -x
@@ -103,7 +103,7 @@ rule format_vcf_header:
     params:
         output_version=OUTPUT_VERSION["format_header"],
     conda:
-        CONDA_ENV_YAML_DIR.join("vcf_prep.yaml")
+        SHARED_CONDA_ENV_YAML_DIR.join("veff-py.yaml")
     shell:
         """
         set -x
@@ -130,7 +130,7 @@ rule extract_vcf_variants:
     wildcard_constraints:
         vcf_file=f".+(?:{'|'.join(VCF_FILE_ENDINGS)})",
     conda:
-        CONDA_ENV_YAML_DIR.join("vcf_prep.yaml")
+        SHARED_CONDA_ENV_YAML_DIR.join("veff-py.yaml")
     shell:
         """
         set -x
@@ -158,7 +158,7 @@ rule extract_valid_vcf_variants:
     params:
         output_version=OUTPUT_VERSION["extract_valid_variants"],
     conda:
-        CONDA_ENV_YAML_DIR.join("vcf_prep.yaml")
+        SHARED_CONDA_ENV_YAML_DIR.join("veff-py.yaml")
     shell:
         """
         set -x

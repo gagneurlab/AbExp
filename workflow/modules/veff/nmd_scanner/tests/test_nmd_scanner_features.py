@@ -1,8 +1,8 @@
 """Tests of the rule veff__nmd_scanner_features
 
 Each test runs `nmd_scanner_features.py.py` on small input tables of one variant in one gene, and
-checks the full output row. Run them in the environment of `envs/nmd_features_env.yaml`, with
-pytest added:
+checks the full output row. Run them in the environment of
+`workflow/modules/veff/envs/veff-py.yaml`, with pytest added:
 
     pytest workflow/modules/veff/nmd_scanner/tests
 """

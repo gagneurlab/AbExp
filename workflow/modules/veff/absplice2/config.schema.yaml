@@ -85,9 +85,10 @@ properties:
     type: boolean
     default: false
     description: >-
-      Run the Pangolin rule in the CUDA variant of the PyTorch environment
-      (envs/absplice2-pangolin-cuda.yaml of this module) instead of the CPU variant. The CUDA
-      variant also runs on hosts without a GPU. The veff module sets this from its own use_gpu.
+      Run the rules of this module in the CUDA variant of their PyTorch environment
+      (envs/absplice2-cuda.yaml of this module) instead of the CPU variant. Only the Pangolin
+      rule requests a GPU. The CUDA variant also runs on hosts without a GPU. The veff module
+      sets this from its own use_gpu.
   enabled:
     type: boolean
     default: false

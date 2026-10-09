@@ -113,8 +113,8 @@ The publication to this method can be found in [Nature Communications](https://w
 
 `use_gpu: True` in the config makes Enformer, MMSplice, SpliceAI and AbSplice-DNA use the CUDA variant of their
 TensorFlow environment (`workflow/modules/veff/envs/abexp-tensorflow-cuda.yaml`) instead of the CPU variant.
-Pangolin of the absplice2 module likewise uses the CUDA variant of its PyTorch environment
-(`workflow/modules/veff/absplice2/envs/absplice2-pangolin-cuda.yaml`). The CUDA variants also run on hosts
+Pangolin and AbSplice2 of the absplice2 module likewise use the CUDA variant of their PyTorch environment
+(`workflow/modules/veff/absplice2/envs/absplice2-cuda.yaml`). The CUDA variants also run on hosts
 without a GPU, on the CPU. Only with `use_gpu: True`, the rules of Enformer, MMSplice, SpliceAI and Pangolin request
 one GPU (resource `gpu`), e.g. from SLURM. AbSplice-DNA requests none.
 
@@ -176,7 +176,7 @@ Setup:
 2) In `config/config.yaml`, set `veff.annotator: "mehari"` and `veff.mehari_gencode_transcripts_fasta`.
    The pipeline builds the mehari transcript database from `gff3_file` and the FASTA (about 6 minutes and 4 GB RAM for
    a full GRCh38 release) and stores it at `system.mehari.transcripts_db` (see `workflow/modules/veff/mehari/config.schema.yaml`).
-3) Run snakemake. The mehari rules use the environment `workflow/modules/veff/mehari/envs/mehari_env.yaml`,
+3) Run snakemake. The mehari rules use the environment `workflow/modules/veff/envs/veff-py.yaml`,
    which installs the mehari Python package from bioconda.
    If you already have a conda environment with the mehari Python package, set `system.mehari.conda_env`
    in the config to its name instead.
@@ -269,7 +269,7 @@ workflow/modules/veff/absplice/             # AbSplice-DNA
 workflow/modules/veff/absplice2/            # AbSplice2-DNA
 workflow/modules/veff/enformer/             # Enformer
 workflow/modules/veff/nmd_scanner/          # NMD-Scanner, NMD efficiency, NMD features
-workflow/modules/veff/envs/                 # conda environments that several veff modules use
+workflow/modules/veff/envs/                 # conda environments that several modules use
 ```
 
 `workflow/modules/veff/loftee` runs reloftee, a VEP-free reimplementation of LOFTEE that is not
@@ -332,11 +332,12 @@ variant of the chr22 ClinVar example VCFs, GENCODE v40 instead of v38 added 14 v
 AbSplice_DNA below 0.001, and did not change the other 2,603 pairs.
 
 Each module has its own `config.schema.yaml` with its options and defaults, its own scripts and
-conda environments (`envs/`), and the files it ships. The conda environments that several veff modules
-use are in `workflow/modules/veff/envs/`. Every rule that needs more than a shell has a
+conda environments (`envs/`), and the files it ships. The conda environments that several modules
+use are in `workflow/modules/veff/envs/`, e.g. the light Python environment `veff-py.yaml` of vcf_prep,
+gtf_transcripts and most veff modules. Every rule that needs more than a shell has a
 `conda:` environment. The download rules that use aria2c, tar and gzip have no conda environment and take
 these tools from the PATH. The other download rules run in a conda environment, e.g.
-`veff__absplice2_download_pangolin_model` calls `abexp.pangolin.download_model` in the Pangolin environment.
+`veff__absplice2_download_pangolin_model` calls `abexp.pangolin.download_model` in the environment of absplice2.
 So the importing workflow needs Snakemake 9 and aria2c (conda-forge package `aria2`) in one
 environment, and `--sdm conda`.
 

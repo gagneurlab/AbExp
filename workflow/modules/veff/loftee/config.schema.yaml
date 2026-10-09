@@ -71,9 +71,9 @@ properties:
     description: >-
       Name or path of an existing conda environment with the reloftee Python package
       installed. reloftee has no public git repository to install from, so
-      `snakemake --sdm conda` cannot build a working environment on its own:
-      envs/loftee_env.yaml only provides reloftee's other dependencies. Set this to an
-      environment that already has reloftee installed.
+      `snakemake --sdm conda` cannot build a working environment on its own: the shared
+      workflow/modules/veff/envs/veff-py.yaml only provides reloftee's other dependencies.
+      Set this to an environment that already has reloftee installed.
   enabled:
     type: boolean
     default: false
@@ -100,7 +100,7 @@ then:
     conda_env:
       type: string
       description: >-
-        `enabled: true` needs `conda_env`: envs/loftee_env.yaml lacks reloftee. Set it to an
-        existing conda environment with the reloftee Python package.
+        `enabled: true` needs `conda_env`: workflow/modules/veff/envs/veff-py.yaml lacks
+        reloftee. Set it to an existing conda environment with the reloftee Python package.
   required:
     - conda_env

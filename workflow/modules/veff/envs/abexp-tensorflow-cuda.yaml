@@ -27,6 +27,6 @@ dependencies:
   - pip
   - pip:
     # packages/aberrant_expression of this repository at its release tag. release-please bumps the tag.
-    - "aberrant-expression[enformer,splicing,rocksdb] @ git+https://github.com/gagneurlab/AbExp.git@aberrant-expression-v0.1.0#subdirectory=packages/aberrant_expression"  # x-release-please-version
+    - "aberrant-expression[enformer,splicing,rocksdb] @ git+https://github.com/gagneurlab/AbExp.git@aberrant-expression-v0.1.1#subdirectory=packages/aberrant_expression"  # x-release-please-version
     # SpliceAI of the branch mnp, which predicts multi-nucleotide variants
     - "spliceai @ git+https://github.com/hoeze/SpliceAI.git@e3470ae185d1418fe40cf35e8c4e33431cbc5df2"

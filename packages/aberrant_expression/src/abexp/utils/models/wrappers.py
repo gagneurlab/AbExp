@@ -1,6 +1,8 @@
 import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.base import RegressorMixin
+from sklearn.exceptions import NotFittedError
+from sklearn.utils.validation import check_is_fitted
 
 __all__ = [
     "ModelWrapper",
@@ -55,6 +57,16 @@ class ModelWrapper(BaseEstimator):
         retval = self.model.get_params()
         retval["model_class"] = self.model_class
         return retval
+
+    def __sklearn_is_fitted__(self):
+        # The fitted state lives in self.model, so the wrapper has no attribute that ends with "_", from which
+        # check_is_fitted would see that it is fitted. Since scikit-learn 1.8, Pipeline.predict raises NotFittedError
+        # if its last step looks unfitted.
+        try:
+            check_is_fitted(self.model)
+        except NotFittedError:
+            return False
+        return True
 
     def __getattr__(self, *args):
         return self.model.__getattribute__(*args)

@@ -78,14 +78,14 @@ change of the requirements in a `pyproject.toml`, run `uv lock` and commit `uv.l
 
 The tests are in one directory per area: `tests/utils`, `tests/enformer`, `tests/splicing`, `tests/pangolin` and
 `tests/absplice2`.
-Each area needs the extras of its subpackages: `polars`, `spark` and `gff3` for `tests/utils`, and the extra of the
-same name for the other areas. Install them with the dependency group `test`, and run pytest through `uv run`.
+Each area needs the extras of its subpackages: `models`, `polars`, `spark` and `gff3` for `tests/utils`, and the extra
+of the same name for the other areas. Install them with the dependency group `test`, and run pytest through `uv run`.
 `uv sync --extra all --group test` covers all areas at once. The tests run across all cores by default, through
 pytest-xdist. Pass `-n0` to run them in one process, which a debugger needs and which restores per-test output
 order.
 
 ```bash
-uv sync --extra polars,spark,gff3 --group test
+uv sync --extra models,polars,spark,gff3 --group test
 cd packages/aberrant_expression && uv run pytest tests/utils
 ```
 The spark tests need Java 17.

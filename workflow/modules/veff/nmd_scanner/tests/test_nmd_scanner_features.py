@@ -149,6 +149,7 @@ def run_features(tmp_path: Path, transcripts: list[Transcript], proportions: lis
             "isoform_proportions_pq": str(tmp_path / "isoform_proportions.parquet"),
         },
         output={"veff_pq": str(tmp_path / "features.parquet")},
+        resources=SimpleNamespace(mem_mb=2000),
     )
     nmd_scanner_df.write_parquet(snakemake.input["nmd_scanner_pq"])
     score_df.write_parquet(snakemake.input["nmd_score_pq"])

@@ -147,6 +147,7 @@ def run_tissue_specific_vep(tmp_path: Path, chrom: str, gene: str, consequences:
         output={"veff_pq": str(tmp_path / "tissue_specific_vep.parquet")},
         params={},
         config={},
+        resources=SimpleNamespace(mem_mb=2000),
     )
     vep_df.write_parquet(snakemake.input["vep_pq"])
     gtf_transcripts_df.write_parquet(snakemake.input["gtf_transcripts"])

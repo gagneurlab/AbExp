@@ -448,6 +448,10 @@ Snakemake uses this profile when it runs `workflow/Snakefile`, also with `--snak
 - in a workflow that imports AbExp as a module, which uses its own profile. Pass
   `--rerun-triggers mtime params input` there to get the same behavior.
 
+With `--rerun-triggers mtime` alone, an edit of a feature set template `workflow/scripts/fset@<feature_set>.yaml`
+does not rerun `veff__fset_config`. So the feature set keeps its old `config.yaml`, and `veff__fset` keeps the old
+features. Only the params trigger notices the edit, through the param `template` of `veff__fset_config`.
+
 The recorded params of outputs from earlier AbExp versions lack `output_version`. So the first run after the
 update reruns all rules with an `output_version` and the rules downstream of them, once. To keep the existing
 outputs instead, run Snakemake once with `--touch` and the same config and targets. It marks the outputs as up

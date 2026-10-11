@@ -286,17 +286,24 @@ sequence columns. Two more rules build the NMD features from this table:
 - `veff__nmd_scanner_score` predicts the NMD efficiency `nmd_pred_score` of each transcript with a PTC,
   with the random forest of NMD-Scanner (see [NMD efficiency model](#nmd-efficiency-model)). It scores the
   rows whose `nmd_model_status` is "ok", and its log gives the number of rows per status.
-- `veff__nmd_scanner_features` aggregates the scores per variant, gene and GTEx tissue. The GTEx isoform
-  proportions of the tissue_specific_vep module weight them: the weight of a transcript is its median
-  transcript proportion in the tissue, divided by the sum of these medians over all transcripts of its gene.
-  So the weights of a gene add up to 1 in each tissue. The output has the key columns and a struct
-  column `features` with 28 fields: 12 from the scores and the PTC counts, and a weighted proportion and
-  a maximum for each of 8 NMD-Scanner flags (start and stop loss, the 5 NMD escape rules and
-  `ptc_less_than_150nt_to_start`). `alt_has_ptc.proportion` and `num_ptc` count every transcript in which
-  the variant creates a PTC, also those that the model cannot score. As in tissue_specific_vep, each variant
-  and gene gets a row for every tissue of the isoform proportions. A transcript that GTEx does not list under
-  its gene has no weight, so it counts only in the features without weights, such as `num_ptc` and
-  `nmd_pred_score`.
+- `veff__nmd_scanner_features` aggregates the transcripts and scores per variant, gene and GTEx tissue. The
+  GTEx isoform proportions of the tissue_specific_vep module weight them: the weight of a transcript is its
+  median transcript proportion in the tissue, divided by the sum of these medians over all transcripts of its
+  gene. So the weights of a gene add up to 1 in each tissue. The output has the key columns and a struct
+  column `features` with 28 fields: 8 from the scores, 4 PTC and NMD escape counts and proportions, and a
+  weighted proportion and a maximum for each of 8 NMD-Scanner flags (start and stop loss, the 5 NMD escape
+  rules and `ptc_less_than_150nt_to_start`).
+  - A variant and gene gets rows if the variant creates a PTC, a start loss or a stop loss in one of its
+    transcripts. As in tissue_specific_vep, it gets a row for every tissue of the isoform proportions.
+  - `start_loss` and `stop_loss` count on all transcripts of the variant and gene. In NMD-Scanner, a
+    transcript with a stop loss has no PTC.
+  - `alt_has_ptc.proportion`, `num_ptc`, `nmd_escape.proportion`, `num_escape` and the rule flags count
+    every transcript in which the variant creates a PTC, also those that the model cannot score. So a rule
+    flag of 0 means either that no transcript has a PTC or that no PTC transcript has the rule. A rule that
+    NMD-Scanner leaves null, because an input of the rule is null, counts as not set.
+  - The features of `nmd_pred_score` come from the scored transcripts only. They are null without one.
+  - A transcript that GTEx does not list under its gene has no weight, so it counts only in the features
+    without weights, such as `num_ptc` and `nmd_pred_score`.
 
 The module is off by default. Set `system.nmd_scanner.enabled: true` and request
 `<output_dir>/veff/nmd_scanner/features.parquet/<vcf_file>.parquet` as target.

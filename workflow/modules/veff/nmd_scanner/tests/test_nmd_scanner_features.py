@@ -15,6 +15,9 @@ from types import SimpleNamespace
 import polars as pl
 import pytest
 
+# The tests import polars before they run the script, so set_polars_memory_env() of the script warns.
+pytestmark = pytest.mark.filterwarnings("ignore:set_polars_memory_env:UserWarning")
+
 SCRIPT = Path(__file__).parent.parent / "nmd_scanner_features.py.py"
 
 VARIANT = {"chrom": "chr22", "start": 100, "end": 101, "ref": "C", "alt": "T"}

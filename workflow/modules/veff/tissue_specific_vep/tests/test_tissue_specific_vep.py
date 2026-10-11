@@ -14,6 +14,9 @@ from types import SimpleNamespace
 import polars as pl
 import pytest
 
+# The tests import polars before they run the script, so set_polars_memory_env() of the script warns.
+pytestmark = pytest.mark.filterwarnings("ignore:set_polars_memory_env:UserWarning")
+
 SCRIPT = Path(__file__).parent.parent / "tissue_specific_vep.py.py"
 
 TISSUE = "Whole Blood"

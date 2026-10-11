@@ -96,7 +96,7 @@ class AbExpZscoreRegressor(ModelWrapper):
         return -self.model.predict(*args, **kwargs)
 
 
-class NullRegressor(RegressorMixin):
+class NullRegressor(RegressorMixin, BaseEstimator):
     """
     Dummy model that returns the mean of the features as output.
     """
@@ -105,6 +105,10 @@ class NullRegressor(RegressorMixin):
 
     def fit(self, X=None, y=None):
         return self
+
+    def __sklearn_is_fitted__(self):
+        # fit learns nothing, so the model is fitted from the start
+        return True
 
     def predict(self, X=None):
         X = np.asanyarray(X)

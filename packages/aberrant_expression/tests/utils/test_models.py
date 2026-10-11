@@ -7,12 +7,16 @@ from sklearn.exceptions import NotFittedError
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import PolynomialFeatures
+from sklearn.preprocessing import StandardScaler
 from sklearn.utils.validation import check_is_fitted
 
 from abexp.utils.models import AbExpBinaryClassifier
+from abexp.utils.models import AbExpZscoreRegressor
+from abexp.utils.models import NullRegressor
 
 X = np.array([[0.0, 1.0], [1.0, 0.0], [1.0, 1.0], [2.0, 1.0], [0.0, 0.0], [2.0, 2.0]])
 Y = np.array([False, False, True, True, False, True])
+Z = np.array([0.5, -1.0, 2.0, 1.5, -0.5, 3.0])
 
 
 def test_wrapper_is_not_fitted_before_fit():
@@ -34,6 +38,16 @@ def test_pipeline_with_the_wrapper_as_last_step_predicts():
     x_poly = PolynomialFeatures(interaction_only=True, include_bias=False).fit_transform(X)
     expected = LogisticRegression().fit(x_poly, Y).predict_proba(x_poly)[:, 1]
     np.testing.assert_array_equal(pipeline.predict(X), expected)
+
+
+def test_pipeline_with_a_wrapped_null_regressor_as_last_step_predicts():
+    # check_is_fitted reads the tags of NullRegressor, which BaseEstimator provides
+    pipeline = Pipeline([
+        ("scaler", StandardScaler()),
+        ("regressor", AbExpZscoreRegressor(NullRegressor)),
+    ]).fit(X, Z)
+
+    np.testing.assert_array_equal(pipeline.predict(X), StandardScaler().fit_transform(X).mean(axis=-1))
 
 
 def test_clone_of_a_wrapper_around_an_estimator():

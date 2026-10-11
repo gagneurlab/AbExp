@@ -2,6 +2,7 @@ import pickle
 
 import numpy as np
 import pytest
+import sklearn
 from sklearn.exceptions import NotFittedError
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
@@ -33,6 +34,37 @@ def test_pipeline_with_the_wrapper_as_last_step_predicts():
     x_poly = PolynomialFeatures(interaction_only=True, include_bias=False).fit_transform(X)
     expected = LogisticRegression().fit(x_poly, Y).predict_proba(x_poly)[:, 1]
     np.testing.assert_array_equal(pipeline.predict(X), expected)
+
+
+def test_clone_of_a_wrapper_around_an_estimator():
+    model = AbExpBinaryClassifier(LogisticRegression, C=0.5).fit(X, Y)
+
+    cloned = sklearn.clone(model)
+
+    assert type(cloned) is AbExpBinaryClassifier
+    assert cloned.get_params() == model.get_params()
+    with pytest.raises(NotFittedError):
+        check_is_fitted(cloned)
+
+
+def test_clone_of_a_wrapper_around_a_pipeline():
+    # sklearn.clone passes get_params(deep=False) to __init__, which takes the params of the Pipeline, but not the
+    # params of its steps
+    model = AbExpBinaryClassifier(
+        model_class=Pipeline,
+        model_instance=Pipeline([
+            ("polynomial_features", PolynomialFeatures(interaction_only=True, include_bias=False)),
+            ("classifier", LogisticRegression(C=0.5)),
+        ]),
+    ).fit(X, Y)
+
+    cloned = sklearn.clone(model)
+
+    assert type(cloned) is AbExpBinaryClassifier
+    assert repr(cloned) == repr(model)
+    assert cloned.model_class is Pipeline
+    with pytest.raises(NotFittedError):
+        check_is_fitted(cloned)
 
 
 class _PickledByVersion010:

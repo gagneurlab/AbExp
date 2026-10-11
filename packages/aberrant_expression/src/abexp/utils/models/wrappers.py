@@ -53,8 +53,11 @@ class ModelWrapper(BaseEstimator):
             self.model = fitted_model
         return self
 
-    def get_params(self, *args, **kwargs):
-        retval = self.model.get_params()
+    def get_params(self, deep=True):
+        # The params of the model are the params of the wrapper, because __init__ passes them to model_class.
+        # sklearn.clone passes the params of deep=False back to __init__, so these must not hold the nested params of
+        # the model, e.g. those of the steps of a Pipeline.
+        retval = self.model.get_params(deep=deep)
         retval["model_class"] = self.model_class
         return retval
 

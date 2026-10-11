@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aberrant-expression"
-version = "0.1.0"
+version = "0.1.1"
 description = "Utilities, Enformer, MMSplice, AbSplice-DNA, SpliceAI-RocksDB, Pangolin and AbSplice2-DNA for the AbExp pipeline"
 authors = [
     { name = "Florian Hölzlwimmer", email = "git.ich@frhoelzlwimmer.de" },

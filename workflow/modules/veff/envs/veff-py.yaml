@@ -42,4 +42,4 @@ dependencies:
 - pip
 - pip:
   # packages/aberrant_expression of this repository at its release tag. release-please bumps the tag.
-  - "aberrant-expression[gff3] @ git+https://github.com/gagneurlab/AbExp.git@aberrant-expression-v0.1.0#subdirectory=packages/aberrant_expression"  # x-release-please-version
+  - "aberrant-expression[gff3] @ git+https://github.com/gagneurlab/AbExp.git@aberrant-expression-v0.1.1#subdirectory=packages/aberrant_expression"  # x-release-please-version

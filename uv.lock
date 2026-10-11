@@ -33,7 +33,7 @@ requires-dist = ["setuptools>=25"]
 
 [[package]]
 name = "aberrant-expression"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "packages/aberrant_expression" }
 
 [package.optional-dependencies]

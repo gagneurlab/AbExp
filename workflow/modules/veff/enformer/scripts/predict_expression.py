@@ -1,4 +1,10 @@
 import os
+
+from abexp.utils.common import set_polars_memory_env
+
+# Tell polars the mem_mb of the rule before its first import.
+set_polars_memory_env(snakemake.resources.mem_mb * 10**6)
+
 import pathlib
 
 from abexp.enformer.enformer import Enformer, EnformerAggregator

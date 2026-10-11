@@ -19,7 +19,7 @@ jobs:
         include:
           # abexp.utils
           - area: utils
-            extras: polars,spark,gff3
+            extras: models,polars,spark,gff3
           # abexp.enformer
           - area: enformer
             extras: enformer

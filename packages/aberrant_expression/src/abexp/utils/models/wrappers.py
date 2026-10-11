@@ -1,6 +1,8 @@
 import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.base import RegressorMixin
+from sklearn.exceptions import NotFittedError
+from sklearn.utils.validation import check_is_fitted
 
 __all__ = [
     "ModelWrapper",
@@ -51,10 +53,23 @@ class ModelWrapper(BaseEstimator):
             self.model = fitted_model
         return self
 
-    def get_params(self, *args, **kwargs):
-        retval = self.model.get_params()
+    def get_params(self, deep=True):
+        # The params of the model are the params of the wrapper, because __init__ passes them to model_class.
+        # sklearn.clone passes the params of deep=False back to __init__, so these must not hold the nested params of
+        # the model, e.g. those of the steps of a Pipeline.
+        retval = self.model.get_params(deep=deep)
         retval["model_class"] = self.model_class
         return retval
+
+    def __sklearn_is_fitted__(self):
+        # The fitted state lives in self.model, so the wrapper has no attribute that ends with "_", from which
+        # check_is_fitted would see that it is fitted. Since scikit-learn 1.8, Pipeline.predict raises NotFittedError
+        # if its last step looks unfitted.
+        try:
+            check_is_fitted(self.model)
+        except NotFittedError:
+            return False
+        return True
 
     def __getattr__(self, *args):
         return self.model.__getattribute__(*args)
@@ -81,7 +96,7 @@ class AbExpZscoreRegressor(ModelWrapper):
         return -self.model.predict(*args, **kwargs)
 
 
-class NullRegressor(RegressorMixin):
+class NullRegressor(RegressorMixin, BaseEstimator):
     """
     Dummy model that returns the mean of the features as output.
     """
@@ -90,6 +105,10 @@ class NullRegressor(RegressorMixin):
 
     def fit(self, X=None, y=None):
         return self
+
+    def __sklearn_is_fitted__(self):
+        # fit learns nothing, so the model is fitted from the start
+        return True
 
     def predict(self, X=None):
         X = np.asanyarray(X)

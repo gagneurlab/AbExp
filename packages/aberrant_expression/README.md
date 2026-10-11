@@ -72,7 +72,9 @@ describes the workspace and the tests.
 feature sets of AbExp. `abexp.utils.models` holds the scikit-learn model wrappers of the AbExp models, and needs the
 extra `models`. `abexp.utils.gff3` reads GFF3 files with polars-bio for `abexp.enformer` and `abexp.pangolin`, and
 needs the extra `gff3`. With `par_y_suffix=True`, it adds the suffix `_PAR_Y` to `gene_id` and `transcript_id` of the
-chrY PAR copies, as `abexp.enformer` does.
+chrY PAR copies, as `abexp.enformer` does. `abexp.utils.common` needs only the standard library. Its
+`set_polars_memory_env(limit)` tells polars the memory limit of a job, and the workflow scripts call it before their
+first import of polars.
 
 ## abexp.enformer
 

@@ -22,7 +22,7 @@ SHARED_CONDA_ENV_YAML_DIR = workflow.current_basedir.join("../envs")
 OUTPUT_VERSION = {
     "annotation": 3,
     "score": 2,
-    "features": 5,
+    "features": 6,
 }
 
 OUTPUT_DIR = os.path.abspath(config["output_dir"])

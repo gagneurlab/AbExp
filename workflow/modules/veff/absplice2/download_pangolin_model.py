@@ -1,5 +1,10 @@
 # Downloads one published Pangolin weight file with abexp.pangolin.download_model. The package pins
 # the commit of the Pangolin repository and checks the SHA-256 sum of the file.
+from abexp.utils.common import set_polars_memory_env
+
+# Tell polars the mem_mb of the rule before its first import.
+set_polars_memory_env(snakemake.resources.mem_mb * 10**6)
+
 import logging
 
 from abexp.pangolin import download_model

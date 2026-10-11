@@ -14,6 +14,9 @@ from types import SimpleNamespace
 import polars as pl
 import pytest
 
+# The tests import polars before they run the script, so set_polars_memory_env() of the script warns.
+pytestmark = pytest.mark.filterwarnings("ignore:set_polars_memory_env:UserWarning")
+
 SCRIPT = Path(__file__).parent.parent / "tissue_specific_vep.py.py"
 
 TISSUE = "Whole Blood"
@@ -147,6 +150,7 @@ def run_tissue_specific_vep(tmp_path: Path, chrom: str, gene: str, consequences:
         output={"veff_pq": str(tmp_path / "tissue_specific_vep.parquet")},
         params={},
         config={},
+        resources=SimpleNamespace(mem_mb=2000),
     )
     vep_df.write_parquet(snakemake.input["vep_pq"])
     gtf_transcripts_df.write_parquet(snakemake.input["gtf_transcripts"])

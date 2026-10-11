@@ -17,6 +17,12 @@
 # %%
 import os
 
+from abexp.utils.common import set_polars_memory_env
+
+# Tell polars the mem_mb of the rule before its first import.
+if "snakemake" in globals():
+    set_polars_memory_env(snakemake.resources.mem_mb * 10**6)
+
 import polars as pl
 
 from abexp.utils.gff3 import read_gff3

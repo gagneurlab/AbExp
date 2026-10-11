@@ -36,8 +36,6 @@ import json
 import shutil
 import logging
 
-import yaml
-
 from pprint import pprint
 
 import numpy as np

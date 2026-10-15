@@ -309,6 +309,8 @@ possible_consequences = [
     "stop_retained_variant",
     "synonymous_variant",
     "coding_sequence_variant",
+    # since VEP 116, for a variant that covers a whole protein-coding transcript
+    "coding_transcript_variant",
     "mature_miRNA_variant",
     "5_prime_UTR_variant",
     "3_prime_UTR_variant",

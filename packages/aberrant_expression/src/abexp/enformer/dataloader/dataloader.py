@@ -4,15 +4,18 @@ from collections.abc import Mapping
 import numpy as np
 import pyarrow as pa
 import math
-import re
 import polars as pl
 from kipoiseq2.extractors import VariantSeqExtractor, FastaStringExtractor
 from kipoiseq2 import Interval, Variant
-from kipoiseq2.transforms.functional import one_hot_dna
+from kipoiseq2.transforms.functional import DNA_ONE_HOT, encode
 from abexp.enformer.utils import genome_annotation_to_polars
 
-# the letters other than A, C, G, T and N, after str.upper
-_NOT_ACGTN = re.compile('[^ACGTN]')
+# DNA_ONE_HOT encodes A, C, G and T one-hot and N as 0.25, in either case.
+# All other ASCII characters encode as all-zero rows, e.g. IUPAC codes.
+_ONE_HOT_TABLE = {
+    **{chr(code): (0, 0, 0, 0) for code in range(128) if chr(code).upper() not in DNA_ONE_HOT},
+    **DNA_ONE_HOT,
+}
 
 
 def numpy_collate(samples: list):
@@ -174,15 +177,11 @@ def one_hot_encode(seq: str) -> np.ndarray:
     """
     One-hot encode a sequence in upper or lower case, with N as 0.25 and all other letters as all-zero rows.
     Soft-masked FASTAs such as UCSC hg38.fa hold repeats in lowercase, and VCF ALT alleles may be lowercase too.
-    The other letters are e.g. the few IUPAC codes of GRCh37 and GRCh38. one_hot_dna of kipoiseq2 0.2 raises
-    a ValueError for them, so they become N first and all-zero rows afterwards.
+    The other letters are e.g. the few IUPAC codes of GRCh37 and GRCh38.
     :param seq: The sequence
     :return: Array of shape (len(seq), 4) with the columns A, C, G and T
     """
-    seq = seq.upper()
-    one_hot = one_hot_dna(_NOT_ACGTN.sub('N', seq))
-    one_hot[[match.start() for match in _NOT_ACGTN.finditer(seq)]] = 0
-    return one_hot
+    return encode(seq, _ONE_HOT_TABLE, dtype=np.float32)
 
 
 def extract_sequences_around_anchor(shifts, chromosome, strand, anchor, seq_length,

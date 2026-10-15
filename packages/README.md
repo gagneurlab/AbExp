@@ -192,7 +192,7 @@ update the workflow after the pin has moved.
 After a release, the workflow builds the sdist and wheel of the package with `uv build`. PyPI rejects direct URL
 dependencies. If the package has one, the build emits a warning. If the upload to PyPI is on, the build fails
 instead.
-The extras `splicing`, `enformer` and `pangolin` depend on kipoiseq2 0.1 from PyPI. kipoiseq2 requires Python
+The extras `splicing`, `enformer` and `pangolin` depend on kipoiseq2 0.2 from PyPI. kipoiseq2 requires Python
 3.12 or later, so aberrant-expression does too.
 
 Notes:

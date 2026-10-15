@@ -89,7 +89,7 @@ numpy = [
     "numpy>=1.26.4",
 ]
 kipoiseq2 = [
-    "kipoiseq2[ranges]>=0.1,<0.2",
+    "kipoiseq2[ranges]>=0.2,<0.3",
 ]
 tensorflow = [
     "tensorflow>=2.14.0",

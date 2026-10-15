@@ -155,7 +155,8 @@ The workflow does not stop if a shipped model runs on VEP 116 features. Some of 
 - `NMD_escaping_variant`: since VEP 110, the NMD plugin applies the rule of the last 50 bases of the penultimate
   exon at the correct end of minus-strand transcripts.
 - `coding_sequence_variant`: a variant that covers a whole protein-coding transcript gets the new term
-  `coding_transcript_variant` instead.
+  `coding_transcript_variant` instead. tissue_specific_vep writes it as the features `coding_transcript_variant.*`,
+  which are always 0 with VEP 108.
 - The VEP 116 cache holds the transcripts of Ensembl 116 instead of Ensembl 108.
 
 ## Using mehari instead of VEP

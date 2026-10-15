@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/gagneurlab/AbExp/compare/aberrant-expression-v0.1.1...aberrant-expression-v0.1.2) (2026-10-15)
+
+
+### Bug Fixes
+
+* **enformer:** uppercase the sequence before one-hot encoding ([#41](https://github.com/gagneurlab/AbExp/issues/41)) ([d3cce58](https://github.com/gagneurlab/AbExp/commit/d3cce58be318fc1edae9f607af4433b2971e005b))
+
 ## [0.1.1](https://github.com/gagneurlab/AbExp/compare/aberrant-expression-v0.1.0...aberrant-expression-v0.1.1) (2026-10-11)
 
 

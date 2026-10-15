@@ -135,6 +135,28 @@ def test_n_in_window(predict):
     )
 
 
+def test_iupac_codes_in_window(models, tmp_path, monkeypatch):
+    # IUPAC codes are all zeros in the one-hot encoding, as N, so the row equals that of test_n_in_window
+    monkeypatch.setitem(s.CHROMS, 'chr2', s.CHROMS['chr2'].replace('N' * 20, 'RYSWKMBDHV' * 2))
+    s.write_fasta(tmp_path / 'genome.fa')
+    s.write_gff3(tmp_path / 'genes.gff3')
+    s.write_vcf(tmp_path / 'variants.vcf', [s.N_IN_WINDOW])
+    genes = read_gff3_genes(tmp_path / 'genes.gff3', s.TRANSCRIPT_TAGS)
+    pangolin = Pangolin(str(tmp_path / 'genome.fa'), genes, models, distance=s.DISTANCE)
+    assert_rows(
+        pangolin.predict_df(str(tmp_path / 'variants.vcf')),
+        ('chr2:6020:T>C', 'PLUS3', 0.029540440067648888, 0, -0.004769896622747183, 20, []),
+    )
+
+
+def test_encode():
+    # N and the IUPAC codes are all zeros, and the - strand is reverse complemented
+    zeros = np.zeros((4, 11), dtype=np.float32)
+    eye = np.eye(4, dtype=np.float32)
+    np.testing.assert_array_equal(Pangolin._encode('ACGTNRYSWKMBDHV', '+'), np.hstack([eye, zeros]))
+    np.testing.assert_array_equal(Pangolin._encode('ACGTNRYSWKMBDHV', '-'), np.hstack([zeros, eye]))
+
+
 def test_chromosome_start(predict):
     # the rows of chr3n:6120:A>G, where 6000 N precede the same sequence
     assert_rows(

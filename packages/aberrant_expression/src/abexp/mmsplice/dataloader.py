@@ -24,7 +24,7 @@ class ExonVariantSeqExtrator:
     """
 
     def __init__(self, fasta_file):
-        self.variant_seq_extractor = VariantSeqExtractor(fasta_file)
+        self.variant_seq_extractor = VariantSeqExtractor(fasta_file, use_strand=True)
         self.fasta = self.variant_seq_extractor.ref_seq_extractor
 
     def extract(self, interval, variants, overhang=(100, 100)):

@@ -168,7 +168,7 @@ class VCFTSSDataloader(TSSDataloader):
                 (f"shift must be smaller than downstream_tss + upstream_tss + 1 but got "
                  f"{shift} >= {variant_downstream_tss + variant_upstream_tss + 1}")
 
-        self._variant_seq_extractor = VariantSeqExtractor(reference_sequence=self._reference_sequence)
+        self._variant_seq_extractor = VariantSeqExtractor(reference_sequence=self._reference_sequence, use_strand=True)
         self.vcf_file = vcf_file
         self.variant_upstream_tss = variant_upstream_tss
         self.variant_downstream_tss = variant_downstream_tss

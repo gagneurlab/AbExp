@@ -210,5 +210,7 @@ def extract_sequences_around_anchor(shifts, chromosome, strand, anchor, seq_leng
         assert len(seq) == seq_length, \
             f"interval width must be {seq_length} but got {len(seq)}"
 
-        sequences.append(one_hot_dna(seq))
+        # one_hot_dna encodes lowercase bases as all-zero rows,
+        # e.g. the repeats of a soft-masked FASTA or a lowercase ALT allele
+        sequences.append(one_hot_dna(seq.upper()))
     return sequences, interval

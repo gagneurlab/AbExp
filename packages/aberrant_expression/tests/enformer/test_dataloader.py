@@ -1,9 +1,11 @@
 import numpy as np
+import polars as pl
 import pytest
 from kipoiseq2 import Variant
 from kipoiseq2.extractors import FastaStringExtractor, VariantSeqExtractor
 from kipoiseq2.transforms.functional import one_hot_dna
 
+from abexp.enformer.dataloader import RefTSSDataloader, VCFTSSDataloader
 from abexp.enformer.dataloader.dataloader import extract_sequences_around_anchor
 
 CHROM_SEQ = 'ACGTTGCAACGGTACCATGATTCAGGCTAA'
@@ -54,3 +56,31 @@ def test_extract_variant_sequences_at_the_chromosome_ends(fasta_file, strand, an
     if strand == '-':
         expected = reverse_complement(expected)
     np.testing.assert_array_equal(sequences[0], one_hot_dna(expected))
+
+
+@pytest.mark.parametrize('strand', ['+', '-'])
+def test_dataloaders_uppercase_a_soft_masked_reference_and_a_lowercase_alt(tmp_path, strand):
+    # soft-masked references, such as UCSC hg38.fa, hold repeats in lowercase,
+    # VCF ALT alleles may be lowercase too,
+    # and one_hot_dna encodes lowercase bases as all-zero rows
+    fasta_file = tmp_path / 'chrT.fa'
+    fasta_file.write_text(f'>chrT\n{CHROM_SEQ.lower()}\n')
+    vcf_file = tmp_path / 'chrT.vcf'
+    vcf_file.write_text('##fileformat=VCFv4.2\n'
+                        '#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n'
+                        'chrT\t2\t.\tC\tt\t.\t.\t.\n')
+    # the transcript has one base, so its TSS is 2 on both strands
+    genome_annotation = pl.DataFrame({
+        'Chromosome': ['chrT'], 'Feature': ['transcript'], 'Start': [2], 'End': [3], 'Strand': [strand],
+        'gene_id': ['g1'], 'transcript_id': ['t1'],
+    })
+    dl_args = {'fasta_file': fasta_file, 'genome_annotation': genome_annotation,
+               'seq_length': SEQ_LENGTH, 'shifts': [0]}
+    for dl, expected in [
+        (RefTSSDataloader(chromosome='chrT', **dl_args), 'NNN' + CHROM_SEQ[:7]),
+        (VCFTSSDataloader(vcf_file=vcf_file, **dl_args), 'NNN' + 'AT' + CHROM_SEQ[2:7]),
+    ]:
+        if strand == '-':
+            expected = reverse_complement(expected)
+        [sample] = list(dl)
+        np.testing.assert_array_equal(sample['sequences'][0], one_hot_dna(expected))

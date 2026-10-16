@@ -35,8 +35,8 @@ def test_encodeDNA():
     np.testing.assert_array_equal(encoded[2, 5], [0., 0., 1., 0.])
 
     np.testing.assert_array_equal(encodeDNA(['N*']), np.zeros((1, 2, 4)))
-    # other letters, e.g. IUPAC codes, raise a KeyError with kipoiseq2 0.1 and a ValueError with kipoiseq2 0.2
-    with pytest.raises((KeyError, ValueError)):
+    # other letters, e.g. IUPAC codes, raise
+    with pytest.raises(ValueError, match='not in table'):
         encodeDNA(['ACGTR'])
 
 

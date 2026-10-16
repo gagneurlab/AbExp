@@ -1,4 +1,5 @@
 import logging
+import re
 from collections import defaultdict
 from dataclasses import dataclass
 
@@ -11,6 +12,8 @@ from kipoiseq2.transforms.functional import one_hot_dna
 logger = logging.getLogger(__name__)
 
 NO_SITES_WARNING = 'NoAnnotatedSitesToMaskForThisGene'
+
+_NOT_ACGT = re.compile('[^ACGT]')
 
 
 @dataclass(frozen=True)
@@ -113,8 +116,9 @@ class Pangolin:
     }
 
     def __init__(self, fasta_file, genes, models, distance=50, mask=True, batch_size=8):
-        self.fasta = FastaStringExtractor(fasta_file, force_upper=True)
-        self.variant_seq_extractor = VariantSeqExtractor(reference_sequence=self.fasta)
+        # The intervals have no strand, so use_strand has no effect. _encode reverse complements for the - strand.
+        self.fasta = FastaStringExtractor(fasta_file, use_strand=False, force_upper=True)
+        self.variant_seq_extractor = VariantSeqExtractor(reference_sequence=self.fasta, use_strand=True)
         self.chrom_lengths = {chrom: len(record) for chrom, record in self.fasta.fasta.items()}
         self.genes = genes.select('chrom', 'start', 'end', 'strand', 'gene_id')
         self.sites = [np.array(sites, dtype=np.int64) for sites in genes.get_column('sites')]
@@ -171,8 +175,12 @@ class Pangolin:
 
     @staticmethod
     def _encode(seq, strand):
-        """One-hot encoding of shape (4, length) with N as 0, reverse complemented for the - strand."""
-        x = one_hot_dna(seq, neutral_value=0).T
+        """One-hot encoding of shape (4, length) with N as 0, reverse complemented for the - strand.
+
+        Letters other than A, C, G and T are 0 too, e.g. the few IUPAC codes of GRCh37 and GRCh38. one_hot_dna of
+        kipoiseq2 0.2 raises a ValueError for them, so they become N first.
+        """
+        x = one_hot_dna(_NOT_ACGT.sub('N', seq), neutral_value=0).T
         if strand == '-':
             # reversing the channels A, C, G, T complements the bases
             return x[::-1, ::-1]

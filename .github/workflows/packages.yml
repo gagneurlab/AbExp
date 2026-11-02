@@ -62,11 +62,11 @@ jobs:
           path: pangolin_models
           key: pangolin-weights-${{ hashFiles('packages/aberrant_expression/src/abexp/pangolin/weights.py') }}
       # reads the uv version from required-version
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           version-file: pyproject.toml
       # the spark tests need Java; pyspark 3.4 and later support Java 17
-      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         if: matrix.area == 'utils'
         with:
           distribution: temurin
@@ -115,7 +115,7 @@ jobs:
           persist-credentials: false
           lfs: false
       # reads the uv version from required-version
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           version-file: pyproject.toml
       # --no-editable: install the package as a wheel, as pip does from the git tag
@@ -147,7 +147,7 @@ jobs:
         with:
           persist-credentials: false
       # reads the uv version from required-version
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           version-file: pyproject.toml
       - run: uv build packages/aberrant_expression --out-dir dist

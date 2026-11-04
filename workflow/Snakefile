@@ -157,6 +157,7 @@ VEFF_CONFIG = {
     "absplice": config["system"]["absplice"],
     "absplice2": config["system"]["absplice2"],
     "enformer": config["system"]["enformer"],
+    "promoterai": config["system"]["promoterai"],
     "nmd_scanner": config["system"]["nmd_scanner"],
 }
 

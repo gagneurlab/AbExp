@@ -8,8 +8,8 @@ description: |
     Double braces, e.g. {{vcf_file}}: Snakemake wildcards or values filled in by the rules.
   The workflow combines the modules workflow/modules/vcf_prep, gtf_transcripts and veff
   (variant annotation). The sections system.vep, system.mehari, system.loftee,
-  system.absplice, system.absplice2, system.enformer and system.nmd_scanner go to the submodules
-  of veff; the config.schema.yaml of each submodule lists their options.
+  system.absplice, system.absplice2, system.enformer, system.promoterai and system.nmd_scanner go
+  to the submodules of veff; the config.schema.yaml of each submodule lists their options.
 type: object
 
 properties:
@@ -148,6 +148,10 @@ properties:
         type: object
         default: {}
         description: Options of the enformer module (workflow/modules/veff/enformer/config.schema.yaml).
+      promoterai:
+        type: object
+        default: {}
+        description: Options of the promoterai module (workflow/modules/veff/promoterai/config.schema.yaml).
       nmd_scanner:
         type: object
         default: {}

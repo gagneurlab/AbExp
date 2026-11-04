@@ -76,8 +76,8 @@ change of the requirements in a `pyproject.toml`, run `uv lock` and commit `uv.l
 
 ## Running the tests
 
-The tests are in one directory per area: `tests/utils`, `tests/enformer`, `tests/splicing`, `tests/pangolin` and
-`tests/absplice2`.
+The tests are in one directory per area: `tests/utils`, `tests/enformer`, `tests/promoterai`, `tests/splicing`,
+`tests/pangolin` and `tests/absplice2`.
 Each area needs the extras of its subpackages: `models`, `polars`, `spark` and `gff3` for `tests/utils`, and the extra
 of the same name for the other areas. Install them with the dependency group `test`, and run pytest through `uv run`.
 `uv sync --extra all --group test` covers all areas at once. The tests run across all cores by default, through
@@ -104,6 +104,13 @@ The fetch is opt-in, because `.lfsconfig` excludes `tests/enformer/data/` from t
 environments pip-install the package from a git URL of this repository. Without the exclude, each environment build
 on a machine with git-lfs would download the test data and use up the LFS quota of the repository. Once the quota
 runs out, the download fails, and so does the pip install. `--exclude=""` in the command above lifts the exclude.
+
+The promoterai tests run a model with fixed random weights on a synthetic genome, so they need no files and no
+network:
+```bash
+uv sync --extra promoterai --group test
+cd packages/aberrant_expression && uv run pytest tests/promoterai
+```
 
 The splicing tests read the files in `packages/aberrant_expression/tests/splicing/data/`, which git stores directly,
 and the chr22 sequence from `example/chr22_hg38.fa`:

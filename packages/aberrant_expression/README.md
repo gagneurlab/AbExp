@@ -8,6 +8,7 @@ installs it as `aberrant-expression`, and Python imports it as `abexp`. The base
 | ------------------------ | ----------------------------------------------------------------------------------------- | ---------- |
 | `abexp.utils`            | functions on polars and Spark DataFrames, a GFF3 reader, and the scikit-learn model wrappers of AbExp | `polars`, `spark`, `gff3`, `models` |
 | `abexp.enformer`         | variant effect prediction of promoter variants with Enformer                              | `enformer` |
+| `abexp.promoterai`       | variant effect prediction of promoter variants with PromoterAI                            | `promoterai` |
 | `abexp.mmsplice`         | MMSplice and the junction VCF dataloaders                                                 | `splicing` |
 | `abexp.absplice`         | AbSplice-DNA from MMSplice with SpliceMaps and from SpliceAI                              | `splicing` |
 | `abexp.spliceai_rocksdb` | SpliceAI scores from SpliceAI-RocksDB                                                     | `rocksdb`  |
@@ -43,8 +44,9 @@ pip install "aberrant-expression[polars] @ git+https://github.com/gagneurlab/AbE
 | `pangolin` | `abexp.pangolin`. conda-forge has PyTorch as `pytorch-cpu` and `pytorch-gpu`. |
 | `absplice2` | `abexp.absplice2`                                                        |
 | `enformer` | `abexp.enformer`. For GPU support on Linux, also install `tensorflow[and-cuda]`. |
+| `promoterai` | `abexp.promoterai`. The PromoterAI model comes from Illumina under a license agreement, see [abexp.promoterai](#abexppromoterai). |
 | `all`      | all extras but `rocksdb`                                                  |
-| `numpy`, `kipoiseq2`, `tensorflow`, `tqdm` | one requirement each, which several extras share |
+| `numpy`, `kipoiseq2`, `pyarrow`, `tensorflow`, `tqdm` | one requirement each, which several extras share |
 
 The extra `rocksdb` installs python-rocksdb, which pip builds only with the RocksDB library installed; conda-forge
 has a build of it. SpliceAI predictions of the variants that are not in SpliceAI-RocksDB also need SpliceAI.
@@ -190,6 +192,78 @@ behavior. The reference scores that the workflow downloads come from the same pi
 behavior. A fix would replace `pred_seq_length // 2` with `pred.shape[2] // 2 * bin_size` in
 `EnformerAggregator._aggregate_batch`. It needs a retrained tissue mapper and recomputed reference scores. The offset
 came in with the crop to 21 output bins, in commit e2bbf5ec (2024-05-16) of the training pipeline.
+
+## abexp.promoterai
+
+[PromoterAI](https://github.com/Illumina/PromoterAI) scores the effect of a promoter variant on the expression of
+the gene, between -1 (under-expression) and 1 (over-expression). `abexp.promoterai` runs the published model on the
+variants near a TSS of the genome annotation and aggregates the scores per gene and variant, as the AbExp pipeline
+needs them. It is our own code, in the style of `abexp.enformer`; the package `promoterai` of Illumina is not a
+dependency.
+
+### PromoterAI model
+
+Illumina publishes the models under a license agreement, see
+[PromoterAI](https://github.com/Illumina/PromoterAI), so no code downloads them: `PromoterAI(model_path=...)` takes
+the path of a model folder, e.g. `promoterAI_v1_hg38_finetune`. The published models are Keras 2 models in the
+TensorFlow SavedModel format, and `abexp.promoterai.promoterai.load_model` restores them with `tf.saved_model.load`,
+which also works with Keras 3. A model in the Keras format (`.keras`) is loaded with `tf.keras.models.load_model`.
+The input length of the dataloader (`seq_length`) must be the one of the model, 20480 for the published models,
+which is `DEFAULT_INPUT_LENGTH` of `abexp.promoterai.constants`.
+
+### Sequences and scores
+
+`VCFTSSDataloader` pairs the variants of a VCF file with the transcripts whose TSS lies within
+`variant_upstream_tss` and `variant_downstream_tss`, and builds the sequences as PromoterAI does: `seq_length`
+bases of the reference around the first base of the variant, with the alternative allele in the middle, and reverse
+complemented for a transcript on the minus strand. An insertion pushes the bases at the 3' end out of the sequence,
+a deletion pads it with N. `PromoterAI.predict` runs the model on both sequences and writes the tanh of the rounded
+mean difference of the outputs of the human head, the score of `promoterai.score` of PromoterAI.
+
+The score of a variant depends only on the variant and on the strand of the transcript, not on the distance to the
+TSS, so all transcripts of a gene get the same score. A variant gets the score NaN if its sequence reaches beyond
+the chromosome, if its reference allele does not match the reference genome, or if its alternative allele is not a
+sequence of ACGT, e.g. a symbolic allele. `promoterai.score` of PromoterAI skips such a variant.
+`PromoterAIVeff.run` drops the NaN rows and aggregates the rest per gene and variant, with the aggregation mode
+`canonical` (the Ensembl canonical transcript of a protein coding gene) or `median`.
+
+### Genome annotation
+
+The dataloader and `PromoterAIVeff` take the genome annotation as `genome_annotation`: the path to a GFF3 file, such
+as a GENCODE annotation, or a polars or pandas DataFrame with pyranges-style columns, see
+`abexp.promoterai.utils.genome_annotation_to_polars`.
+
+### Usage
+
+The example reads the chr22 sequence and genome annotation in `example/` of the AbExp repository, and a VCF file and
+a model folder of your own. Run it in the root of a checkout of AbExp.
+
+```python
+from pathlib import Path
+
+from abexp.promoterai.dataloader import VCFTSSDataloader
+from abexp.promoterai.promoterai import PromoterAI, PromoterAIVeff
+
+fasta_file = 'example/chr22_hg19.fa'
+genome_annotation = 'example/chr22.gencode.v40lift37.annotation.gff3.gz'
+vcf_file = 'my_variants.vcf.gz'
+model_path = 'promoterAI_models/promoterAI_v1_hg38_finetune'
+
+output_dir = Path('output')
+output_dir.mkdir(exist_ok=True, parents=True)
+
+# the variants in the promoters of the canonical transcripts of the protein coding genes
+dl = VCFTSSDataloader(fasta_file=fasta_file, genome_annotation=genome_annotation, vcf_file=vcf_file,
+                      variant_upstream_tss=500, variant_downstream_tss=500,
+                      canonical_only=True, protein_coding_only=True)
+
+# one score per variant and transcript
+PromoterAI(model_path=model_path).predict(dl, batch_size=8, filepath=output_dir / 'scores.parquet')
+
+# one score per variant and gene
+PromoterAIVeff(genome_annotation=genome_annotation).run(
+    output_dir / 'scores.parquet', output_dir / 'veff.parquet', aggregation_mode='canonical')
+```
 
 ## abexp.mmsplice, abexp.absplice and abexp.spliceai_rocksdb
 
@@ -349,6 +423,7 @@ The tests are in one directory per area, and each area needs the extras of its s
 | ---------------- | ----------------- | --------------------------------------------------------------------------------------- |
 | `tests/utils`    | `polars`, `spark`, `gff3` | nothing; the Spark tests need a Java runtime                                    |
 | `tests/enformer` | `enformer`        | the files in `tests/enformer/data/` and the hg19 chr22 sequence `example/chr22_hg19.fa` |
+| `tests/promoterai` | `promoterai`    | nothing                                                                                 |
 | `tests/splicing` | `splicing`        | the files in `tests/splicing/data/` and the hg38 chr22 sequence `example/chr22_hg38.fa` |
 | `tests/pangolin` | `pangolin`        | the files in `tests/pangolin/data/` and the published weights of Pangolin (35 MB)       |
 | `tests/absplice2` | `absplice2`      | nothing                                                                                 |
@@ -365,6 +440,7 @@ git lfs pull --include="packages/aberrant_expression/tests/enformer/data/**" --e
 cd packages/aberrant_expression
 pytest tests/utils
 pytest tests/enformer
+pytest tests/promoterai
 pytest tests/splicing
 pytest tests/pangolin
 pytest tests/absplice2
@@ -380,6 +456,9 @@ Pangolin on an excerpt of GRCh38 chr22 in `tests/pangolin/data/`. They download 
 pytest cache, or into the folder in `ABEXP_PANGOLIN_MODELS_DIR` if set. Without network access, the download fails,
 and so do the tests with the published weights. Their expected rows come from upstream Pangolin, see
 `tests/pangolin/make_expected.py` and `tests/pangolin/make_expected_published.py`.
+
+The promoterai tests run a model with fixed random weights on a synthetic genome, so they need no files and no
+network. `tests/promoterai/synthetic.py` holds the genome, the genome annotation and the variants.
 
 The absplice2 tests run `absplice2_dna` with a stand-in for the AbSplice2 model on the made-up inputs of
 `tests/absplice2/constellations.py`, one constellation per test. Their expected rows come from the AbSplice2 scripts

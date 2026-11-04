@@ -1,5 +1,5 @@
-# TensorFlow environment of the modules enformer and absplice (MMSplice, SpliceAI, SpliceAI-RocksDB and
-# AbSplice-DNA).
+# TensorFlow environment of the modules enformer, promoterai and absplice (MMSplice, SpliceAI,
+# SpliceAI-RocksDB and AbSplice-DNA).
 # abexp-tensorflow-cpu.yaml is the same with the CPU build of TensorFlow.
 name: abexp-tensorflow-cuda
 channels:
@@ -27,6 +27,6 @@ dependencies:
   - pip
   - pip:
     # packages/aberrant_expression of this repository at its release tag. release-please bumps the tag.
-    - "aberrant-expression[enformer,splicing,rocksdb] @ git+https://github.com/gagneurlab/AbExp.git@aberrant-expression-v0.1.1#subdirectory=packages/aberrant_expression"  # x-release-please-version
+    - "aberrant-expression[enformer,promoterai,splicing,rocksdb] @ git+https://github.com/gagneurlab/AbExp.git@aberrant-expression-v0.1.1#subdirectory=packages/aberrant_expression"  # x-release-please-version
     # SpliceAI of the branch mnp, which predicts multi-nucleotide variants
     - "spliceai @ git+https://github.com/hoeze/SpliceAI.git@e3470ae185d1418fe40cf35e8c4e33431cbc5df2"

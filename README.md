@@ -111,12 +111,12 @@ The publication to this method can be found in [Nature Communications](https://w
 
 ## GPU
 
-`use_gpu: True` in the config makes Enformer, MMSplice, SpliceAI and AbSplice-DNA use the CUDA variant of their
-TensorFlow environment (`workflow/modules/veff/envs/abexp-tensorflow-cuda.yaml`) instead of the CPU variant.
-Pangolin and AbSplice2 of the absplice2 module likewise use the CUDA variant of their PyTorch environment
+`use_gpu: True` in the config makes Enformer, PromoterAI, MMSplice, SpliceAI and AbSplice-DNA use the CUDA variant
+of their TensorFlow environment (`workflow/modules/veff/envs/abexp-tensorflow-cuda.yaml`) instead of the CPU
+variant. Pangolin and AbSplice2 of the absplice2 module likewise use the CUDA variant of their PyTorch environment
 (`workflow/modules/veff/absplice2/envs/absplice2-cuda.yaml`). The CUDA variants also run on hosts
-without a GPU, on the CPU. Only with `use_gpu: True`, the rules of Enformer, MMSplice, SpliceAI and Pangolin request
-one GPU (resource `gpu`), e.g. from SLURM. AbSplice-DNA requests none.
+without a GPU, on the CPU. Only with `use_gpu: True`, the rules of Enformer, PromoterAI, MMSplice, SpliceAI and
+Pangolin request one GPU (resource `gpu`), e.g. from SLURM. AbSplice-DNA requests none.
 
 Conda creates the CUDA variants only on a host with a CUDA driver. To create them on a host without one, e.g.
 a login node, set `CONDA_OVERRIDE_CUDA` to a CUDA version that the driver of the GPU nodes supports, e.g. 12.9:
@@ -269,6 +269,7 @@ workflow/modules/veff/tissue_specific_vep/  # consequences per GTEx tissue
 workflow/modules/veff/absplice/             # AbSplice-DNA
 workflow/modules/veff/absplice2/            # AbSplice2-DNA
 workflow/modules/veff/enformer/             # Enformer
+workflow/modules/veff/promoterai/           # PromoterAI
 workflow/modules/veff/nmd_scanner/          # NMD-Scanner, NMD efficiency, NMD features
 workflow/modules/veff/envs/                 # conda environments that several modules use
 ```
@@ -338,6 +339,23 @@ trained with Pangolin's GENCODE v38 database, which has the same genes, transcri
 GENCODE v38 GFF3. Other GENCODE releases differ in their genes and canonical transcripts. For every 4th
 variant of the chr22 ClinVar example VCFs, GENCODE v40 instead of v38 added 14 variant/gene pairs, all with
 AbSplice_DNA below 0.001, and did not change the other 2,603 pairs.
+
+`workflow/modules/veff/promoterai` adds [PromoterAI](https://github.com/Illumina/PromoterAI), which scores
+the effect of a promoter variant on the expression of the gene, between -1 (under-expression) and 1
+(over-expression). The module scores the variants whose distance to a TSS of `gtf_transcripts` is at most
+`variant_upstream_tss` and `variant_downstream_tss` (500 bases each by default, the window of the GTEx variants
+that PromoterAI was fine-tuned on), and aggregates the scores per gene and variant. It is off by default; set
+`system.promoterai.enabled: true` and `system.promoterai.model_path`, and request
+`<output_dir>/veff/promoterai/veff.parquet/<vcf_file>.parquet` as target. Its output is not read by
+tissue_specific_vep, fset or predict.
+
+Illumina publishes the PromoterAI models under a license agreement, so no rule downloads them: request a model
+from [PromoterAI](https://github.com/Illumina/PromoterAI) and set `system.promoterai.model_path` to its folder,
+e.g. `promoterAI_v1_hg38_finetune`. The model runs as `abexp.promoterai` of the aberrant-expression package: our
+own code that builds the sequences and the score of PromoterAI's scoring script, see
+[packages/aberrant_expression/README.md](packages/aberrant_expression/README.md#abexppromoterai). The model is
+about 40 times smaller than Enformer and sees 20480 bases around the variant, so it also runs on a CPU; with
+`use_gpu: True` it uses the CUDA variant of the TensorFlow environment (see [GPU](#gpu)).
 
 Each module has its own `config.schema.yaml` with its options and defaults, its own scripts and
 conda environments (`envs/`), and the files it ships. The conda environments that several modules

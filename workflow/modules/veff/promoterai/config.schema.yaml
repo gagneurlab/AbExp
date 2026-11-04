@@ -1,0 +1,101 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+title: promoterai module
+description: >-
+  PromoterAI (https://github.com/Illumina/PromoterAI): the effect of a promoter variant on the
+  expression of the gene, between -1 (under-expression) and 1 (over-expression). The module runs
+  the published model with abexp.promoterai on the variants near a TSS, and aggregates the scores
+  per gene and variant. Illumina publishes the model under a license agreement, so `model_path`
+  must point at a model folder that exists.
+type: object
+additionalProperties: false
+
+properties:
+  vcf:
+    type: string
+    pattern: "\\{vcf_file\\}"
+    description: Input VCFs, as a pattern with the wildcard {vcf_file}, e.g. the stripped VCFs of the vcf_prep module.
+  gtf_transcripts:
+    type: string
+    description: Transcripts of the genome annotation, e.g. the output of the gtf_transcripts module.
+  output_dir:
+    type: string
+    description: >-
+      The output is <output_dir>/promoterai/veff.parquet/<vcf_file>.parquet. Intermediate files go
+      to <output_dir>/promoterai/<human_genome_version>.
+  human_genome_version:
+    type: string
+    enum: ["hg19", "hg38"]
+  fasta_file:
+    type: string
+    description: >-
+      Genome FASTA of `human_genome_version`, with the chromosome names of the VCFs and of
+      `gtf_transcripts`.
+  model_path:
+    type: string
+    description: >-
+      The PromoterAI model folder, e.g. promoterAI_v1_hg38_finetune. Illumina publishes the models
+      under a license agreement (https://github.com/Illumina/PromoterAI), so no rule downloads
+      them: the folder must exist. Its input length must match `input_length`.
+  input_length:
+    type: integer
+    default: 20480
+    description: >-
+      The number of bases around the variant that the model sees, the `--input_length` of the
+      scoring script of PromoterAI. The published models were trained with 20480.
+  batch_size:
+    type: integer
+    default: 8
+    description: >-
+      The number of variants per batch; each batch runs the model twice, on the ref and the alt
+      sequences. A batch of more than 25 sequences of 20480 bases runs in several calls of the
+      model, see MAX_POSITIONS_PER_CALL in abexp.promoterai.constants.
+  isoform_aggregation_mode:
+    type: string
+    enum: ["canonical", "median"]
+    default: "canonical"
+    description: >-
+      How to aggregate the scores of the transcripts of a gene. A PromoterAI score depends only on
+      the variant and on the strand of the transcript, so the modes differ only in which
+      transcripts they keep: "canonical" keeps the Ensembl canonical transcript of a protein coding
+      gene, "median" takes the median over all transcripts in the window.
+  variant_upstream_tss:
+    type: integer
+    default: 500
+    description: >-
+      How many bases upstream of a TSS to look for variants. The default is the window of the
+      variants that PromoterAI was fine-tuned on (GTEx, up to 500 bases from the TSS).
+  variant_downstream_tss:
+    type: integer
+    default: 500
+    description: How many bases downstream of a TSS to look for variants.
+  canonical_only:
+    type: boolean
+    default: true
+    description: Whether to score only the Ensembl canonical transcripts
+  protein_coding_only:
+    type: boolean
+    default: true
+    description: Whether to score only the protein coding transcripts
+  use_gpu:
+    type: boolean
+    default: false
+    description: >-
+      Run the rules in the CUDA variant of the TensorFlow environment
+      (workflow/modules/veff/envs/abexp-tensorflow-cuda.yaml) instead of the CPU variant. The
+      CUDA variant also runs on hosts without a GPU. The veff module sets this from its own use_gpu.
+  enabled:
+    type: boolean
+    default: false
+    description: >-
+      The veff module loads this module only with `enabled: true`. Off by default: PromoterAI
+      publishes its models under a license agreement, so `model_path` has no default, and the
+      output is not read by tissue_specific_vep, fset or predict. It is built only as a target,
+      see output_dir.
+
+required:
+  - vcf
+  - gtf_transcripts
+  - output_dir
+  - human_genome_version
+  - fasta_file
+  - model_path

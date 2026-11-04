@@ -2,10 +2,10 @@ $schema: "https://json-schema.org/draft/2020-12/schema"
 title: veff module
 description: >-
   Variant effect annotation: prepared VCFs in, per-variant features out. Combines the modules
-  vep, mehari, loftee, tissue_specific_vep, absplice, absplice2, enformer and nmd_scanner; the
-  inputs come from the modules vcf_prep and gtf_transcripts. The sections vep, mehari, loftee,
-  tissue_specific_vep, absplice, absplice2, enformer and nmd_scanner are passed to these modules;
-  their config.schema.yaml lists the options.
+  vep, mehari, loftee, tissue_specific_vep, absplice, absplice2, enformer, promoterai and
+  nmd_scanner; the inputs come from the modules vcf_prep and gtf_transcripts. The sections vep,
+  mehari, loftee, tissue_specific_vep, absplice, absplice2, enformer, promoterai and nmd_scanner
+  are passed to these modules; their config.schema.yaml lists the options.
 type: object
 additionalProperties: false
 
@@ -101,6 +101,12 @@ properties:
     type: object
     default: {}
     description: Options of the enformer module.
+  promoterai:
+    type: object
+    default: {}
+    description: >-
+      Options of the promoterai module. The module is only loaded for `promoterai.enabled: true`,
+      and then `promoterai.model_path` is required.
   nmd_scanner:
     type: object
     default: {}

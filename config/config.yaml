@@ -104,3 +104,10 @@ system:
   # <output_dir>/veff/absplice2/veff.parquet/<vcf_file>.parquet is built only as a target.
   # absplice2:
   #   enabled: True
+
+  # PromoterAI on the variants near a TSS. Illumina publishes the model under a license
+  # agreement (https://github.com/Illumina/PromoterAI), so model_path is required. Its output
+  # <output_dir>/veff/promoterai/veff.parquet/<vcf_file>.parquet is built only as a target.
+  # promoterai:
+  #   enabled: True
+  #   model_path: "/path/to/promoterAI_models/promoterAI_v1_hg38_finetune"

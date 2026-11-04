@@ -200,6 +200,26 @@ module enformer:
 use rule * from enformer
 
 
+# off by default: Illumina publishes the PromoterAI model under a license agreement, so
+# promoterai.model_path has no default, and the output is not read by tissue_specific_vep, fset
+# or predict.
+if config["promoterai"].get("enabled"):
+    PROMOTERAI_CONFIG = {
+        **config["promoterai"],
+        "use_gpu": config["use_gpu"],
+        "vcf": STRIPPED_VCF,
+        "gtf_transcripts": GTF_TRANSCRIPTS,
+        "output_dir": VEFF_DIR,
+        **GENOME,
+    }
+
+    module promoterai:
+        snakefile: "promoterai/Snakefile"
+        config: PROMOTERAI_CONFIG
+
+    use rule * from promoterai
+
+
 # off by default: needs its own conda environment, and its output is not read by
 # tissue_specific_vep, fset or predict. The NMD features use the isoform proportions of the
 # tissue_specific_vep module.
